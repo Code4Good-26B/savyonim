@@ -1,0 +1,33 @@
+name: Deploy Supabase Migrations
+
+# This workflow will run only when there is a push or merge of a PR into the dev branch
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # Pulling the secrets defined in GitHub
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      D: "-"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to Supabase Project
+        run: supabase link $D${D}project-ref $SUPABASE_PROJECT_ID $D${D}password $SUPABASE_DB_PASSWORD
+
+      - name: Push migrations to database
+        run: supabase db push
