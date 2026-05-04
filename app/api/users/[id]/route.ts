@@ -1,0 +1,57 @@
+import { createSupabaseClient } from "@/lib/supabase";
+
+const VALID_ROLES = ["admin", "dispatcher", "driver", "representitive"] as const;
+type UserRole = (typeof VALID_ROLES)[number];
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, full_name, phone, role, is_active")
+    .eq("id", id)
+    .single();
+
+  if (error) return Response.json({ error: error.message }, { status: 404 });
+  return Response.json(data);
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const body = await request.json();
+  const { full_name, phone, role, is_active } = body;
+
+  if (role !== undefined && !VALID_ROLES.includes(role as UserRole)) {
+    return Response.json(
+      { error: `Invalid role. Must be one of: ${VALID_ROLES.join(", ")}` },
+      { status: 400 }
+    );
+  }
+
+  const patch: Record<string, unknown> = {};
+  if (full_name !== undefined) patch.full_name = full_name;
+  if (phone !== undefined) patch.phone = phone;
+  if (role !== undefined) patch.role = role;
+  if (is_active !== undefined) patch.is_active = is_active;
+
+  if (Object.keys(patch).length === 0) {
+    return Response.json({ error: "No fields to update" }, { status: 400 });
+  }
+
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("users")
+    .update(patch)
+    .eq("id", id)
+    .select("id, full_name, phone, role, is_active")
+    .single();
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json(data);
+}
