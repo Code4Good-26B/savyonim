@@ -1,0 +1,67 @@
+import { createSupabaseClient } from "@/lib/supabase";
+
+const AMBULANCE_FIELDS = "id, license_plate, service_zone_id, is_available, is_active";
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("ambulances")
+    .select(AMBULANCE_FIELDS)
+    .eq("id", id)
+    .single();
+
+  if (error) return Response.json({ error: error.message }, { status: 404 });
+  return Response.json(data);
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const body = await request.json();
+  const { license_plate, service_zone_id, is_available, is_active } = body;
+
+  const patch: Record<string, unknown> = {};
+  if (license_plate !== undefined) patch.license_plate = license_plate;
+  if (service_zone_id !== undefined) patch.service_zone_id = service_zone_id;
+  if (is_available !== undefined) patch.is_available = is_available;
+  if (is_active !== undefined) patch.is_active = is_active;
+
+  if (Object.keys(patch).length === 0) {
+    return Response.json({ error: "No fields to update" }, { status: 400 });
+  }
+
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("ambulances")
+    .update(patch)
+    .eq("id", id)
+    .select(AMBULANCE_FIELDS)
+    .single();
+
+  if (error) {
+    if (error.code === "23505") {
+      return Response.json({ error: "license_plate already exists" }, { status: 409 });
+    }
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+
+  return Response.json(data);
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = createSupabaseClient();
+  const { error } = await supabase.from("ambulances").delete().eq("id", id);
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return new Response(null, { status: 204 });
+}
