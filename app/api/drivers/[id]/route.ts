@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const { id } = await params;
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase
+  const { data, error, status: supabaseStatus } = await supabase
     .from("drivers")
     .select(DRIVER_FIELDS)
     .eq("id", id)
@@ -16,9 +16,9 @@ export async function GET(
 
   if (error) {
     const status =
-      error.code === "PGRST116" || error.status === 406
+      error.code === "PGRST116" || supabaseStatus === 406
         ? 404
-        : error.status ?? 500;
+        : supabaseStatus ?? 500;
     return Response.json({ error: error.message }, { status });
   }
   return Response.json(data);
