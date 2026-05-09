@@ -9,7 +9,7 @@ export function createSupabaseClient() {
     !supabaseAnonKey && "SUPABASE_ANON_KEY",
   ].filter(Boolean);
 
-  if (missingEnvVars.length > 0) {
+  if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
       `Missing required Supabase environment variable(s): ${missingEnvVars.join(", ")}`
     );
