@@ -12,21 +12,21 @@ export async function GET(
 ) {
   const { id } = await params;
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase
+  const { data, error, status: supabaseStatus } = await supabase
     .from("passengers")
     .select(PASSENGER_FIELDS)
     .eq("id", id)
-    .single();
+    .single()
 
   if (error) {
     if (error.code === "PGRST116") {
-      return Response.json({ error: error.message }, { status: 404 });
+      return Response.json({ error: error.message }, { status: 404 })
     }
 
     return Response.json(
       { error: error.message },
-      { status: typeof error.status === "number" ? error.status : 500 }
-    );
+      { status: typeof supabaseStatus === "number" ? supabaseStatus : 500 }
+    )
   }
 
   return Response.json(data);
