@@ -18,7 +18,17 @@ export async function GET(
     .eq("id", id)
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 404 });
+  if (error) {
+    if (error.code === "PGRST116") {
+      return Response.json({ error: error.message }, { status: 404 });
+    }
+
+    return Response.json(
+      { error: error.message },
+      { status: typeof error.status === "number" ? error.status : 500 }
+    );
+  }
+
   return Response.json(data);
 }
 
