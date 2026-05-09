@@ -15,7 +15,14 @@ export async function GET(
     .eq("id", id)
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 404 });
+  if (error) {
+    const isNotFound = error.code === "PGRST116" || error.status === 406;
+    return Response.json(
+      { error: error.message },
+      { status: isNotFound ? 404 : error.status ?? 500 }
+    );
+  }
+
   return Response.json(data);
 }
 
