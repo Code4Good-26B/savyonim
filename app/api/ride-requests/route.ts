@@ -1,4 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { supabaseErrorResponse } from "@/lib/api-errors";
+import { createSupabaseClient } from "@/lib/supabase";
 
 const RIDE_REQUEST_FIELDS =
   "id, passenger_id, requested_by_user_id, service_zone_id, status, source_address, source_notes, destination_address, destination_notes, return_trip_required, requested_pickup_at, approved_at, assigned_at, started_at, completed_at, rejected_at, rejection_reason";
@@ -12,17 +13,6 @@ const VALID_STATUSES = [
   "rejected",
 ] as const;
 
-function createSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing required Supabase environment variable(s)");
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
@@ -32,7 +22,7 @@ export async function GET(request: Request) {
   if (status && !VALID_STATUSES.includes(status as (typeof VALID_STATUSES)[number])) {
     return Response.json(
       { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -41,10 +31,7 @@ export async function GET(request: Request) {
   }
 
   const supabase = createSupabaseClient();
-  let query = supabase
-    .from("ride_requests")
-    .select(RIDE_REQUEST_FIELDS)
-    .order("requested_pickup_at", { ascending: false });
+  let query = supabase.from("ride_requests").select(RIDE_REQUEST_FIELDS).order("requested_pickup_at", { ascending: false });
 
   if (status) query = query.eq("status", status);
 
@@ -52,7 +39,7 @@ export async function GET(request: Request) {
     const start = `${date}T00:00:00.000Z`;
     const nextDay = new Date(date);
     nextDay.setDate(nextDay.getDate() + 1);
-    const end = `${nextDay.toISOString().slice(0, 10)}T00:00:00.000Z`;
+    const end = nextDay.toISOString().slice(0, 10) + "T00:00:00.000Z";
     query = query.gte("requested_pickup_at", start).lt("requested_pickup_at", end);
   }
 
@@ -61,7 +48,7 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await query;
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return Response.json(data);
 }
 
@@ -112,12 +99,9 @@ export async function POST(request: Request) {
 
   if (error) {
     if (error.code === "23503") {
-      return Response.json(
-        { error: "passenger_id, requested_by_user_id, or service_zone_id does not exist" },
-        { status: 400 },
-      );
+      return Response.json({ error: "passenger_id, requested_by_user_id, or service_zone_id does not exist" }, { status: 400 });
     }
-    return Response.json({ error: error.message }, { status: 500 });
+    return supabaseErrorResponse(error);
   }
 
   return Response.json(data, { status: 201 });

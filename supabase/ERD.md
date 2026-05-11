@@ -98,6 +98,7 @@ erDiagram
     }
 
     users ||--o{ ride_requests : requested_by
+    service_zones ||--o{ ride_requests : request_zone
     users ||--o{ rides : assigned_by
     users ||--o{ rides : representitive
     users ||--|| drivers : profile
@@ -130,6 +131,6 @@ These constraints block conflicting concurrent assignments at the database level
 
 ## Enum Values
 
-- `user_role`: `admin`, `dispatcher`, `driver`, `representitive`
+- `user_role`: `admin`, `dispatcher`, `driver`, `representative`
 - `request_status`: `pending`, `approved`, `waiting_for_representitive`, `in_progress`, `completed`, `rejected`
 - `mobility_requirement`: `none`, `wheelchair`, `walker`, `cane`
