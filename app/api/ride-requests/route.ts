@@ -1,7 +1,8 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const RIDE_REQUEST_FIELDS =
-  "id, passenger_id, requested_by_user_id, status, source_address, source_notes, destination_address, destination_notes, return_trip_required, requested_pickup_at, approved_at, assigned_at, started_at, completed_at, rejected_at, rejection_reason";
+  "id, passenger_id, requested_by_user_id, service_zone_id, status, source_address, source_notes, destination_address, destination_notes, return_trip_required, requested_pickup_at, approved_at, assigned_at, started_at, completed_at, rejected_at, rejection_reason";
 
 const VALID_STATUSES = [
   "pending",
@@ -47,7 +48,7 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await query;
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return Response.json(data);
 }
 
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
   const {
     passenger_id,
     requested_by_user_id,
+    service_zone_id,
     source_address,
     source_notes,
     destination_address,
@@ -84,6 +86,7 @@ export async function POST(request: Request) {
     .insert({
       passenger_id,
       requested_by_user_id,
+      service_zone_id,
       source_address,
       source_notes,
       destination_address,
@@ -96,9 +99,9 @@ export async function POST(request: Request) {
 
   if (error) {
     if (error.code === "23503") {
-      return Response.json({ error: "passenger_id or requested_by_user_id does not exist" }, { status: 400 });
+      return Response.json({ error: "passenger_id, requested_by_user_id, or service_zone_id does not exist" }, { status: 400 });
     }
-    return Response.json({ error: error.message }, { status: 500 });
+    return supabaseErrorResponse(error);
   }
 
   return Response.json(data, { status: 201 });

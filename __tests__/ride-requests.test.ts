@@ -44,6 +44,7 @@ const BASE_REQUEST = {
   id: "rr1",
   passenger_id: "p1",
   requested_by_user_id: "u1",
+  service_zone_id: null,
   status: "pending",
   source_address: "123 Main St",
   source_notes: null,
@@ -226,7 +227,7 @@ describe("POST /api/ride-requests", () => {
     );
 
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/does not exist/);
+    expect((await res.json()).error).toMatch(/service_zone_id/);
   });
 });
 

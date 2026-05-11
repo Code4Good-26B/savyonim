@@ -1,7 +1,8 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const RIDE_REQUEST_FIELDS =
-  "id, passenger_id, requested_by_user_id, status, source_address, source_notes, destination_address, destination_notes, return_trip_required, requested_pickup_at, approved_at, assigned_at, started_at, completed_at, rejected_at, rejection_reason";
+  "id, passenger_id, requested_by_user_id, service_zone_id, status, source_address, source_notes, destination_address, destination_notes, return_trip_required, requested_pickup_at, approved_at, assigned_at, started_at, completed_at, rejected_at, rejection_reason";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   pending: ["approved", "rejected"],
@@ -67,6 +68,6 @@ export async function PATCH(
     .select(RIDE_REQUEST_FIELDS)
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return Response.json(data);
 }
