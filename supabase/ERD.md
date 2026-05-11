@@ -62,6 +62,7 @@ erDiagram
         uuid id PK
         uuid passenger_id FK
         uuid requested_by_user_id FK
+        uuid service_zone_id FK
         request_status status
         text source_address
         text destination_address
@@ -102,6 +103,7 @@ erDiagram
     users ||--|| drivers : profile
     service_zones ||--o{ drivers : covers
     service_zones ||--o{ ambulances : contains
+    service_zones ||--o{ ride_requests : receives
     passengers ||--o{ ride_requests : submits
     ride_requests ||--o{ rides : operational_attempts
     drivers ||--o{ rides : drives
