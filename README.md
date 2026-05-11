@@ -1,5 +1,36 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Team-Safe Local Development
+
+This project includes an API write guard to reduce accidental writes to shared databases:
+
+- In development, `POST`, `PUT`, `PATCH`, and `DELETE` requests under `/api/*` are blocked by default.
+- To temporarily allow local writes, set `BLOCK_API_WRITES=false` in your local env.
+- Keep `BLOCK_API_WRITES=true` for normal day-to-day development.
+
+### Environment Setup
+
+1. Copy `.env.example` to `.env.local`.
+2. Fill in your local or non-production Supabase credentials.
+3. Run the app with `npm run dev`.
+
+### Recommended Team Workflow
+
+1. Use **local Supabase** for feature development and tests.
+2. Use a separate **staging Supabase** project for integration testing.
+3. Restrict production credentials and avoid using them in local `.env.local`.
+
+### Optional: Run Supabase Locally
+
+If Supabase CLI and Docker are installed:
+
+```bash
+supabase start
+supabase db reset
+```
+
+Then point `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_ANON_KEY` to the local project values.
+
 ## Getting Started
 
 First, run the development server:
