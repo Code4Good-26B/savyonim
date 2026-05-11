@@ -1,6 +1,7 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
-const VALID_ROLES = ["admin", "dispatcher", "driver", "representitive"] as const;
+const VALID_ROLES = ["admin", "dispatcher", "driver", "representative"] as const;
 type UserRole = (typeof VALID_ROLES)[number];
 
 export async function GET(
@@ -15,13 +16,7 @@ export async function GET(
     .eq("id", id)
     .single();
 
-  if (error) {
-    const isNotFound = error.code === "PGRST116" || error.status === 406;
-    return Response.json(
-      { error: error.message },
-      { status: isNotFound ? 404 : error.status ?? 500 }
-    );
-  }
+  if (error) return supabaseErrorResponse(error);
 
   return Response.json(data);
 }
@@ -59,6 +54,6 @@ export async function PUT(
     .select("id, full_name, phone, role, is_active")
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return Response.json(data);
 }

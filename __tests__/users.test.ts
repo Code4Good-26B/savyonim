@@ -102,7 +102,7 @@ describe("PUT /api/users/[id]", () => {
     expect((await res.json()).error).toMatch(/Invalid role/);
   });
 
-  it.each(["admin", "dispatcher", "driver", "representitive"])(
+  it.each(["admin", "dispatcher", "driver", "representative"])(
     "accepts valid role: %s",
     async (role) => {
       mockDB({ data: { id: "u1", role }, error: null });
