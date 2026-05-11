@@ -1,3 +1,4 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const DRIVER_FIELDS = "id, user_id, contact_phone, service_zone_id, is_active";
@@ -9,7 +10,7 @@ export async function GET() {
     .select(DRIVER_FIELDS)
     .order("id");
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return Response.json(data);
 }
 
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     if (error.code === "23503") {
       return Response.json({ error: "user_id or service_zone_id does not exist" }, { status: 400 });
     }
-    return Response.json({ error: error.message }, { status: 500 });
+    return supabaseErrorResponse(error);
   }
 
   return Response.json(data, { status: 201 });

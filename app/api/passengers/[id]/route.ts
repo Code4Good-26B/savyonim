@@ -1,3 +1,4 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const VALID_MOBILITY = ["none", "wheelchair", "walker", "cane"] as const;
@@ -12,22 +13,13 @@ export async function GET(
 ) {
   const { id } = await params;
   const supabase = createSupabaseClient();
-  const { data, error, status: supabaseStatus } = await supabase
+  const { data, error } = await supabase
     .from("passengers")
     .select(PASSENGER_FIELDS)
     .eq("id", id)
     .single()
 
-  if (error) {
-    if (error.code === "PGRST116") {
-      return Response.json({ error: error.message }, { status: 404 })
-    }
-
-    return Response.json(
-      { error: error.message },
-      { status: typeof supabaseStatus === "number" ? supabaseStatus : 500 }
-    )
-  }
+  if (error) return supabaseErrorResponse(error);
 
   return Response.json(data);
 }
@@ -80,7 +72,7 @@ export async function PATCH(
     if (error.code === "23505") {
       return Response.json({ error: "national_id already exists" }, { status: 409 });
     }
-    return Response.json({ error: error.message }, { status: 500 });
+    return supabaseErrorResponse(error);
   }
 
   return Response.json(data);
@@ -94,6 +86,6 @@ export async function DELETE(
   const supabase = createSupabaseClient();
   const { error } = await supabase.from("passengers").delete().eq("id", id);
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return new Response(null, { status: 204 });
 }

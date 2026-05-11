@@ -1,3 +1,4 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const RIDE_FIELDS =
@@ -64,6 +65,6 @@ export async function PATCH(
     .select(RIDE_FIELDS)
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return Response.json(data);
 }

@@ -1,3 +1,4 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const DRIVER_FIELDS = "id, user_id, contact_phone, service_zone_id, is_active";
@@ -11,7 +12,7 @@ export async function GET() {
     .select("driver_id, ambulance_id")
     .in("status", ["assigned", "in_progress"]);
 
-  if (ridesError) return Response.json({ error: ridesError.message }, { status: 500 });
+  if (ridesError) return supabaseErrorResponse(ridesError);
 
   const busyDriverIds = (activeRides ?? []).map((r) => r.driver_id);
   const busyAmbulanceIds = (activeRides ?? []).map((r) => r.ambulance_id);
@@ -26,7 +27,7 @@ export async function GET() {
   }
 
   const { data: drivers, error: driversError } = await driversQuery;
-  if (driversError) return Response.json({ error: driversError.message }, { status: 500 });
+  if (driversError) return supabaseErrorResponse(driversError);
 
   let ambulancesQuery = supabase
     .from("ambulances")
@@ -39,7 +40,7 @@ export async function GET() {
   }
 
   const { data: ambulances, error: ambulancesError } = await ambulancesQuery;
-  if (ambulancesError) return Response.json({ error: ambulancesError.message }, { status: 500 });
+  if (ambulancesError) return supabaseErrorResponse(ambulancesError);
 
   return Response.json({ drivers, ambulances });
 }

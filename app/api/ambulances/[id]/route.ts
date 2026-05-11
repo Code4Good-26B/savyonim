@@ -1,3 +1,4 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const AMBULANCE_FIELDS = "id, license_plate, service_zone_id, is_available, is_active";
@@ -14,7 +15,7 @@ export async function GET(
     .eq("id", id)
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 404 });
+  if (error) return supabaseErrorResponse(error);
   return Response.json(data);
 }
 
@@ -48,7 +49,7 @@ export async function PATCH(
     if (error.code === "23505") {
       return Response.json({ error: "license_plate already exists" }, { status: 409 });
     }
-    return Response.json({ error: error.message }, { status: 500 });
+    return supabaseErrorResponse(error);
   }
 
   return Response.json(data);
@@ -62,6 +63,6 @@ export async function DELETE(
   const supabase = createSupabaseClient();
   const { error } = await supabase.from("ambulances").delete().eq("id", id);
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return new Response(null, { status: 204 });
 }

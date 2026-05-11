@@ -1,3 +1,4 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
 export async function GET() {
@@ -7,6 +8,6 @@ export async function GET() {
     .select("id, full_name, phone, role, is_active")
     .order("full_name");
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return Response.json(data);
 }

@@ -1,3 +1,4 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const RIDE_FIELDS =
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
     if (error.code === "23503") {
       return Response.json({ error: "One or more referenced IDs do not exist" }, { status: 400 });
     }
-    return Response.json({ error: error.message }, { status: 500 });
+    return supabaseErrorResponse(error);
   }
 
   return Response.json(data, { status: 201 });

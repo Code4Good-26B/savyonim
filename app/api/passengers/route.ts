@@ -1,3 +1,4 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const VALID_MOBILITY = ["none", "wheelchair", "walker", "cane"] as const;
@@ -13,7 +14,7 @@ export async function GET() {
     .select(PASSENGER_FIELDS)
     .order("full_name");
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return Response.json(data);
 }
 
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
     if (error.code === "23505") {
       return Response.json({ error: "national_id already exists" }, { status: 409 });
     }
-    return Response.json({ error: error.message }, { status: 500 });
+    return supabaseErrorResponse(error);
   }
 
   return Response.json(data, { status: 201 });

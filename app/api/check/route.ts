@@ -1,3 +1,4 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET() {
@@ -21,15 +22,7 @@ export async function GET() {
   // Query a foundational table from this repository schema instead of the old template 'notes' table.
   const { data, error } = await supabase.from("service_zones").select("id").limit(1);
 
-  if (error) {
-    return Response.json(
-      {
-        status: "Fetch error",
-        message: error.message,
-      },
-      { status: 500 },
-    );
-  }
+  if (error) return supabaseErrorResponse(error);
 
   return Response.json({
     status: "Vercel and Supabase connection is successful!",

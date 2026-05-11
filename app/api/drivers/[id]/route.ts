@@ -1,3 +1,4 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const DRIVER_FIELDS = "id, user_id, contact_phone, service_zone_id, is_active";
@@ -8,19 +9,13 @@ export async function GET(
 ) {
   const { id } = await params;
   const supabase = createSupabaseClient();
-  const { data, error, status: supabaseStatus } = await supabase
+  const { data, error } = await supabase
     .from("drivers")
     .select(DRIVER_FIELDS)
     .eq("id", id)
     .single();
 
-  if (error) {
-    const status =
-      error.code === "PGRST116" || supabaseStatus === 406
-        ? 404
-        : supabaseStatus ?? 500;
-    return Response.json({ error: error.message }, { status });
-  }
+  if (error) return supabaseErrorResponse(error);
   return Response.json(data);
 }
 
@@ -49,7 +44,7 @@ export async function PATCH(
     .select(DRIVER_FIELDS)
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return Response.json(data);
 }
 
@@ -61,6 +56,6 @@ export async function DELETE(
   const supabase = createSupabaseClient();
   const { error } = await supabase.from("drivers").delete().eq("id", id);
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return supabaseErrorResponse(error);
   return new Response(null, { status: 204 });
 }
