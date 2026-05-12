@@ -1,42 +1,28 @@
 -- Foundational dispatch schema for Savyonim.
 -- Local migration file only. Do not apply to production without team lead approval.
 
-begin;
-
 create extension if not exists pgcrypto;
 
 -- Enums
-do $$
-begin
-	if not exists (select 1 from pg_type where typname = 'user_role') then
-		create type public.user_role as enum ('admin', 'dispatcher', 'driver', 'representitive');
-	end if;
+create type public.user_role as enum ('admin', 'dispatcher', 'driver', 'representitive');
 
-	if not exists (select 1 from pg_type where typname = 'request_status') then
-		create type public.request_status as enum (
-			'pending',
-			'approved',
-			'waiting_for_representitive',
-			'in_progress',
-			'completed',
-			'rejected'
-		);
-	end if;
+create type public.request_status as enum (
+	'pending',
+	'approved',
+	'waiting_for_representitive',
+	'in_progress',
+	'completed',
+	'rejected'
+);
 
-	if not exists (select 1 from pg_type where typname = 'ride_status') then
-		create type public.ride_status as enum ('assigned', 'in_progress', 'completed', 'rejected');
-	end if;
+create type public.ride_status as enum ('assigned', 'in_progress', 'completed', 'rejected');
 
-	if not exists (select 1 from pg_type where typname = 'mobility_requirement') then
-		create type public.mobility_requirement as enum (
-			'none',
-			'wheelchair',
-			'walker',
-			'cane'
-		);
-	end if;
-end
-$$;
+create type public.mobility_requirement as enum (
+	'none',
+	'wheelchair',
+	'walker',
+	'cane'
+);
 
 -- Shared timestamp trigger
 create or replace function public.set_updated_at()
@@ -319,4 +305,3 @@ alter table public.passengers enable row level security;
 alter table public.ride_requests enable row level security;
 alter table public.rides enable row level security;
 
-commit;

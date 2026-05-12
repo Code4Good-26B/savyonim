@@ -1,3 +1,4 @@
+import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET() {
@@ -16,24 +17,13 @@ export async function GET() {
     );
   }
 
-  // Initialize the Supabase client
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Fetch data from the 'notes' table created in step 1
-  const { data, error } = await supabase.from("notes").select("*");
+  // Query a foundational table from this repository schema instead of the old template 'notes' table.
+  const { data, error } = await supabase.from("service_zones").select("id").limit(1);
 
-  // Handle database connection or query errors
-  if (error) {
-    return Response.json(
-      {
-        status: "Fetch error",
-        message: error.message,
-      },
-      { status: 500 },
-    );
-  }
+  if (error) return supabaseErrorResponse(error);
 
-  // Return success status and the retrieved data
   return Response.json({
     status: "Vercel and Supabase connection is successful!",
     results: data,
