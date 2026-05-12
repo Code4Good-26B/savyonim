@@ -5,5 +5,32 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     environment: "node",
+    // Load local Supabase credentials for integration tests
+    envDir: ".",
+    // Projects let us run unit and integration tests separately
+    projects: [
+      {
+        test: {
+          name: "unit",
+          include: ["__tests__/**/*.test.ts"],
+          environment: "node",
+        },
+        plugins: [tsconfigPaths()],
+      },
+      {
+        test: {
+          name: "integration",
+          include: ["__integration__/**/*.test.ts"],
+          environment: "node",
+          // Runs once before all integration tests to reset the DB
+          globalSetup: ["__integration__/setup.ts"],
+          // Loads .env.test.local into each test worker process
+          setupFiles: ["__integration__/load-env.ts"],
+          // Give integration tests more time (real DB calls)
+          testTimeout: 15000,
+        },
+        plugins: [tsconfigPaths()],
+      },
+    ],
   },
 });
