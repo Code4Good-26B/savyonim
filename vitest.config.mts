@@ -3,10 +3,10 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
+  // Load local Supabase credentials for integration tests
+  envDir: ".",
   test: {
     environment: "node",
-    // Load local Supabase credentials for integration tests
-    envDir: ".",
     // Projects let us run unit and integration tests separately
     projects: [
       {
