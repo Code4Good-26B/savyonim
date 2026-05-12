@@ -15,7 +15,7 @@ export async function GET(
     .eq("id", id)
     .single();
 
-  if (error) return supabaseErrorResponse(error);
+  if (error) return supabaseErrorResponse(error, 404);
   return Response.json(data);
 }
 

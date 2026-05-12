@@ -1,0 +1,23 @@
+services:
+  test-db:
+    image: postgres:17
+    container_name: savionim-local-test-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - savionim-local-test-db-data:/var/lib/postgresql/data
+      - ./supabase:/workspace/supabase:ro
+      - ./scripts/test-db:/workspace/scripts/test-db:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  savionim-local-test-db-data:

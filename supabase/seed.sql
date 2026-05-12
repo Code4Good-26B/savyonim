@@ -13,7 +13,7 @@ INSERT INTO public.service_zones (id, name, region_code, region, city, is_active
   ('11111111-0000-0000-0000-000000000003', 'South Tel Aviv',    'TLV-S', 'Tel Aviv District', 'Jaffa',    true)
 ON CONFLICT (id) DO NOTHING;
 
--- ─── Auth Users (5 drivers) ───────────────────────────────────────────────────
+-- ─── Auth Users (admin, dispatcher, drivers) ──────────────────────────────────
 -- Synthetic entries for local / staging only. Password: Seed1234!
 
 INSERT INTO auth.users (
@@ -23,35 +23,82 @@ INSERT INTO auth.users (
   raw_app_meta_data, raw_user_meta_data,
   created_at, updated_at
 ) VALUES
+  ('22222222-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated',
+   'admin@savionim.test', crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
+   '{"provider":"email","providers":["email"],"app_role":"admin"}'::jsonb, '{}'::jsonb, NOW(), NOW()),
+
+  ('22222222-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated',
+   'dispatcher@savionim.test', crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
+   '{"provider":"email","providers":["email"],"app_role":"dispatcher"}'::jsonb, '{}'::jsonb, NOW(), NOW()),
+
   ('22222222-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated',
    'avi.cohen@savionim.test',    crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
-   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW()),
+   '{"provider":"email","providers":["email"],"app_role":"driver"}'::jsonb, '{}'::jsonb, NOW(), NOW()),
 
   ('22222222-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated',
    'noa.levi@savionim.test',     crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
-   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW()),
+   '{"provider":"email","providers":["email"],"app_role":"driver"}'::jsonb, '{}'::jsonb, NOW(), NOW()),
 
   ('22222222-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated',
    'yossi.mizrahi@savionim.test', crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
-   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW()),
+   '{"provider":"email","providers":["email"],"app_role":"driver"}'::jsonb, '{}'::jsonb, NOW(), NOW()),
 
   ('22222222-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated',
    'dana.shapiro@savionim.test', crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
-   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW()),
+   '{"provider":"email","providers":["email"],"app_role":"driver"}'::jsonb, '{}'::jsonb, NOW(), NOW()),
 
   ('22222222-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated',
    'eran.peretz@savionim.test',  crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
-   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW())
+   '{"provider":"email","providers":["email"],"app_role":"driver"}'::jsonb, '{}'::jsonb, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
--- ─── Public Users (5 drivers) ─────────────────────────────────────────────────
+-- ─── Auth Identities ─────────────────────────────────────────────────────────
+-- Required by Supabase Auth email/password sign-in for local seeded users.
+
+INSERT INTO auth.identities (
+  id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
+) VALUES
+  ('2aaaaaaa-0000-0000-0000-000000000010', '22222222-0000-0000-0000-000000000010',
+   '{"sub":"22222222-0000-0000-0000-000000000010","email":"admin@savionim.test"}'::jsonb,
+   'email', '22222222-0000-0000-0000-000000000010', NOW(), NOW(), NOW()),
+
+  ('2aaaaaaa-0000-0000-0000-000000000011', '22222222-0000-0000-0000-000000000011',
+   '{"sub":"22222222-0000-0000-0000-000000000011","email":"dispatcher@savionim.test"}'::jsonb,
+   'email', '22222222-0000-0000-0000-000000000011', NOW(), NOW(), NOW()),
+
+  ('2aaaaaaa-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000001',
+   '{"sub":"22222222-0000-0000-0000-000000000001","email":"avi.cohen@savionim.test"}'::jsonb,
+   'email', '22222222-0000-0000-0000-000000000001', NOW(), NOW(), NOW()),
+
+  ('2aaaaaaa-0000-0000-0000-000000000002', '22222222-0000-0000-0000-000000000002',
+   '{"sub":"22222222-0000-0000-0000-000000000002","email":"noa.levi@savionim.test"}'::jsonb,
+   'email', '22222222-0000-0000-0000-000000000002', NOW(), NOW(), NOW()),
+
+  ('2aaaaaaa-0000-0000-0000-000000000003', '22222222-0000-0000-0000-000000000003',
+   '{"sub":"22222222-0000-0000-0000-000000000003","email":"yossi.mizrahi@savionim.test"}'::jsonb,
+   'email', '22222222-0000-0000-0000-000000000003', NOW(), NOW(), NOW()),
+
+  ('2aaaaaaa-0000-0000-0000-000000000004', '22222222-0000-0000-0000-000000000004',
+   '{"sub":"22222222-0000-0000-0000-000000000004","email":"dana.shapiro@savionim.test"}'::jsonb,
+   'email', '22222222-0000-0000-0000-000000000004', NOW(), NOW(), NOW()),
+
+  ('2aaaaaaa-0000-0000-0000-000000000005', '22222222-0000-0000-0000-000000000005',
+   '{"sub":"22222222-0000-0000-0000-000000000005","email":"eran.peretz@savionim.test"}'::jsonb,
+   'email', '22222222-0000-0000-0000-000000000005', NOW(), NOW(), NOW())
+ON CONFLICT (provider_id, provider) DO NOTHING;
+
+-- ─── Public Users (admin, dispatcher, drivers) ────────────────────────────────
 
 INSERT INTO public.users (id, full_name, phone, role, is_active) VALUES
+  ('22222222-0000-0000-0000-000000000010', 'Local Admin',      '000-000-0010', 'admin', true),
+  ('22222222-0000-0000-0000-000000000011', 'Local Dispatcher', '000-000-0011', 'dispatcher', true),
   ('22222222-0000-0000-0000-000000000001', 'Avi Cohen',       '050-1234567', 'driver', true),
   ('22222222-0000-0000-0000-000000000002', 'Noa Levi',        '052-2345678', 'driver', true),
   ('22222222-0000-0000-0000-000000000003', 'Yossi Mizrahi',   '054-3456789', 'driver', true),

@@ -1,5 +1,5 @@
 import { supabaseErrorResponse } from "@/lib/api-errors";
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseClient } from "@/lib/supabase";
 
 export async function GET() {
   // Use the exact variable names provided by Vercel integration
@@ -17,7 +17,7 @@ export async function GET() {
     );
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = createSupabaseClient();
 
   // Query a foundational table from this repository schema instead of the old template 'notes' table.
   const { data, error } = await supabase.from("service_zones").select("id").limit(1);

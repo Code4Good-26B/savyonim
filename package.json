@@ -3,11 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node ./scripts/validate-local-env.mjs",
     "dev": "next dev",
+    "pretest": "node ./scripts/validate-local-env.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:test:start": "sh ./scripts/test-db/start.sh",
+    "db:test:schema": "sh ./scripts/test-db/load-schema.sh",
+    "db:test:seed": "sh ./scripts/test-db/seed.sh",
+    "db:test:reset": "sh ./scripts/test-db/reset.sh",
+    "db:test:verify": "sh ./scripts/test-db/verify.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.1",

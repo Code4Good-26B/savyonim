@@ -1,6 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
+import { assertLocalOnlyEnvironment, assertLocalSupabaseUrl } from "@/lib/env-safety";
 
 export function createSupabaseClient() {
+  assertLocalOnlyEnvironment();
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
@@ -14,6 +17,8 @@ export function createSupabaseClient() {
       `Missing required Supabase environment variable(s): ${missingEnvVars.join(", ")}`
     );
   }
+
+  assertLocalSupabaseUrl(supabaseUrl);
 
   return createClient(supabaseUrl, supabaseAnonKey);
 }

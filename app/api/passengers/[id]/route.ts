@@ -17,9 +17,9 @@ export async function GET(
     .from("passengers")
     .select(PASSENGER_FIELDS)
     .eq("id", id)
-    .single()
+    .single();
 
-  if (error) return supabaseErrorResponse(error);
+  if (error) return supabaseErrorResponse(error, 404);
 
   return Response.json(data);
 }

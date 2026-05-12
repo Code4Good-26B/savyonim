@@ -11,13 +11,13 @@ This project includes an API write guard to reduce accidental writes to shared d
 ### Environment Setup
 
 1. Copy `.env.example` to `.env.local`.
-2. Fill in your local or non-production Supabase credentials.
+2. Keep `.env.local` pointed at localhost/Docker only.
 3. Run the app with `npm run dev`.
 
 ### Recommended Team Workflow
 
 1. Use **local Supabase** for feature development and tests.
-2. Use a separate **staging Supabase** project for integration testing.
+2. Use a separate **staging Supabase** project for integration testing outside local development.
 3. Restrict production credentials and avoid using them in local `.env.local`.
 
 ### Optional: Run Supabase Locally
@@ -30,6 +30,73 @@ supabase db reset
 ```
 
 Then point `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_ANON_KEY` to the local project values.
+
+## Local Docker Test Database
+
+This branch includes an isolated local Postgres database for tests and schema checks. It runs in Docker on host port `55432`, separate from the Supabase CLI default DB port `54322` and separate from any hosted Supabase project.
+
+The committed `.env.test` is intentionally local-only:
+
+- `DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres`
+- `SUPABASE_DB_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres`
+- `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321`
+- `SUPABASE_ANON_KEY=local-test-anon-key`
+
+Do not replace `.env.test` with production, staging, or shared project credentials. If schema is copied from a real database in the future, use a schema-only export unless the data has been explicitly approved and anonymized. Never copy real emails, passwords, phone numbers, payment data, tokens, or private records into the test database.
+
+The local startup path is guarded: `npm run dev`, `npm test`, and the test DB scripts run local environment validation before starting. In development and test mode, hosted Supabase URLs, remote Postgres URLs, Vercel OIDC tokens, and Supabase service-role keys fail fast.
+
+### Start the DB
+
+```bash
+npm run db:test:start
+```
+
+Equivalent Docker command:
+
+```bash
+docker compose up -d test-db
+```
+
+### Load Schema
+
+This resets the disposable `public` and `auth` schemas, creates a minimal local `auth.users` table needed by the existing migrations, and applies every migration in `supabase/migrations`.
+
+```bash
+npm run db:test:schema
+```
+
+### Seed Test Data
+
+This loads synthetic data from `supabase/test-seed.sql`.
+
+```bash
+npm run db:test:seed
+```
+
+### Reset the DB
+
+This reloads the schema and then reloads synthetic seed data.
+
+```bash
+npm run db:test:reset
+```
+
+### Verify the DB
+
+```bash
+npm run db:test:verify
+```
+
+This confirms the container is running, Postgres is accepting local connections, and the seeded schema can be queried.
+
+### Run Tests
+
+```bash
+npm test
+```
+
+Vitest loads `.env.test` through `__tests__/setup-env.ts`. The test setup rejects non-local database URLs, and `createSupabaseClient()` refuses non-local Supabase URLs while `NODE_ENV=test`, so tests cannot accidentally point at a hosted project database.
 
 ## Getting Started
 
