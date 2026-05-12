@@ -1,19 +1,11 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { createSupabaseClient } from "../lib/supabase";
 
 /**
  * Returns a Supabase client wired to the local Docker instance.
- * Reads from .env.test.local (loaded automatically by vitest's envDir config).
+ * Reads from .env.test.local, which is loaded by the integration test setup
+ * file via dotenv (see __integration__/load-env.ts).
  */
 export function getLocalSupabase(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    throw new Error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_ANON_KEY.\n" +
-        "Make sure .env.test.local exists and `npx supabase start` is running."
-    );
-  }
-
-  return createClient(url, key);
+  return createSupabaseClient();
 }
