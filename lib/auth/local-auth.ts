@@ -1,10 +1,11 @@
-import { createHmac, pbkdf2, randomBytes, timingSafeEqual } from "crypto";
+import bcrypt from "bcryptjs";
+import { createHmac, pbkdf2, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 
 const pbkdf2Async = promisify(pbkdf2);
-const PASSWORD_ITERATIONS = 310000;
 const PASSWORD_KEY_LENGTH = 32;
 const PASSWORD_DIGEST = "sha256";
+const BCRYPT_ROUNDS = 12;
 const TOKEN_TTL_SECONDS = 60 * 60 * 24;
 
 type TokenPayload = {
@@ -30,13 +31,15 @@ function tokenSecret() {
 }
 
 export async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("base64url");
-  const hash = await pbkdf2Async(password, salt, PASSWORD_ITERATIONS, PASSWORD_KEY_LENGTH, PASSWORD_DIGEST);
-  return `pbkdf2_${PASSWORD_DIGEST}$${PASSWORD_ITERATIONS}$${salt}$${hash.toString("base64url")}`;
+  return bcrypt.hash(password, BCRYPT_ROUNDS);
 }
 
 export async function verifyPassword(password: string, storedHash: string | null | undefined) {
   if (!storedHash) return false;
+
+  if (storedHash.startsWith("$2a$") || storedHash.startsWith("$2b$") || storedHash.startsWith("$2y$")) {
+    return bcrypt.compare(password, storedHash);
+  }
 
   const [algorithm, iterationText, salt, expected] = storedHash.split("$");
   if (algorithm !== `pbkdf2_${PASSWORD_DIGEST}` || !iterationText || !salt || !expected) {

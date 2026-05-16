@@ -6,6 +6,7 @@ import {
   updateRideOdometer,
   updateRideStatus,
 } from "@/lib/driver/api";
+import { useDriverI18n } from "@/components/driver/DriverI18n";
 import type { DriverApiError, DriverSession, RideSummary } from "@/lib/driver/types";
 import { DriverNotice } from "@/components/driver/DriverNotice";
 
@@ -47,6 +48,7 @@ export function OpenRideActions({
   session: DriverSession;
   onAccepted: (ride: RideSummary) => void;
 }) {
+  const { t } = useDriverI18n();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,9 +68,9 @@ export function OpenRideActions({
 
   return (
     <div className="space-y-3">
-      {error ? <DriverNotice title="Could not take ride" kind="error">{error}</DriverNotice> : null}
+      {error ? <DriverNotice title={t("couldNotTakeRide")} kind="error">{error}</DriverNotice> : null}
       <ActionButton disabled={isPending} onClick={handleAccept}>
-        {isPending ? "Taking ride..." : "Take ride"}
+        {isPending ? t("takingRide") : t("takeRide")}
       </ActionButton>
     </div>
   );
@@ -81,6 +83,7 @@ export function AssignedRideActions({
   ride: RideSummary;
   onChanged: (ride: RideSummary) => void;
 }) {
+  const { t } = useDriverI18n();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -105,15 +108,15 @@ export function AssignedRideActions({
     const end = odometerEnd ? Number(odometerEnd) : undefined;
 
     if (start !== undefined && Number.isNaN(start)) {
-      setError("Odometer start must be a number.");
+      setError(t("odometerStartNumber"));
       return;
     }
     if (end !== undefined && Number.isNaN(end)) {
-      setError("Odometer end must be a number.");
+      setError(t("odometerEndNumber"));
       return;
     }
     if (start !== undefined && end !== undefined && end < start) {
-      setError("Odometer end must be greater than or equal to odometer start.");
+      setError(t("odometerEndGreater"));
       return;
     }
 
@@ -129,23 +132,23 @@ export function AssignedRideActions({
 
   return (
     <div className="space-y-4">
-      {error ? <DriverNotice title="Action failed" kind="error">{error}</DriverNotice> : null}
+      {error ? <DriverNotice title={t("actionFailed")} kind="error">{error}</DriverNotice> : null}
 
       {ride.status === "assigned" ? (
         <ActionButton
           disabled={isPending}
           onClick={() => void run(() => updateRideStatus({ rideId: ride.id, status: "in_progress" }))}
         >
-          {isPending ? "Starting..." : "Start ride"}
+          {isPending ? t("startRidePending") : t("startRide")}
         </ActionButton>
       ) : null}
 
       {ride.status === "in_progress" ? (
         <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <h2 className="text-base font-semibold text-slate-950">Complete ride</h2>
+          <h2 className="text-base font-semibold text-slate-950">{t("completeRide")}</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <label className="block text-sm font-medium text-slate-700">
-              Odometer start
+              {t("odometerStart")}
               <input
                 value={odometerStart}
                 onChange={(event) => setOdometerStart(event.target.value)}
@@ -154,7 +157,7 @@ export function AssignedRideActions({
               />
             </label>
             <label className="block text-sm font-medium text-slate-700">
-              Odometer end
+              {t("odometerEnd")}
               <input
                 value={odometerEnd}
                 onChange={(event) => setOdometerEnd(event.target.value)}
@@ -165,7 +168,7 @@ export function AssignedRideActions({
           </div>
           <div className="mt-4">
             <ActionButton disabled={isPending} onClick={() => void completeRide()} tone="secondary">
-              {isPending ? "Completing..." : "Complete ride"}
+              {isPending ? t("completeRidePending") : t("completeRide")}
             </ActionButton>
           </div>
         </div>
@@ -174,7 +177,7 @@ export function AssignedRideActions({
       {ride.status === "assigned" || ride.status === "in_progress" ? (
         <div className="rounded-lg border border-slate-200 bg-white p-4">
           <label className="block text-sm font-medium text-slate-700">
-            Reject/cancel reason
+            {t("rejectCancelReason")}
             <textarea
               value={rejectionReason}
               onChange={(event) => setRejectionReason(event.target.value)}
@@ -195,7 +198,7 @@ export function AssignedRideActions({
               }
               tone="danger"
             >
-              {isPending ? "Rejecting..." : "Reject ride"}
+              {isPending ? t("rejectRidePending") : t("rejectRide")}
             </ActionButton>
           </div>
         </div>

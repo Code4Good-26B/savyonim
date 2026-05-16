@@ -80,8 +80,23 @@ export async function GET(request: Request) {
     [driverId],
   );
 
+  const rideHistory = await query<RideRow>(
+    `
+      select
+        ${RIDE_SELECT},
+        to_jsonb(rr.*) as ride_request
+      from public.rides r
+      left join public.ride_requests rr on rr.id = r.ride_request_id
+      where r.driver_id = $1::uuid
+        and r.status in ('completed', 'rejected')
+      order by coalesce(r.completed_at, r.rejected_at, r.assigned_at) desc
+    `,
+    [driverId],
+  );
+
   return Response.json({
     openRides: openRides.rows,
     assignedRides: assignedRides.rows,
+    rideHistory: rideHistory.rows,
   });
 }

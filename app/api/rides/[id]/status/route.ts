@@ -1,5 +1,4 @@
-import { supabaseErrorResponse } from "@/lib/api-errors";
-import { createSupabaseClient } from "@/lib/supabase";
+import { transaction } from "@/lib/db";
 
 const RIDE_FIELDS =
   "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representitive_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
@@ -33,38 +32,48 @@ export async function PATCH(
     return Response.json({ error: "rejection_reason is required when rejecting" }, { status: 400 });
   }
 
-  const supabase = createSupabaseClient();
+  const updated = await transaction(async (client) => {
+    const currentResult = await client.query<{ status: string }>(
+      "select status from public.rides where id = $1::uuid limit 1",
+      [id],
+    );
 
-  const { data: current, error: fetchError } = await supabase
-    .from("rides")
-    .select("status")
-    .eq("id", id)
-    .single();
+    const current = currentResult.rows[0];
+    if (!current) return null;
 
-  if (fetchError) return Response.json({ error: "Ride not found" }, { status: 404 });
+    const allowed = VALID_TRANSITIONS[current.status] ?? [];
+    if (!allowed.includes(newStatus)) {
+      return { invalidTransition: current.status };
+    }
 
-  const allowed = VALID_TRANSITIONS[current.status] ?? [];
-  if (!allowed.includes(newStatus)) {
+    const patch: Record<string, unknown> = { status: newStatus };
+
+    const timestampField = STATUS_TIMESTAMPS[newStatus];
+    if (timestampField) patch[timestampField] = new Date().toISOString();
+
+    if (newStatus === "rejected") patch.rejection_reason = rejection_reason;
+
+    const assignments = Object.keys(patch).map((field, index) => `${field} = $${index + 2}`);
+    const result = await client.query(
+      `
+        update public.rides
+        set ${assignments.join(", ")}
+        where id = $1::uuid
+        returning ${RIDE_FIELDS}
+      `,
+      [id, ...Object.values(patch)],
+    );
+
+    return { ride: result.rows[0] };
+  });
+
+  if (!updated) return Response.json({ error: "Ride not found" }, { status: 404 });
+  if ("invalidTransition" in updated) {
     return Response.json(
-      { error: `Invalid transition: ${current.status} → ${newStatus}` },
-      { status: 422 }
+      { error: `Invalid transition: ${updated.invalidTransition} -> ${newStatus}` },
+      { status: 422 },
     );
   }
 
-  const patch: Record<string, unknown> = { status: newStatus };
-
-  const timestampField = STATUS_TIMESTAMPS[newStatus];
-  if (timestampField) patch[timestampField] = new Date().toISOString();
-
-  if (newStatus === "rejected") patch.rejection_reason = rejection_reason;
-
-  const { data, error } = await supabase
-    .from("rides")
-    .update(patch)
-    .eq("id", id)
-    .select(RIDE_FIELDS)
-    .single();
-
-  if (error) return supabaseErrorResponse(error);
-  return Response.json(data);
+  return Response.json(updated.ride);
 }

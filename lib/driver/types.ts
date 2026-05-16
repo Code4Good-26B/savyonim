@@ -55,6 +55,7 @@ export type RideSummary = {
 export type DriverRidesResponse = {
   openRides: RideRequestSummary[];
   assignedRides: RideSummary[];
+  rideHistory: RideSummary[];
 };
 
 export type DriverRideDetail =
