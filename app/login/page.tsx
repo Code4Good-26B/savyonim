@@ -23,7 +23,7 @@ export default function LoginPage() {
     try {
       const session = await loginDriver(email, password);
       storeDriverSession(session);
-      router.replace("/driver");
+      router.replace("/driver/dashboard");
     } catch (caught) {
       const apiError = caught as DriverApiError;
       setError(apiError.detail ?? "Could not log in.");

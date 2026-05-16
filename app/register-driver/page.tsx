@@ -32,7 +32,7 @@ export default function RegisterDriverPage() {
         serviceZoneId: serviceZoneId || undefined,
       });
       storeDriverSession(session);
-      router.replace("/driver");
+      router.replace("/driver/dashboard");
     } catch (caught) {
       const apiError = caught as DriverApiError;
       setError(apiError.detail ?? "Could not register this driver.");
@@ -47,7 +47,7 @@ export default function RegisterDriverPage() {
         <p className="text-sm font-medium uppercase tracking-wide text-blue-700">Savionim driver</p>
         <h1 className="mt-2 text-2xl font-semibold text-slate-950">Register driver</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Creates a Supabase auth user and a driver profile. Leave service zone empty if the team has not assigned one yet.
+          Creates a local driver account and profile. Leave service zone empty if the team has not assigned one yet.
         </p>
 
         {error ? (
@@ -90,7 +90,7 @@ export default function RegisterDriverPage() {
               value={serviceZoneId}
               onChange={(event) => setServiceZoneId(event.target.value)}
               className="mt-1 min-h-12 w-full rounded-md border border-slate-300 px-3 text-slate-950"
-              placeholder="Optional UUID"
+              placeholder="Optional service zone UUID"
             />
           </label>
           <label className="block text-sm font-medium text-slate-700">

@@ -1,111 +1,63 @@
-"use client";
+import Link from "next/link";
 
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { DriverHeader } from "@/components/driver/DriverHeader";
-import { DriverNotice } from "@/components/driver/DriverNotice";
-import { AssignedRideCard, OpenRideCard } from "@/components/driver/RideCard";
-import { getDriverRides } from "@/lib/driver/api";
-import { getStoredDriverSession } from "@/lib/driver/session";
-import type { DriverApiError, DriverRidesResponse, DriverSession } from "@/lib/driver/types";
-
-export default function DriverDashboardPage() {
-  const router = useRouter();
-  const [session] = useState<DriverSession | null>(() => getStoredDriverSession());
-  const [rides, setRides] = useState<DriverRidesResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const load = useCallback(async (nextSession: DriverSession) => {
-    await Promise.resolve();
-    setIsLoading(true);
-    setError(null);
-    try {
-      setRides(await getDriverRides(nextSession));
-    } catch (caught) {
-      const apiError = caught as DriverApiError;
-      setError(apiError.detail ?? "Could not load driver rides.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!session || session.role !== "driver") {
-      router.replace("/login");
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      void load(session);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [load, router, session]);
-
-  if (!session) {
-    return <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-700">Checking driver session...</main>;
-  }
-
+export default function DriverLandingPage() {
   return (
-    <div className="min-h-screen bg-slate-100">
-      <DriverHeader session={session} />
-      <main className="mx-auto max-w-4xl space-y-6 px-4 py-6">
-        <section>
-          <h2 className="text-xl font-semibold text-slate-950">Current work</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            Review rides assigned to you and open rides in your service zone.
-          </p>
+    <div className="min-h-screen bg-slate-50 text-slate-950">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
+        <Link href="/" className="text-sm font-semibold text-slate-700 transition hover:text-slate-950">
+          Savionim
+        </Link>
+        <Link href="/" className="text-sm font-medium text-blue-700 transition hover:text-blue-900">
+          Back to homepage
+        </Link>
+      </header>
+
+      <main className="mx-auto flex w-full max-w-6xl flex-col px-5 pb-10 pt-8 sm:px-8 lg:min-h-[calc(100vh-84px)] lg:justify-center">
+        <section className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">Savionim drivers</p>
+            <h1 className="mt-4 text-4xl font-semibold tracking-normal text-slate-950 sm:text-5xl lg:text-6xl">
+              Drive care where it is needed most.
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+              Join the driver platform to review assigned rides, see open requests in your service zone, and keep
+              every transport moving with clear status updates.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/login"
+                className="inline-flex min-h-12 items-center justify-center rounded-md bg-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register-driver"
+                className="inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-blue-300 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Sign Up
+              </Link>
+            </div>
+          </div>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-lg font-semibold text-slate-950">After joining, drivers can</h2>
+            <div className="mt-5 divide-y divide-slate-200 border-y border-slate-200">
+              <div className="py-4">
+                <p className="text-sm font-semibold text-slate-950">Manage active rides</p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">View assigned pickups and update ride progress.</p>
+              </div>
+              <div className="py-4">
+                <p className="text-sm font-semibold text-slate-950">Claim nearby requests</p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">Find open rides matched to your service zone.</p>
+              </div>
+              <div className="py-4">
+                <p className="text-sm font-semibold text-slate-950">Stay coordinated</p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">Keep dispatch and care teams aligned in real time.</p>
+              </div>
+            </div>
+          </section>
         </section>
-
-        <DriverNotice title="Local testing note">
-          Write actions need <code>BLOCK_API_WRITES=false</code> in <code>.env.local</code>.
-        </DriverNotice>
-
-        {error ? (
-          <DriverNotice title="Could not load rides" kind="error">
-            {error}
-            <button
-              type="button"
-              onClick={() => void load(session)}
-              className="mt-3 block min-h-11 rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white"
-            >
-              Retry
-            </button>
-          </DriverNotice>
-        ) : null}
-
-        {isLoading ? (
-          <DriverNotice title="Loading rides">Fetching your assigned and open rides...</DriverNotice>
-        ) : null}
-
-        {!isLoading && rides ? (
-          <>
-            <section className="space-y-3">
-              <h2 className="text-lg font-semibold text-slate-950">Assigned to you</h2>
-              {rides.assignedRides.length === 0 ? (
-                <DriverNotice title="No assigned rides">You do not have an active assigned ride.</DriverNotice>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {rides.assignedRides.map((ride) => (
-                    <AssignedRideCard key={ride.id} ride={ride} />
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section className="space-y-3">
-              <h2 className="text-lg font-semibold text-slate-950">Open rides</h2>
-              {rides.openRides.length === 0 ? (
-                <DriverNotice title="No open rides">There are no open rides in your service zone right now.</DriverNotice>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {rides.openRides.map((ride) => (
-                    <OpenRideCard key={ride.id} ride={ride} />
-                  ))}
-                </div>
-              )}
-            </section>
-          </>
-        ) : null}
       </main>
     </div>
   );

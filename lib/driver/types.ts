@@ -5,6 +5,8 @@ export type DriverSession = {
   email: string;
   role: "driver";
   serviceZoneId: string | null;
+  token?: string;
+  expiresAt?: string;
 };
 
 export type ApiErrorPayload = {
