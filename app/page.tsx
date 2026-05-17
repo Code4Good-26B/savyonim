@@ -1,168 +1,65 @@
-"use client";
+import Link from "next/link";
 
-import { useEffect, useMemo, useState } from "react";
-
-type RouteCard = {
-  title: string;
-  endpoint: string;
-  ok: boolean;
-  statusCode: number | null;
-  summary: string;
-};
-
-type JsonLike = Record<string, unknown>;
-
-async function fetchRoute(endpoint: string): Promise<RouteCard> {
-  try {
-    const response = await fetch(endpoint, { cache: "no-store" });
-    const text = await response.text();
-
-    let json: JsonLike | null = null;
-    try {
-      json = JSON.parse(text) as JsonLike;
-    } catch {
-      json = null;
-    }
-
-    const summary =
-      json && typeof json.status === "string"
-        ? json.status
-        : json && typeof json.message === "string"
-          ? json.message
-          : text.length > 140
-            ? `${text.slice(0, 140)}...`
-            : text;
-
-    return {
-      title: endpoint.replace("/api/", "").toUpperCase(),
-      endpoint,
-      ok: response.ok,
-      statusCode: response.status,
-      summary: summary || "No response body",
-    };
-  } catch (error) {
-    return {
-      title: endpoint.replace("/api/", "").toUpperCase(),
-      endpoint,
-      ok: false,
-      statusCode: null,
-      summary: error instanceof Error ? error.message : "Unknown fetch error",
-    };
-  }
-}
-
-export default function Home() {
-  const endpoints = useMemo(
-    () => ["/api/ping", "/api/check", "/api/service-zones", "/api/passengers"],
-    [],
-  );
-
-  const [cards, setCards] = useState<RouteCard[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<string>("");
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const load = async () => {
-      setIsLoading(true);
-      const results = await Promise.all(endpoints.map((endpoint) => fetchRoute(endpoint)));
-
-      if (!isMounted) return;
-
-      setCards(results);
-      setLastUpdated(new Date().toLocaleTimeString());
-      setIsLoading(false);
-    };
-
-    void load();
-    const interval = window.setInterval(() => {
-      void load();
-    }, 15000);
-
-    return () => {
-      isMounted = false;
-      window.clearInterval(interval);
-    };
-  }, [endpoints]);
-
-  const okCount = cards.filter((card) => card.ok).length;
-
+export default function LandingPage() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_#0b1320_0%,_#101a2f_35%,_#1b2d4a_70%,_#253f67_100%)] text-white">
-      <div className="pointer-events-none absolute -left-32 top-14 h-64 w-64 rounded-full bg-cyan-300/20 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 bottom-16 h-80 w-80 rounded-full bg-amber-300/20 blur-3xl" />
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-sm flex flex-col gap-8">
 
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10 sm:px-10">
-        <header className="rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur-md sm:p-8">
-          <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/80">Savionim Control Surface</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-            API Runtime Dashboard
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm text-blue-50/90 sm:text-base">
-            This page polls the active API routes and gives you a quick confidence check that the app and
-            Supabase wiring are healthy.
-          </p>
-        </header>
+        {/* Logo / Title */}
+        <div className="text-center">
+          <p className="text-xs uppercase tracking-widest text-gray-400">ברוכים הבאים</p>
+          <h1 className="mt-2 text-3xl font-bold text-gray-900">סביונים</h1>
+          <p className="mt-2 text-sm text-gray-500">מערכת הסעות מותאמת אישית</p>
+        </div>
 
-        <section className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/20 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-wide text-blue-100/80">Routes Checked</p>
-            <p className="mt-2 text-3xl font-semibold">{endpoints.length}</p>
+        {/* Login */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col gap-4">
+          <div>
+            <h2 className="font-semibold text-gray-900">כניסה למערכת</h2>
+            <p className="mt-1 text-sm text-gray-500">לנוסעים רשומים</p>
           </div>
-          <div className="rounded-2xl border border-white/20 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-wide text-blue-100/80">Healthy</p>
-            <p className="mt-2 text-3xl font-semibold">{isLoading ? "..." : `${okCount}/${cards.length}`}</p>
-          </div>
-          <div className="rounded-2xl border border-white/20 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-wide text-blue-100/80">Last Update</p>
-            <p className="mt-2 text-3xl font-semibold">{lastUpdated || "--:--:--"}</p>
-          </div>
-        </section>
+          <Link
+            href="/passenger/login"
+            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white text-center hover:bg-blue-700 transition-colors"
+          >
+            כניסה
+          </Link>
+        </div>
 
-        <section className="grid gap-4 md:grid-cols-2">
-          {cards.map((card, index) => (
-            <article
-              key={card.endpoint}
-              className="rounded-2xl border border-white/20 bg-white/10 p-5 shadow-[0_10px_40px_-25px_rgba(0,0,0,0.7)] backdrop-blur-sm"
-              style={{ animation: `fadeIn 250ms ease ${index * 60}ms both` }}
+        {/* Register */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col gap-4">
+          <div>
+            <h2 className="font-semibold text-gray-900">הרשמה</h2>
+            <p className="mt-1 text-sm text-gray-500">לא רשום עדיין?</p>
+          </div>
+          <Link
+            href="/passenger/register"
+            className="rounded-lg border border-blue-600 px-4 py-2.5 text-sm font-medium text-blue-600 text-center hover:bg-blue-50 transition-colors"
+          >
+            הרשמה כנוסע
+          </Link>
+        </div>
+
+        {/* Dev shortcuts */}
+        <div className="flex flex-col gap-2 border-t border-gray-200 pt-4">
+          <p className="text-xs text-center uppercase tracking-wide text-gray-300">קיצורי דרך לפיתוח</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href="/dispatcher/dashboard"
+              className="rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-500 text-center hover:bg-gray-50"
             >
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold">{card.title}</h2>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    card.ok
-                      ? "bg-emerald-300/20 text-emerald-100 ring-1 ring-emerald-200/30"
-                      : "bg-rose-300/20 text-rose-100 ring-1 ring-rose-200/30"
-                  }`}
-                >
-                  {card.ok ? "OK" : "ERROR"}
-                </span>
-              </div>
+              דשבורד דיספצ׳ר
+            </Link>
+            <Link
+              href="/dev"
+              className="rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-500 text-center hover:bg-gray-50"
+            >
+              API Status
+            </Link>
+          </div>
+        </div>
 
-              <p className="mt-2 text-sm text-cyan-50/90">{card.endpoint}</p>
-              <p className="mt-3 text-sm text-blue-50/95">{card.summary}</p>
-
-              <p className="mt-4 text-xs uppercase tracking-wide text-blue-100/80">
-                HTTP {card.statusCode ?? "No response"}
-              </p>
-            </article>
-          ))}
-        </section>
-
-        <style jsx>{`
-          @keyframes fadeIn {
-            from {
-              opacity: 0;
-              transform: translateY(8px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-        `}</style>
-      </main>
+      </div>
     </div>
   );
 }
