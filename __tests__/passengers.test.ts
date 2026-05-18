@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as supabaseModule from "@/lib/supabase";
+import * as db from "@/lib/db";
 
 vi.mock("@/lib/supabase");
+vi.mock("@/lib/db", () => ({ query: vi.fn() }));
 
+// Supabase chain mock — used by /api/passengers/[id] routes
 function chain(result: object) {
   const handler: ProxyHandler<object> = {
     get(_, prop: string) {
@@ -17,7 +20,7 @@ function chain(result: object) {
   return new Proxy({}, handler);
 }
 
-function mockDB(result: { data?: unknown; error?: { message: string; code?: string } | null }) {
+function mockSupabase(result: { data?: unknown; error?: { message: string; code?: string } | null }) {
   vi.mocked(supabaseModule.createSupabaseClient).mockReturnValue({
     from: () => chain(result),
   } as unknown as ReturnType<typeof supabaseModule.createSupabaseClient>);
@@ -39,7 +42,7 @@ beforeEach(() => vi.clearAllMocks());
 // ─── GET /api/passengers ──────────────────────────────────────────────────────
 describe("GET /api/passengers", () => {
   it("returns list of passengers", async () => {
-    mockDB({ data: [BASE_PASSENGER], error: null });
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [BASE_PASSENGER] } as never);
 
     const { GET } = await import("@/app/api/passengers/route");
     const res = await GET();
@@ -49,7 +52,7 @@ describe("GET /api/passengers", () => {
   });
 
   it("returns 500 on DB error", async () => {
-    mockDB({ data: null, error: { message: "connection failed" } });
+    vi.mocked(db.query).mockRejectedValueOnce(new Error("connection failed"));
 
     const { GET } = await import("@/app/api/passengers/route");
     const res = await GET();
@@ -61,7 +64,7 @@ describe("GET /api/passengers", () => {
 // ─── POST /api/passengers ─────────────────────────────────────────────────────
 describe("POST /api/passengers", () => {
   it("creates a passenger and returns 201", async () => {
-    mockDB({ data: BASE_PASSENGER, error: null });
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [BASE_PASSENGER] } as never);
 
     const { POST } = await import("@/app/api/passengers/route");
     const res = await POST(
@@ -109,7 +112,7 @@ describe("POST /api/passengers", () => {
   it.each(["none", "wheelchair", "walker", "cane"])(
     "accepts valid mobility_need: %s",
     async (mobility_need) => {
-      mockDB({ data: { ...BASE_PASSENGER, mobility_need }, error: null });
+      vi.mocked(db.query).mockResolvedValueOnce({ rows: [{ ...BASE_PASSENGER, mobility_need }] } as never);
 
       const { POST } = await import("@/app/api/passengers/route");
       const res = await POST(
@@ -124,7 +127,9 @@ describe("POST /api/passengers", () => {
   );
 
   it("returns 409 when national_id is duplicate", async () => {
-    mockDB({ data: null, error: { message: "duplicate key", code: "23505" } });
+    vi.mocked(db.query).mockRejectedValueOnce(
+      Object.assign(new Error("duplicate key"), { code: "23505" })
+    );
 
     const { POST } = await import("@/app/api/passengers/route");
     const res = await POST(
@@ -140,7 +145,7 @@ describe("POST /api/passengers", () => {
 
   it("saves emergency_contact and mobility_notes", async () => {
     const withExtras = { ...BASE_PASSENGER, emergency_contact: "050-9991111", mobility_notes: "needs help" };
-    mockDB({ data: withExtras, error: null });
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [withExtras] } as never);
 
     const { POST } = await import("@/app/api/passengers/route");
     const res = await POST(
@@ -163,7 +168,7 @@ describe("POST /api/passengers", () => {
 // ─── GET /api/passengers/[id] ─────────────────────────────────────────────────
 describe("GET /api/passengers/[id]", () => {
   it("returns single passenger", async () => {
-    mockDB({ data: BASE_PASSENGER, error: null });
+    mockSupabase({ data: BASE_PASSENGER, error: null });
 
     const { GET } = await import("@/app/api/passengers/[id]/route");
     const res = await GET(
@@ -176,7 +181,7 @@ describe("GET /api/passengers/[id]", () => {
   });
 
   it("returns 404 on DB error", async () => {
-    mockDB({ data: null, error: { message: "not found" } });
+    mockSupabase({ data: null, error: { message: "not found", code: "PGRST116" } });
 
     const { GET } = await import("@/app/api/passengers/[id]/route");
     const res = await GET(
@@ -192,7 +197,7 @@ describe("GET /api/passengers/[id]", () => {
 describe("PATCH /api/passengers/[id]", () => {
   it("updates passenger and returns updated record", async () => {
     const updated = { ...BASE_PASSENGER, phone: "052-9999999" };
-    mockDB({ data: updated, error: null });
+    mockSupabase({ data: updated, error: null });
 
     const { PATCH } = await import("@/app/api/passengers/[id]/route");
     const res = await PATCH(
@@ -222,7 +227,7 @@ describe("PATCH /api/passengers/[id]", () => {
   });
 
   it("returns 409 when national_id is duplicate", async () => {
-    mockDB({ data: null, error: { message: "duplicate key", code: "23505" } });
+    mockSupabase({ data: null, error: { message: "duplicate key", code: "23505" } });
 
     const { PATCH } = await import("@/app/api/passengers/[id]/route");
     const res = await PATCH(
@@ -251,7 +256,7 @@ describe("PATCH /api/passengers/[id]", () => {
 
   it("saves updated emergency_contact and mobility_notes", async () => {
     const updated = { ...BASE_PASSENGER, emergency_contact: "054-7777777", mobility_notes: "updated notes" };
-    mockDB({ data: updated, error: null });
+    mockSupabase({ data: updated, error: null });
 
     const { PATCH } = await import("@/app/api/passengers/[id]/route");
     const res = await PATCH(
@@ -271,7 +276,7 @@ describe("PATCH /api/passengers/[id]", () => {
 // ─── DELETE /api/passengers/[id] ──────────────────────────────────────────────
 describe("DELETE /api/passengers/[id]", () => {
   it("returns 204 on success", async () => {
-    mockDB({ error: null });
+    mockSupabase({ error: null });
 
     const { DELETE } = await import("@/app/api/passengers/[id]/route");
     const res = await DELETE(

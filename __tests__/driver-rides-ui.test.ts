@@ -1,22 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import * as supabaseModule from "@/lib/supabase";
+import * as db from "@/lib/db";
 import { userMessageForStatus } from "@/lib/driver/api";
 
-vi.mock("@/lib/supabase");
-
-function chain(result: object) {
-  const handler: ProxyHandler<object> = {
-    get(_, prop: string) {
-      if (prop === "then")
-        return (res: unknown, rej: unknown) =>
-          Promise.resolve(result).then(res as never, rej as never);
-      if (prop === "catch")
-        return (rej: unknown) => Promise.resolve(result).catch(rej as never);
-      return () => new Proxy({}, handler);
-    },
-  };
-  return new Proxy({}, handler);
-}
+vi.mock("@/lib/db", () => ({ query: vi.fn() }));
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -30,19 +16,10 @@ describe("driver ride API", () => {
   });
 
   it("returns open and assigned rides for the requested driver", async () => {
-    const fromMock = vi.fn()
-      .mockReturnValueOnce(chain({
-        data: [{ id: "rr1", status: "approved", source_address: "A", destination_address: "B" }],
-        error: null,
-      }))
-      .mockReturnValueOnce(chain({
-        data: [{ id: "ride1", driver_id: "d1", status: "assigned" }],
-        error: null,
-      }));
-
-    vi.mocked(supabaseModule.createSupabaseClient).mockReturnValue({
-      from: fromMock,
-    } as unknown as ReturnType<typeof supabaseModule.createSupabaseClient>);
+    vi.mocked(db.query)
+      .mockResolvedValueOnce({ rows: [{ id: "rr1", status: "approved", source_address: "A", destination_address: "B" }] } as never)
+      .mockResolvedValueOnce({ rows: [{ id: "ride1", driver_id: "d1", status: "assigned" }] } as never)
+      .mockResolvedValueOnce({ rows: [] } as never);
 
     const { GET } = await import("@/app/api/driver/rides/route");
     const res = await GET(new Request("http://localhost/api/driver/rides?driverId=d1&serviceZoneId=z1"));

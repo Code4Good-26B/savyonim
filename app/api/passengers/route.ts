@@ -20,11 +20,15 @@ type PassengerRow = {
 };
 
 export async function GET() {
-  const result = await query<PassengerRow>(
-    `select ${PASSENGER_FIELDS} from public.passengers order by full_name`,
-  );
-
-  return Response.json(result.rows);
+  try {
+    const result = await query<PassengerRow>(
+      `select ${PASSENGER_FIELDS} from public.passengers order by full_name`,
+    );
+    return Response.json(result.rows);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Internal server error";
+    return Response.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {

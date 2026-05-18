@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as supabaseModule from "@/lib/supabase";
+import * as db from "@/lib/db";
 
 vi.mock("@/lib/supabase");
+vi.mock("@/lib/db", () => ({ query: vi.fn() }));
 
-// Builds a chainable mock where any method call returns itself,
-// and awaiting the chain resolves to `result`.
+// Supabase chain mock — used by /api/service-zones/[id] routes
 function chain(result: object) {
   const handler: ProxyHandler<object> = {
     get(_, prop: string) {
@@ -19,7 +20,7 @@ function chain(result: object) {
   return new Proxy({}, handler);
 }
 
-function mockDB(result: { data?: unknown; error?: { message: string } | null }) {
+function mockSupabase(result: { data?: unknown; error?: { message: string; code?: string } | null }) {
   vi.mocked(supabaseModule.createSupabaseClient).mockReturnValue({
     from: () => chain(result),
   } as unknown as ReturnType<typeof supabaseModule.createSupabaseClient>);
@@ -31,7 +32,7 @@ beforeEach(() => vi.clearAllMocks());
 describe("GET /api/service-zones", () => {
   it("returns list of zones", async () => {
     const zones = [{ id: "z1", name: "North", region_code: "N", is_active: true }];
-    mockDB({ data: zones, error: null });
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: zones } as never);
 
     const { GET } = await import("@/app/api/service-zones/route");
     const res = await GET();
@@ -42,7 +43,7 @@ describe("GET /api/service-zones", () => {
   });
 
   it("returns 500 on DB error", async () => {
-    mockDB({ data: null, error: { message: "connection failed" } });
+    vi.mocked(db.query).mockRejectedValueOnce(new Error("connection failed"));
 
     const { GET } = await import("@/app/api/service-zones/route");
     const res = await GET();
@@ -57,7 +58,7 @@ describe("GET /api/service-zones", () => {
 describe("POST /api/service-zones", () => {
   it("creates a zone and returns 201", async () => {
     const created = { id: "z2", name: "South", region_code: "S", is_active: true };
-    mockDB({ data: created, error: null });
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [created] } as never);
 
     const { POST } = await import("@/app/api/service-zones/route");
     const req = new Request("http://localhost/api/service-zones", {
@@ -88,7 +89,7 @@ describe("POST /api/service-zones", () => {
 describe("GET /api/service-zones/[id]", () => {
   it("returns single zone", async () => {
     const zone = { id: "z1", name: "North", region_code: "N", is_active: true };
-    mockDB({ data: zone, error: null });
+    mockSupabase({ data: zone, error: null });
 
     const { GET } = await import("@/app/api/service-zones/[id]/route");
     const res = await GET(
@@ -101,7 +102,7 @@ describe("GET /api/service-zones/[id]", () => {
   });
 
   it("returns 404 on DB error", async () => {
-    mockDB({ data: null, error: { message: "not found" } });
+    mockSupabase({ data: null, error: { message: "not found", code: "PGRST116" } });
 
     const { GET } = await import("@/app/api/service-zones/[id]/route");
     const res = await GET(
@@ -117,7 +118,7 @@ describe("GET /api/service-zones/[id]", () => {
 describe("PUT /api/service-zones/[id]", () => {
   it("updates zone and returns updated record", async () => {
     const updated = { id: "z1", name: "Updated", region_code: "N", is_active: true };
-    mockDB({ data: updated, error: null });
+    mockSupabase({ data: updated, error: null });
 
     const { PUT } = await import("@/app/api/service-zones/[id]/route");
     const res = await PUT(
@@ -149,7 +150,7 @@ describe("PUT /api/service-zones/[id]", () => {
 // ─── DELETE /api/service-zones/[id] ──────────────────────────────────────────
 describe("DELETE /api/service-zones/[id]", () => {
   it("returns 204 on success", async () => {
-    mockDB({ error: null });
+    mockSupabase({ error: null });
 
     const { DELETE } = await import("@/app/api/service-zones/[id]/route");
     const res = await DELETE(

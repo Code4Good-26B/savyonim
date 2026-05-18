@@ -10,11 +10,15 @@ type ServiceZoneRow = {
 };
 
 export async function GET() {
-  const result = await query<ServiceZoneRow>(
-    "select id, name, region_code, is_active from public.service_zones order by name",
-  );
-
-  return Response.json(result.rows);
+  try {
+    const result = await query<ServiceZoneRow>(
+      "select id, name, region_code, is_active from public.service_zones order by name",
+    );
+    return Response.json(result.rows);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Internal server error";
+    return Response.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {

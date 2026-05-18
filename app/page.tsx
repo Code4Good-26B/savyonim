@@ -12,44 +12,38 @@ export default function LandingPage() {
           <p className="mt-2 text-sm text-gray-500">מערכת הסעות מותאמת אישית</p>
         </div>
 
-        {/* Login */}
+        {/* Dispatcher login */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col gap-4">
           <div>
             <h2 className="font-semibold text-gray-900">כניסה למערכת</h2>
-            <p className="mt-1 text-sm text-gray-500">לנוסעים רשומים</p>
+            <p className="mt-1 text-sm text-gray-500">לדיספצ׳רים</p>
           </div>
           <Link
-            href="/passenger/login"
+            href="/dispatcher/dashboard"
             className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white text-center hover:bg-blue-700 transition-colors"
           >
-            כניסה
+            דשבורד דיספצ׳ר
           </Link>
         </div>
 
-        {/* Register */}
+        {/* Driver */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col gap-4">
           <div>
-            <h2 className="font-semibold text-gray-900">הרשמה</h2>
-            <p className="mt-1 text-sm text-gray-500">לא רשום עדיין?</p>
+            <h2 className="font-semibold text-gray-900">פורטל נהגים</h2>
+            <p className="mt-1 text-sm text-gray-500">לנהגים בשטח</p>
           </div>
           <Link
-            href="/passenger/register"
+            href="/driver"
             className="rounded-lg border border-blue-600 px-4 py-2.5 text-sm font-medium text-blue-600 text-center hover:bg-blue-50 transition-colors"
           >
-            הרשמה כנוסע
+            כניסה לנהג
           </Link>
         </div>
 
         {/* Dev shortcuts */}
         <div className="flex flex-col gap-2 border-t border-gray-200 pt-4">
           <p className="text-xs text-center uppercase tracking-wide text-gray-300">קיצורי דרך לפיתוח</p>
-          <div className="grid grid-cols-2 gap-2">
-            <Link
-              href="/dispatcher/dashboard"
-              className="rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-500 text-center hover:bg-gray-50"
-            >
-              דשבורד דיספצ׳ר
-            </Link>
+          <div className="grid grid-cols-1 gap-2">
             <Link
               href="/dev"
               className="rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-500 text-center hover:bg-gray-50"

@@ -1,43 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import * as supabaseModule from "@/lib/supabase";
+import * as db from "@/lib/db";
 
-vi.mock("@/lib/supabase");
-
-function chain(result: object) {
-  const handler: ProxyHandler<object> = {
-    get(_, prop: string) {
-      if (prop === "then")
-        return (res: unknown, rej: unknown) =>
-          Promise.resolve(result).then(res as never, rej as never);
-      if (prop === "catch")
-        return (rej: unknown) => Promise.resolve(result).catch(rej as never);
-      return () => new Proxy({}, handler);
-    },
-  };
-  return new Proxy({}, handler);
-}
-
-function mockDB(result: { data?: unknown; error?: { message: string; code?: string } | null }) {
-  vi.mocked(supabaseModule.createSupabaseClient).mockReturnValue({
-    from: () => chain(result),
-  } as unknown as ReturnType<typeof supabaseModule.createSupabaseClient>);
-}
-
-function mockStatusPatch({
-  current,
-  updated,
-}: {
-  current: { data?: unknown; error?: { message: string } | null };
-  updated?: { data?: unknown; error?: { message: string } | null };
-}) {
-  const fromMock = vi.fn()
-    .mockReturnValueOnce(chain(current))
-    .mockReturnValueOnce(chain(updated ?? { data: null, error: null }));
-
-  vi.mocked(supabaseModule.createSupabaseClient).mockReturnValue({
-    from: fromMock,
-  } as unknown as ReturnType<typeof supabaseModule.createSupabaseClient>);
-}
+vi.mock("@/lib/db", () => ({ query: vi.fn(), transaction: vi.fn() }));
 
 const BASE_RIDE = {
   id: "ride1",
@@ -61,7 +25,7 @@ beforeEach(() => vi.clearAllMocks());
 // ─── POST /api/rides ──────────────────────────────────────────────────────────
 describe("POST /api/rides", () => {
   it("creates a ride and returns 201", async () => {
-    mockDB({ data: BASE_RIDE, error: null });
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [BASE_RIDE] } as never);
 
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
@@ -135,10 +99,9 @@ describe("POST /api/rides", () => {
   // ── Race condition tests ───────────────────────────────────────────────────
 
   it("returns 409 when driver already has an active ride (race condition)", async () => {
-    mockDB({
-      data: null,
-      error: { message: 'duplicate key value violates unique constraint "ux_rides_active_driver"', code: "23505" },
-    });
+    vi.mocked(db.query).mockRejectedValueOnce(
+      Object.assign(new Error("duplicate key"), { code: "23505", constraint: "ux_rides_active_driver" })
+    );
 
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
@@ -153,10 +116,9 @@ describe("POST /api/rides", () => {
   });
 
   it("returns 409 when ambulance already has an active ride (race condition)", async () => {
-    mockDB({
-      data: null,
-      error: { message: 'duplicate key value violates unique constraint "ux_rides_active_ambulance"', code: "23505" },
-    });
+    vi.mocked(db.query).mockRejectedValueOnce(
+      Object.assign(new Error("duplicate key"), { code: "23505", constraint: "ux_rides_active_ambulance" })
+    );
 
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
@@ -171,10 +133,9 @@ describe("POST /api/rides", () => {
   });
 
   it("returns 409 when ride request already has an active assignment (race condition)", async () => {
-    mockDB({
-      data: null,
-      error: { message: 'duplicate key value violates unique constraint "ux_rides_active_request"', code: "23505" },
-    });
+    vi.mocked(db.query).mockRejectedValueOnce(
+      Object.assign(new Error("duplicate key"), { code: "23505", constraint: "ux_rides_active_request" })
+    );
 
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
@@ -189,7 +150,9 @@ describe("POST /api/rides", () => {
   });
 
   it("returns 400 when referenced IDs do not exist", async () => {
-    mockDB({ data: null, error: { message: "foreign key violation", code: "23503" } });
+    vi.mocked(db.query).mockRejectedValueOnce(
+      Object.assign(new Error("foreign key violation"), { code: "23503" })
+    );
 
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
@@ -207,7 +170,7 @@ describe("POST /api/rides", () => {
 // ─── GET /api/rides/[id] ──────────────────────────────────────────────────────
 describe("GET /api/rides/[id]", () => {
   it("returns single ride", async () => {
-    mockDB({ data: BASE_RIDE, error: null });
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [BASE_RIDE] } as never);
 
     const { GET } = await import("@/app/api/rides/[id]/route");
     const res = await GET(
@@ -220,7 +183,7 @@ describe("GET /api/rides/[id]", () => {
   });
 
   it("returns 404 on DB error", async () => {
-    mockDB({ data: null, error: { message: "not found" } });
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [] } as never);
 
     const { GET } = await import("@/app/api/rides/[id]/route");
     const res = await GET(
@@ -235,7 +198,7 @@ describe("GET /api/rides/[id]", () => {
 // ─── PATCH /api/rides/[id] (odometer) ────────────────────────────────────────
 describe("PATCH /api/rides/[id] (odometer)", () => {
   it("updates odometer_start_km", async () => {
-    mockDB({ data: { ...BASE_RIDE, odometer_start_km: 12345.0 }, error: null });
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [{ ...BASE_RIDE, odometer_start_km: 12345.0 }] } as never);
 
     const { PATCH } = await import("@/app/api/rides/[id]/route");
     const res = await PATCH(
@@ -251,7 +214,7 @@ describe("PATCH /api/rides/[id] (odometer)", () => {
   });
 
   it("updates odometer_end_km", async () => {
-    mockDB({ data: { ...BASE_RIDE, odometer_start_km: 12345.0, odometer_end_km: 12360.0 }, error: null });
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [{ ...BASE_RIDE, odometer_start_km: 12345.0, odometer_end_km: 12360.0 }] } as never);
 
     const { PATCH } = await import("@/app/api/rides/[id]/route");
     const res = await PATCH(
@@ -297,12 +260,18 @@ describe("PATCH /api/rides/[id] (odometer)", () => {
 
 // ─── PATCH /api/rides/[id]/status ────────────────────────────────────────────
 describe("PATCH /api/rides/[id]/status", () => {
+  function mockTransaction(currentRows: unknown[], updatedRows?: unknown[]) {
+    vi.mocked(db.transaction).mockImplementationOnce(async (callback) => {
+      const clientQuery = vi.fn()
+        .mockResolvedValueOnce({ rows: currentRows })
+        .mockResolvedValueOnce({ rows: updatedRows ?? [] });
+      return callback({ query: clientQuery } as never);
+    });
+  }
+
   it("transitions assigned → in_progress", async () => {
     const updated = { ...BASE_RIDE, status: "in_progress", in_progress_at: "2026-05-07T11:00:00.000Z" };
-    mockStatusPatch({
-      current: { data: { status: "assigned" }, error: null },
-      updated: { data: updated, error: null },
-    });
+    mockTransaction([{ status: "assigned" }], [updated]);
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
@@ -319,10 +288,7 @@ describe("PATCH /api/rides/[id]/status", () => {
 
   it("transitions in_progress → completed", async () => {
     const updated = { ...BASE_RIDE, status: "completed", completed_at: "2026-05-07T12:00:00.000Z" };
-    mockStatusPatch({
-      current: { data: { status: "in_progress" }, error: null },
-      updated: { data: updated, error: null },
-    });
+    mockTransaction([{ status: "in_progress" }], [updated]);
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
@@ -339,10 +305,7 @@ describe("PATCH /api/rides/[id]/status", () => {
 
   it("transitions assigned → rejected with rejection_reason", async () => {
     const updated = { ...BASE_RIDE, status: "rejected", rejected_at: "2026-05-07T10:30:00.000Z", rejection_reason: "Driver unavailable" };
-    mockStatusPatch({
-      current: { data: { status: "assigned" }, error: null },
-      updated: { data: updated, error: null },
-    });
+    mockTransaction([{ status: "assigned" }], [updated]);
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
@@ -386,7 +349,7 @@ describe("PATCH /api/rides/[id]/status", () => {
   });
 
   it("returns 422 for invalid transition assigned → completed", async () => {
-    mockStatusPatch({ current: { data: { status: "assigned" }, error: null } });
+    mockTransaction([{ status: "assigned" }]);
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
@@ -402,7 +365,7 @@ describe("PATCH /api/rides/[id]/status", () => {
   });
 
   it("returns 422 when ride is already completed", async () => {
-    mockStatusPatch({ current: { data: { status: "completed" }, error: null } });
+    mockTransaction([{ status: "completed" }]);
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
@@ -417,7 +380,7 @@ describe("PATCH /api/rides/[id]/status", () => {
   });
 
   it("returns 404 when ride not found", async () => {
-    mockStatusPatch({ current: { data: null, error: { message: "not found" } } });
+    mockTransaction([]);
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
