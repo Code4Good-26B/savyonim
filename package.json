@@ -10,7 +10,9 @@
     "test": "vitest run --project unit",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
-    "test:all": "vitest run"
+    "test:all": "vitest run",
+    "mock:broadcast-ride": "node ./scripts/mock-broadcast-ride.mjs",
+    "mock:send-ride": "npm run mock:broadcast-ride"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.1",

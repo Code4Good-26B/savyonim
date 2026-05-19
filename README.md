@@ -31,6 +31,40 @@ supabase db reset
 
 Then point `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_ANON_KEY` to the local project values.
 
+## Mock Commbox Webhooks (Phase 1)
+
+This repository now includes secure webhook endpoints and a mock sender CLI for integration testing.
+
+1. Start the app:
+
+```bash
+npm run dev
+```
+
+2. In another terminal, trigger a mock ride broadcast:
+
+```bash
+npm run mock:broadcast-ride
+```
+
+The mock command posts to `POST /api/webhooks/ride-request`, creates a `ride_requests` row, and returns a preview of drivers who would receive WhatsApp notifications.
+
+API contract docs: `docs/commbox-webhook-contract.md`.
+
+## Intake API Draft (Issues #42 / #43)
+
+This branch includes a draft intake contract and a guarded intake route:
+
+- `docs/api/intake-ride-request.md`
+- `app/api/intake/ride-request/route.ts`
+
+Current behavior:
+
+- Bearer API-key auth + full contract validation are implemented.
+- Database writes are intentionally blocked with `501` in this spike branch.
+
+Do not merge this spike to `dev` until Issues #40, #41, and #42 are finalized.
+
 ## Getting Started
 
 First, run the development server:
