@@ -132,7 +132,7 @@ describe("GET /api/ambulances/[id]", () => {
   });
 
   it("returns 404 on DB error", async () => {
-    mockDB({ data: null, error: { message: "not found" } });
+    mockDB({ data: null, error: { message: "not found", code: "PGRST116" } });
 
     const { GET } = await import("@/app/api/ambulances/[id]/route");
     const res = await GET(
