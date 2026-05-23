@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser";
 
 const MOBILITY_OPTIONS = [
   { value: "none", label: "ללא" },
@@ -23,6 +24,7 @@ export default function PassengerRegisterPage() {
     full_name: "",
     phone: "",
     email: "",
+    password: "",
     national_id: "",
     category: "",
     mobility_need: "none",
@@ -36,12 +38,25 @@ export default function PassengerRegisterPage() {
     form.full_name.trim() !== "" &&
     form.phone.trim() !== "" &&
     form.email.trim() !== "" &&
+    form.password.trim().length >= 6 &&
     form.category !== "";
 
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
     try {
+      const supabase = createBrowserSupabaseClient();
+
+      // 1. Register in Supabase Auth first
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+      });
+
+      if (signUpError) throw new Error(signUpError.message);
+      if (!authData.user) throw new Error("שגיאה ברישום המשתמש");
+
+      // 2. Insert passenger details in public database
       const res = await fetch("/api/passengers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,7 +103,7 @@ export default function PassengerRegisterPage() {
             placeholder="ישראל ישראלי"
             value={form.full_name}
             onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
 
@@ -103,7 +118,7 @@ export default function PassengerRegisterPage() {
               placeholder="050-0000000"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -115,7 +130,7 @@ export default function PassengerRegisterPage() {
               maxLength={9}
               value={form.national_id}
               onChange={(e) => setForm({ ...form, national_id: e.target.value })}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -130,7 +145,21 @@ export default function PassengerRegisterPage() {
             placeholder="name@example.com"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="password" className="text-sm font-medium text-gray-700">
+            סיסמה <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="password"
+            type="password"
+            placeholder="לפחות 6 תווים"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
 
@@ -144,7 +173,7 @@ export default function PassengerRegisterPage() {
             placeholder="050-0000000"
             value={form.emergency_contact}
             onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
       </section>
@@ -200,7 +229,7 @@ export default function PassengerRegisterPage() {
               placeholder="פרט אם נדרשת עזרה מיוחדת..."
               value={form.mobility_notes}
               onChange={(e) => setForm({ ...form, mobility_notes: e.target.value })}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
         )}
