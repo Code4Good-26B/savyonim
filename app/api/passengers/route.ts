@@ -1,5 +1,6 @@
-import { supabaseErrorResponse } from "@/lib/api-errors";
-import { createSupabaseClient } from "@/lib/supabase";
+import { query } from "@/lib/db";
+
+export const runtime = "nodejs";
 
 const VALID_MOBILITY = ["none", "wheelchair", "walker", "cane"] as const;
 type MobilityNeed = (typeof VALID_MOBILITY)[number];
@@ -7,15 +8,27 @@ type MobilityNeed = (typeof VALID_MOBILITY)[number];
 const PASSENGER_FIELDS =
   "id, national_id, full_name, category, mobility_need, mobility_notes, phone, emergency_contact";
 
-export async function GET() {
-  const supabase = createSupabaseClient();
-  const { data, error } = await supabase
-    .from("passengers")
-    .select(PASSENGER_FIELDS)
-    .order("full_name");
+type PassengerRow = {
+  id: string;
+  national_id: string | null;
+  full_name: string;
+  category: string | null;
+  mobility_need: MobilityNeed;
+  mobility_notes: string | null;
+  phone: string | null;
+  emergency_contact: string | null;
+};
 
-  if (error) return supabaseErrorResponse(error);
-  return Response.json(data);
+export async function GET() {
+  try {
+    const result = await query<PassengerRow>(
+      `select ${PASSENGER_FIELDS} from public.passengers order by full_name`,
+    );
+    return Response.json(result.rows);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Internal server error";
+    return Response.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
@@ -41,20 +54,24 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = createSupabaseClient();
-  const { data, error } = await supabase
-    .from("passengers")
-    .insert({ national_id, full_name, category, mobility_need, mobility_notes, phone, emergency_contact })
-    .select(PASSENGER_FIELDS)
-    .single();
+  try {
+    const result = await query<PassengerRow>(
+      `
+        insert into public.passengers (
+          national_id, full_name, category, mobility_need, mobility_notes, phone, emergency_contact
+        )
+        values ($1, $2, $3, $4, $5, $6, $7)
+        returning ${PASSENGER_FIELDS}
+      `,
+      [national_id, full_name, category, mobility_need, mobility_notes, phone, emergency_contact],
+    );
 
-  if (error) {
-    // Postgres unique violation on national_id
-    if (error.code === "23505") {
+    return Response.json(result.rows[0], { status: 201 });
+  } catch (error) {
+    const pgError = error as { code?: string; message?: string };
+    if (pgError.code === "23505") {
       return Response.json({ error: "national_id already exists" }, { status: 409 });
     }
-    return supabaseErrorResponse(error);
+    return Response.json({ error: pgError.message ?? "Could not create passenger" }, { status: 500 });
   }
-
-  return Response.json(data, { status: 201 });
 }

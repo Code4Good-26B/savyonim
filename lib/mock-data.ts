@@ -17,6 +17,7 @@ export type PastRide = {
   source: string;
   destination: string;
   status: RideStatus;
+  passenger_name?: string;
   driver_name?: string;
 };
 
@@ -26,10 +27,10 @@ export const MOCK_SAVED_DESTINATIONS: SavedDestination[] = [
 ];
 
 export const MOCK_PAST_RIDES: PastRide[] = [
-  { id: "pr1", date: "2026-05-10T09:00:00.000Z", source: "רחוב הרצל 5, תל אביב", destination: "בית חולים איכילוב, תל אביב", status: "completed", driver_name: "דוד אברמוב" },
-  { id: "pr2", date: "2026-05-03T14:00:00.000Z", source: "רחוב הרצל 5, תל אביב", destination: "מרפאה מאוחדת, תל אביב", status: "completed", driver_name: "אלי שפירא" },
-  { id: "pr3", date: "2026-04-28T10:30:00.000Z", source: "שדרות רוטשילד 22, תל אביב", destination: "בית חולים איכילוב, תל אביב", status: "rejected", },
-  { id: "pr4", date: "2026-04-15T08:00:00.000Z", source: "רחוב הרצל 5, תל אביב", destination: "מרכז רפואי סורסקי, תל אביב", status: "completed", driver_name: "יוסי כהן" },
+  { id: "pr1", date: "2026-05-10T09:00:00.000Z", source: "רחוב הרצל 5, תל אביב", destination: "בית חולים איכילוב, תל אביב", status: "completed", passenger_name: "מרים כץ", driver_name: "דוד אברמוב" },
+  { id: "pr2", date: "2026-05-03T14:00:00.000Z", source: "רחוב הרצל 5, תל אביב", destination: "מרפאה מאוחדת, תל אביב", status: "completed", passenger_name: "יוסף אוחיון", driver_name: "אלי שפירא" },
+  { id: "pr3", date: "2026-04-28T10:30:00.000Z", source: "שדרות רוטשילד 22, תל אביב", destination: "בית חולים איכילוב, תל אביב", status: "rejected", passenger_name: "רחל גולן" },
+  { id: "pr4", date: "2026-04-15T08:00:00.000Z", source: "רחוב הרצל 5, תל אביב", destination: "מרכז רפואי סורסקי, תל אביב", status: "completed", passenger_name: "אברהם שמש", driver_name: "יוסי כהן" },
 ];
 
 export const MOCK_SERVICE_ZONES: ServiceZone[] = [

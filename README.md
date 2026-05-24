@@ -14,6 +14,30 @@ This project includes an API write guard to reduce accidental writes to shared d
 2. Fill in your local or non-production Supabase credentials.
 3. Run the app with `npm run dev`.
 
+### Driver Interface Local Testing
+
+The mobile-first driver UI is available at:
+
+- `/login`
+- `/register-driver`
+- `/driver`
+- `/driver/rides/[id]`
+
+Seeded local test driver:
+
+- Email: `driver.one@example.test`
+- Password: `LocalTestPassword123!`
+
+Driver write actions call local API routes. In development, writes are blocked by default to protect shared databases. To test registration, taking a ride, starting a ride, rejecting a ride, or completing a ride, set this in `.env.local`:
+
+```bash
+BLOCK_API_WRITES=false
+```
+
+Then restart `npm run dev`.
+
+Required local env values are listed in `.env.example`: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_ANON_KEY`, `DATABASE_URL`, `SUPABASE_DB_URL`, `LOCAL_DEV_ONLY=true`, and `BLOCK_API_WRITES`.
+
 ### Recommended Team Workflow
 
 1. Use **local Supabase** for feature development and tests.

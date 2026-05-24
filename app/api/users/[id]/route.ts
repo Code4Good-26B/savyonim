@@ -1,7 +1,7 @@
 import { supabaseErrorResponse } from "@/lib/api-errors";
 import { createSupabaseClient } from "@/lib/supabase";
 
-const VALID_ROLES = ["admin", "dispatcher", "driver", "representative"] as const;
+const VALID_ROLES = ["admin", "dispatcher", "driver"] as const;
 type UserRole = (typeof VALID_ROLES)[number];
 
 export async function GET(
