@@ -1,0 +1,19 @@
+<svg width="178" height="212" viewBox="0 0 178 212" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+  <title id="title">Savionim</title>
+  <rect width="178" height="212" fill="white"/>
+  <g transform="translate(22 10)">
+    <path d="M65 41C58 25 56 11 60 0C68 7 75 19 76 36C86 22 95 14 106 11C106 25 101 37 88 48C105 47 118 50 128 58C118 66 104 69 88 66C101 77 106 89 106 103C94 100 84 91 76 77C75 95 68 108 60 116C56 103 58 89 65 75C52 88 40 93 26 93C30 80 39 70 53 63C36 62 23 56 14 47C27 43 40 45 54 53C41 40 35 28 34 14C47 17 57 26 65 41Z" fill="#7DBD3B"/>
+    <path d="M65 41C57 30 51 23 40 18C42 30 48 40 58 47C45 46 34 48 24 55C35 61 46 63 59 59C49 68 43 77 40 90C53 87 62 79 68 68C67 82 69 94 76 105C83 94 85 82 84 68C91 80 101 87 114 90C111 77 105 68 94 59C107 63 119 61 129 55C119 48 108 46 95 47C106 39 112 29 114 18C102 23 95 31 88 41C85 28 81 17 76 8C71 18 68 29 65 41Z" fill="white"/>
+    <path d="M69 56C67 50 70 45 76 45C82 45 85 50 83 56C90 52 96 56 96 63C96 71 88 76 76 84C64 76 56 71 56 63C56 56 62 52 69 56Z" fill="#E2232A"/>
+    <circle cx="15" cy="30" r="6" fill="#E2232A"/>
+    <circle cx="3" cy="59" r="6" fill="#D41E2A"/>
+    <circle cx="26" cy="99" r="6" fill="#8B4E16"/>
+    <circle cx="76" cy="123" r="6" fill="#0B0B0B"/>
+    <circle cx="119" cy="102" r="6" fill="#F4A51C"/>
+    <circle cx="137" cy="58" r="6" fill="#0069B4"/>
+    <circle cx="115" cy="24" r="6" fill="#18823A"/>
+    <circle cx="44" cy="6" r="6" fill="#F4A51C"/>
+  </g>
+  <text x="89" y="180" text-anchor="middle" fill="#7DBD3B" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="800">&#x05E1;&#x05D1;&#x05D9;&#x05D5;&#x05E0;&#x05D9;&#x05DD;</text>
+  <text x="48" y="146" text-anchor="middle" fill="#8A8A8A" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="500">&#x05E2;&#x05E8;</text>
+</svg>

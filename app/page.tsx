@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function LandingPage() {
@@ -8,7 +9,14 @@ export default function LandingPage() {
         {/* Logo / Title */}
         <div className="text-center">
           <p className="text-xs uppercase tracking-widest text-gray-400">ברוכים הבאים</p>
-          <h1 className="mt-2 text-3xl font-bold text-gray-900">סביונים</h1>
+          <Image
+            src="/savionim-logo.svg"
+            alt="Savionim"
+            width={178}
+            height={212}
+            priority
+            className="mx-auto mt-2 h-24 w-auto"
+          />
           <p className="mt-2 text-sm text-gray-500">מערכת הסעות מותאמת אישית</p>
         </div>
 
