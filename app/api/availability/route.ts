@@ -1,9 +1,15 @@
 import { query } from "@/lib/db";
+import { requireBearerAuth } from "@/lib/api-auth";
 
 const DRIVER_FIELDS = "id, user_id, contact_phone, service_zone_id, is_active";
 const AMBULANCE_FIELDS = "id, license_plate, service_zone_id, is_available, is_active";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
   try {
     const drivers = await query(
       `

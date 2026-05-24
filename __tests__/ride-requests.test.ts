@@ -52,6 +52,16 @@ const BASE_REQUEST = {
   destination_notes: null,
   return_trip_required: false,
   requested_pickup_at: "2026-05-10T10:00:00.000Z",
+  caller_full_name: null,
+  caller_id_number: null,
+  caller_phone: null,
+  request_for_self: false,
+  trip_type: null,
+  requested_arrival_at: null,
+  estimated_departure_at: null,
+  waiting_time_minutes: null,
+  leisure_window_start: null,
+  leisure_window_end: null,
   approved_at: null,
   assigned_at: null,
   started_at: null,
@@ -116,6 +126,23 @@ describe("GET /api/ride-requests", () => {
     expect(res.status).toBe(400);
     expect((await res.json()).error).toMatch(/Invalid date format/);
   });
+
+  it("accepts valid trip_type filter", async () => {
+    mockDB({ data: [BASE_REQUEST], error: null });
+
+    const { GET } = await import("@/app/api/ride-requests/route");
+    const res = await GET(new Request("http://localhost/api/ride-requests?trip_type=medical"));
+
+    expect(res.status).toBe(200);
+  });
+
+  it("returns 400 for invalid trip_type filter", async () => {
+    const { GET } = await import("@/app/api/ride-requests/route");
+    const res = await GET(new Request("http://localhost/api/ride-requests?trip_type=urgent"));
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/Invalid trip_type/);
+  });
 });
 
 // ─── POST /api/ride-requests ──────────────────────────────────────────────────
@@ -150,6 +177,24 @@ describe("POST /api/ride-requests", () => {
 
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe("passenger_id is required");
+  });
+
+  it("returns 400 when trip_type is invalid", async () => {
+    const { POST } = await import("@/app/api/ride-requests/route");
+    const res = await POST(
+      new Request("http://localhost/api/ride-requests", {
+        method: "POST",
+        body: JSON.stringify({
+          passenger_id: "p1",
+          source_address: "A",
+          destination_address: "B",
+          trip_type: "urgent",
+        }),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/Invalid trip_type/);
   });
 
   it("returns 400 when source_address is missing", async () => {
@@ -196,6 +241,99 @@ describe("POST /api/ride-requests", () => {
     expect((await res.json()).error).toMatch(/Invalid requested_pickup_at/);
   });
 
+  it("returns 400 for invalid requested_arrival_at", async () => {
+    const { POST } = await import("@/app/api/ride-requests/route");
+    const res = await POST(
+      new Request("http://localhost/api/ride-requests", {
+        method: "POST",
+        body: JSON.stringify({
+          passenger_id: "p1",
+          source_address: "A",
+          destination_address: "B",
+          requested_arrival_at: "bad-date",
+        }),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/Invalid requested_arrival_at/);
+  });
+
+  it("returns 400 when medical trip is missing requested_arrival_at", async () => {
+    const { POST } = await import("@/app/api/ride-requests/route");
+    const res = await POST(
+      new Request("http://localhost/api/ride-requests", {
+        method: "POST",
+        body: JSON.stringify({
+          passenger_id: "p1",
+          source_address: "A",
+          destination_address: "B",
+          trip_type: "medical",
+        }),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/requested_arrival_at is required/);
+  });
+
+  it("returns 400 when leisure trip is missing window", async () => {
+    const { POST } = await import("@/app/api/ride-requests/route");
+    const res = await POST(
+      new Request("http://localhost/api/ride-requests", {
+        method: "POST",
+        body: JSON.stringify({
+          passenger_id: "p1",
+          source_address: "A",
+          destination_address: "B",
+          trip_type: "leisure",
+          leisure_window_start: "10:00",
+        }),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/leisure_window_start and leisure_window_end are required/);
+  });
+
+  it("returns 400 when leisure end is before start", async () => {
+    const { POST } = await import("@/app/api/ride-requests/route");
+    const res = await POST(
+      new Request("http://localhost/api/ride-requests", {
+        method: "POST",
+        body: JSON.stringify({
+          passenger_id: "p1",
+          source_address: "A",
+          destination_address: "B",
+          trip_type: "leisure",
+          leisure_window_start: "12:00",
+          leisure_window_end: "10:00",
+        }),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/leisure_window_end must be after leisure_window_start/);
+  });
+
+  it("returns 400 when waiting_time_minutes is non-positive", async () => {
+    const { POST } = await import("@/app/api/ride-requests/route");
+    const res = await POST(
+      new Request("http://localhost/api/ride-requests", {
+        method: "POST",
+        body: JSON.stringify({
+          passenger_id: "p1",
+          source_address: "A",
+          destination_address: "B",
+          waiting_time_minutes: 0,
+        }),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/waiting_time_minutes must be a positive integer/);
+  });
+
   it("accepts valid requested_pickup_at", async () => {
     mockDB({ data: { ...BASE_REQUEST, requested_pickup_at: "2026-05-10T10:00:00.000Z" }, error: null });
 
@@ -213,6 +351,44 @@ describe("POST /api/ride-requests", () => {
     );
 
     expect(res.status).toBe(201);
+  });
+
+  it("creates an enriched medical ride request and returns 201", async () => {
+    mockDB({
+      data: {
+        ...BASE_REQUEST,
+        trip_type: "medical",
+        request_for_self: true,
+        caller_full_name: "Caller Name",
+        caller_id_number: "123456789",
+        caller_phone: "050-1111111",
+        requested_arrival_at: "2026-05-10T10:30:00.000Z",
+        waiting_time_minutes: 30,
+      },
+      error: null,
+    });
+
+    const { POST } = await import("@/app/api/ride-requests/route");
+    const res = await POST(
+      new Request("http://localhost/api/ride-requests", {
+        method: "POST",
+        body: JSON.stringify({
+          passenger_id: "p1",
+          source_address: "A",
+          destination_address: "B",
+          trip_type: "medical",
+          request_for_self: true,
+          caller_full_name: "Caller Name",
+          caller_id_number: "123456789",
+          caller_phone: "050-1111111",
+          requested_arrival_at: "2026-05-10T10:30:00.000Z",
+          waiting_time_minutes: 30,
+        }),
+      })
+    );
+
+    expect(res.status).toBe(201);
+    expect((await res.json()).trip_type).toBe("medical");
   });
 
   it("returns 400 when passenger_id does not exist", async () => {

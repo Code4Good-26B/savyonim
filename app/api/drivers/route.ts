@@ -1,10 +1,16 @@
 import { supabaseErrorResponse } from "@/lib/api-errors";
+import { requireBearerAuth } from "@/lib/api-auth";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const DRIVER_FIELDS = "id, user_id, contact_phone, service_zone_id, is_active";
 
-export async function GET() {
-  const supabase = createSupabaseClient();
+export async function GET(request: Request) {
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
+  const supabase = createSupabaseClient(auth.token);
   const { data, error } = await supabase
     .from("drivers")
     .select(DRIVER_FIELDS)
@@ -22,7 +28,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "user_id is required" }, { status: 400 });
   }
 
-  const supabase = createSupabaseClient();
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
+  const supabase = createSupabaseClient(auth.token);
   const { data, error } = await supabase
     .from("drivers")
     .insert({ user_id, contact_phone, service_zone_id })

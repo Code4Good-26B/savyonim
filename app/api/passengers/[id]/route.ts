@@ -1,18 +1,33 @@
 import { supabaseErrorResponse } from "@/lib/api-errors";
+import { requireBearerAuth } from "@/lib/api-auth";
 import { createSupabaseClient } from "@/lib/supabase";
 
-const VALID_MOBILITY = ["none", "wheelchair", "walker", "cane"] as const;
+const VALID_MOBILITY = ["none", "walking", "wheelchair", "walker", "cane"] as const;
+const VALID_CATEGORIES = [
+  "wounded_soldier",
+  "idf_disabled",
+  "holocaust_survivor",
+  "cancer_patient",
+  "dialysis_patient",
+  "other",
+] as const;
 type MobilityNeed = (typeof VALID_MOBILITY)[number];
+type PassengerCategory = (typeof VALID_CATEGORIES)[number];
 
 const PASSENGER_FIELDS =
   "id, national_id, full_name, category, mobility_need, mobility_notes, phone, emergency_contact";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = createSupabaseClient();
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
+  const supabase = createSupabaseClient(auth.token);
   const { data, error } = await supabase
     .from("passengers")
     .select(PASSENGER_FIELDS)
@@ -47,6 +62,13 @@ export async function PATCH(
     );
   }
 
+  if (category !== undefined && category !== null && !VALID_CATEGORIES.includes(category as PassengerCategory)) {
+    return Response.json(
+      { error: `Invalid category. Must be one of: ${VALID_CATEGORIES.join(", ")}` },
+      { status: 400 }
+    );
+  }
+
   const patch: Record<string, unknown> = {};
   if (national_id !== undefined) patch.national_id = national_id;
   if (full_name !== undefined) patch.full_name = full_name;
@@ -60,7 +82,12 @@ export async function PATCH(
     return Response.json({ error: "No fields to update" }, { status: 400 });
   }
 
-  const supabase = createSupabaseClient();
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
+  const supabase = createSupabaseClient(auth.token);
   const { data, error } = await supabase
     .from("passengers")
     .update(patch)
@@ -79,11 +106,16 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = createSupabaseClient();
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
+  const supabase = createSupabaseClient(auth.token);
   const { error } = await supabase.from("passengers").delete().eq("id", id);
 
   if (error) return supabaseErrorResponse(error);

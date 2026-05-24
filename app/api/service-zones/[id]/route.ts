@@ -1,12 +1,18 @@
 import { supabaseErrorResponse } from "@/lib/api-errors";
+import { requireBearerAuth } from "@/lib/api-auth";
 import { createSupabaseClient } from "@/lib/supabase";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = createSupabaseClient();
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
+  const supabase = createSupabaseClient(auth.token);
   const { data, error } = await supabase
     .from("service_zones")
     .select("id, name, region_code, is_active")
@@ -34,7 +40,12 @@ export async function PUT(
     return Response.json({ error: "No fields to update" }, { status: 400 });
   }
 
-  const supabase = createSupabaseClient();
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
+  const supabase = createSupabaseClient(auth.token);
   const { data, error } = await supabase
     .from("service_zones")
     .update(patch)
@@ -47,11 +58,16 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = createSupabaseClient();
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
+  const supabase = createSupabaseClient(auth.token);
   const { error } = await supabase
     .from("service_zones")
     .delete()

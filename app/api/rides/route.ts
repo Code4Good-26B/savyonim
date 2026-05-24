@@ -1,9 +1,15 @@
 import { query } from "@/lib/db";
+import { requireBearerAuth } from "@/lib/api-auth";
 
 const RIDE_FIELDS =
   "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representitive_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
 
 export async function POST(request: Request) {
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
   const body = await request.json();
   const {
     ride_request_id,

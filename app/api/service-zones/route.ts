@@ -1,27 +1,31 @@
-import { query } from "@/lib/db";
+import { supabaseErrorResponse } from "@/lib/api-errors";
+import { requireBearerAuth } from "@/lib/api-auth";
+import { createSupabaseClient } from "@/lib/supabase";
 
-export const runtime = "nodejs";
+const SERVICE_ZONE_FIELDS = "id, name, region_code, is_active";
 
-type ServiceZoneRow = {
-  id: string;
-  name: string;
-  region_code: string | null;
-  is_active: boolean;
-};
-
-export async function GET() {
-  try {
-    const result = await query<ServiceZoneRow>(
-      "select id, name, region_code, is_active from public.service_zones order by name",
-    );
-    return Response.json(result.rows);
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : "Internal server error";
-    return Response.json({ error: msg }, { status: 500 });
+export async function GET(request: Request) {
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
   }
+
+  const supabase = createSupabaseClient(auth.token);
+  const { data, error } = await supabase
+    .from("service_zones")
+    .select(SERVICE_ZONE_FIELDS)
+    .order("name");
+
+  if (error) return supabaseErrorResponse(error);
+  return Response.json(data);
 }
 
 export async function POST(request: Request) {
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
   const body = await request.json();
   const { name, region_code, is_active = true } = body;
 
@@ -29,22 +33,19 @@ export async function POST(request: Request) {
     return Response.json({ error: "name is required" }, { status: 400 });
   }
 
-  try {
-    const result = await query<ServiceZoneRow>(
-      `
-        insert into public.service_zones (name, region_code, is_active)
-        values ($1, $2, $3)
-        returning id, name, region_code, is_active
-      `,
-      [name, region_code ?? null, is_active],
-    );
+  const supabase = createSupabaseClient(auth.token);
+  const { data, error } = await supabase
+    .from("service_zones")
+    .insert({ name, region_code, is_active })
+    .select(SERVICE_ZONE_FIELDS)
+    .single();
 
-    return Response.json(result.rows[0], { status: 201 });
-  } catch (error) {
-    const pgError = error as { code?: string; message?: string };
-    if (pgError.code === "23505") {
+  if (error) {
+    if (error.code === "23505") {
       return Response.json({ error: "name or region_code already exists" }, { status: 409 });
     }
-    return Response.json({ error: pgError.message ?? "Could not create service zone" }, { status: 500 });
+    return supabaseErrorResponse(error);
   }
+
+  return Response.json(data, { status: 201 });
 }

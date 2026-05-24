@@ -13,7 +13,7 @@ INSERT INTO public.service_zones (id, name, region_code, region, city, is_active
   ('11111111-0000-0000-0000-000000000003', 'South Tel Aviv',    'TLV-S', 'Tel Aviv District', 'Jaffa',    true)
 ON CONFLICT (id) DO NOTHING;
 
--- ─── Auth Users (5 drivers) ───────────────────────────────────────────────────
+-- ─── Auth Users (5 drivers + 1 admin) ─────────────────────────────────────────
 -- Synthetic entries for local / staging only. Password: Seed1234!
 
 INSERT INTO auth.users (
@@ -46,17 +46,23 @@ INSERT INTO auth.users (
   ('22222222-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated',
    'eran.peretz@savionim.test',  crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
-   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW())
+    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW()),
+
+    ('22222222-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated',
+    'admin.dispatch@savionim.test', crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
+    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
--- ─── Public Users (5 drivers) ─────────────────────────────────────────────────
+  -- ─── Public Users (5 drivers + 1 admin) ───────────────────────────────────────
 
 INSERT INTO public.users (id, full_name, phone, role, is_active) VALUES
   ('22222222-0000-0000-0000-000000000001', 'Avi Cohen',       '050-1234567', 'driver', true),
   ('22222222-0000-0000-0000-000000000002', 'Noa Levi',        '052-2345678', 'driver', true),
   ('22222222-0000-0000-0000-000000000003', 'Yossi Mizrahi',   '054-3456789', 'driver', true),
   ('22222222-0000-0000-0000-000000000004', 'Dana Shapiro',    '053-4567890', 'driver', false),
-  ('22222222-0000-0000-0000-000000000005', 'Eran Peretz',     '058-5678901', 'driver', true)
+  ('22222222-0000-0000-0000-000000000005', 'Eran Peretz',     '058-5678901', 'driver', true),
+  ('22222222-0000-0000-0000-000000000010', 'System Admin',    '050-0000010', 'admin',  true)
 ON CONFLICT (id) DO NOTHING;
 
 -- ─── Drivers (5) ─────────────────────────────────────────────────────────────
@@ -79,16 +85,16 @@ ON CONFLICT (id) DO NOTHING;
 -- ─── Passengers (10) ─────────────────────────────────────────────────────────
 
 INSERT INTO public.passengers (id, national_id, full_name, phone, emergency_contact, mobility_need, category) VALUES
-  ('55555555-0000-0000-0000-000000000001', '111111111', 'Miriam Katz',     '050-1111111', '050-9991111', 'none',       'elderly'),
-  ('55555555-0000-0000-0000-000000000002', '222222222', 'David Ben-David', '052-2222222', '052-9992222', 'wheelchair', 'elderly'),
-  ('55555555-0000-0000-0000-000000000003', '333333333', 'Rachel Goldberg', '054-3333333', '054-9993333', 'walker',     'elderly'),
-  ('55555555-0000-0000-0000-000000000004', '444444444', 'Moshe Friedman',  '053-4444444', '053-9994444', 'none',       'general'),
-  ('55555555-0000-0000-0000-000000000005', '555555555', 'Tamar Azoulay',   '058-5555555', '058-9995555', 'cane',       'elderly'),
-  ('55555555-0000-0000-0000-000000000006', '666666666', 'Ilan Schwartz',   '050-6666666', '050-9996666', 'none',       'general'),
-  ('55555555-0000-0000-0000-000000000007', '777777777', 'Shira Biton',     '052-7777777', '052-9997777', 'wheelchair', 'disability'),
-  ('55555555-0000-0000-0000-000000000008', '888888888', 'Ronen Hazan',     '054-8888888', '054-9998888', 'none',       'general'),
-  ('55555555-0000-0000-0000-000000000009', '999999999', 'Liora Ohayon',    '053-9999999', '053-9999999', 'walker',     'elderly'),
-  ('55555555-0000-0000-0000-000000000010', '100000000', 'Gal Nachum',      '058-0000000', '058-9990000', 'none',       'general')
+  ('55555555-0000-0000-0000-000000000001', '111111111', 'Miriam Katz',     '050-1111111', '050-9991111', 'walking',    'other'),
+  ('55555555-0000-0000-0000-000000000002', '222222222', 'David Ben-David', '052-2222222', '052-9992222', 'wheelchair', 'idf_disabled'),
+  ('55555555-0000-0000-0000-000000000003', '333333333', 'Rachel Goldberg', '054-3333333', '054-9993333', 'walker',     'holocaust_survivor'),
+  ('55555555-0000-0000-0000-000000000004', '444444444', 'Moshe Friedman',  '053-4444444', '053-9994444', 'walking',    'other'),
+  ('55555555-0000-0000-0000-000000000005', '555555555', 'Tamar Azoulay',   '058-5555555', '058-9995555', 'cane',       'cancer_patient'),
+  ('55555555-0000-0000-0000-000000000006', '666666666', 'Ilan Schwartz',   '050-6666666', '050-9996666', 'walking',    'other'),
+  ('55555555-0000-0000-0000-000000000007', '777777777', 'Shira Biton',     '052-7777777', '052-9997777', 'wheelchair', 'wounded_soldier'),
+  ('55555555-0000-0000-0000-000000000008', '888888888', 'Ronen Hazan',     '054-8888888', '054-9998888', 'walking',    'dialysis_patient'),
+  ('55555555-0000-0000-0000-000000000009', '999999999', 'Liora Ohayon',    '053-9999999', '053-9999999', 'walker',     'other'),
+  ('55555555-0000-0000-0000-000000000010', '100000000', 'Gal Nachum',      '058-0000000', '058-9990000', 'walking',    'other')
 ON CONFLICT (id) DO NOTHING;
 
 COMMIT;

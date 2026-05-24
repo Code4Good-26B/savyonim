@@ -26,6 +26,16 @@ export type RideRequestSummary = {
   destination_notes: string | null;
   return_trip_required: boolean;
   requested_pickup_at: string | null;
+  caller_full_name: string | null;
+  caller_id_number: string | null;
+  caller_phone: string | null;
+  request_for_self: boolean;
+  trip_type: "medical" | "leisure" | null;
+  requested_arrival_at: string | null;
+  estimated_departure_at: string | null;
+  waiting_time_minutes: number | null;
+  leisure_window_start: string | null;
+  leisure_window_end: string | null;
   approved_at?: string | null;
   assigned_at?: string | null;
   started_at?: string | null;

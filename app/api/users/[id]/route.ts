@@ -1,15 +1,21 @@
 import { supabaseErrorResponse } from "@/lib/api-errors";
+import { requireBearerAuth } from "@/lib/api-auth";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const VALID_ROLES = ["admin", "dispatcher", "driver"] as const;
 type UserRole = (typeof VALID_ROLES)[number];
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = createSupabaseClient();
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
+  const supabase = createSupabaseClient(auth.token);
   const { data, error } = await supabase
     .from("users")
     .select("id, full_name, phone, role, is_active")
@@ -46,7 +52,12 @@ export async function PUT(
     return Response.json({ error: "No fields to update" }, { status: 400 });
   }
 
-  const supabase = createSupabaseClient();
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
+  const supabase = createSupabaseClient(auth.token);
   const { data, error } = await supabase
     .from("users")
     .update(patch)

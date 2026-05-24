@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as supabaseModule from "@/lib/supabase";
+import * as dbModule from "@/lib/db";
 
 vi.mock("@/lib/supabase");
+vi.mock("@/lib/db");
 
 function chain(result: object) {
   const handler: ProxyHandler<object> = {
@@ -23,23 +25,37 @@ function mockDB(result: { data?: unknown; error?: { message: string; code?: stri
   } as unknown as ReturnType<typeof supabaseModule.createSupabaseClient>);
 }
 
+function mockSql(result: { rows?: unknown[]; error?: { message?: string; code?: string } | null }) {
+  if (result.error) {
+    vi.mocked(dbModule.query).mockRejectedValue(result.error);
+    return;
+  }
+
+  vi.mocked(dbModule.query).mockResolvedValue({
+    rows: result.rows ?? [],
+  } as Awaited<ReturnType<typeof dbModule.query>>);
+}
+
 const BASE_PASSENGER = {
   id: "p1",
   national_id: "123456789",
   full_name: "Miriam Katz",
-  category: "elderly",
+  category: "other",
   mobility_need: "walker",
   mobility_notes: "needs help on stairs",
   phone: "050-1111111",
   emergency_contact: "050-9991111",
 };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(dbModule.query).mockReset();
+});
 
 // ─── GET /api/passengers ──────────────────────────────────────────────────────
 describe("GET /api/passengers", () => {
   it("returns list of passengers", async () => {
-    mockDB({ data: [BASE_PASSENGER], error: null });
+    mockSql({ rows: [BASE_PASSENGER] });
 
     const { GET } = await import("@/app/api/passengers/route");
     const res = await GET();
@@ -49,7 +65,7 @@ describe("GET /api/passengers", () => {
   });
 
   it("returns 500 on DB error", async () => {
-    mockDB({ data: null, error: { message: "connection failed" } });
+    mockSql({ error: { message: "connection failed" } });
 
     const { GET } = await import("@/app/api/passengers/route");
     const res = await GET();
@@ -61,7 +77,7 @@ describe("GET /api/passengers", () => {
 // ─── POST /api/passengers ─────────────────────────────────────────────────────
 describe("POST /api/passengers", () => {
   it("creates a passenger and returns 201", async () => {
-    mockDB({ data: BASE_PASSENGER, error: null });
+    mockSql({ rows: [BASE_PASSENGER] });
 
     const { POST } = await import("@/app/api/passengers/route");
     const res = await POST(
@@ -106,10 +122,10 @@ describe("POST /api/passengers", () => {
     expect((await res.json()).error).toMatch(/Invalid mobility_need/);
   });
 
-  it.each(["none", "wheelchair", "walker", "cane"])(
+  it.each(["none", "walking", "wheelchair", "walker", "cane"])(
     "accepts valid mobility_need: %s",
     async (mobility_need) => {
-      mockDB({ data: { ...BASE_PASSENGER, mobility_need }, error: null });
+      mockSql({ rows: [{ ...BASE_PASSENGER, mobility_need }] });
 
       const { POST } = await import("@/app/api/passengers/route");
       const res = await POST(
@@ -123,8 +139,21 @@ describe("POST /api/passengers", () => {
     }
   );
 
+  it("returns 400 for invalid category", async () => {
+    const { POST } = await import("@/app/api/passengers/route");
+    const res = await POST(
+      new Request("http://localhost/api/passengers", {
+        method: "POST",
+        body: JSON.stringify({ full_name: "Miriam Katz", category: "elderly" }),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/Invalid category/);
+  });
+
   it("returns 409 when national_id is duplicate", async () => {
-    mockDB({ data: null, error: { message: "duplicate key", code: "23505" } });
+    mockSql({ error: { message: "duplicate key", code: "23505" } });
 
     const { POST } = await import("@/app/api/passengers/route");
     const res = await POST(
@@ -140,7 +169,7 @@ describe("POST /api/passengers", () => {
 
   it("saves emergency_contact and mobility_notes", async () => {
     const withExtras = { ...BASE_PASSENGER, emergency_contact: "050-9991111", mobility_notes: "needs help" };
-    mockDB({ data: withExtras, error: null });
+    mockSql({ rows: [withExtras] });
 
     const { POST } = await import("@/app/api/passengers/route");
     const res = await POST(
@@ -219,6 +248,20 @@ describe("PATCH /api/passengers/[id]", () => {
 
     expect(res.status).toBe(400);
     expect((await res.json()).error).toMatch(/Invalid mobility_need/);
+  });
+
+  it("returns 400 for invalid category", async () => {
+    const { PATCH } = await import("@/app/api/passengers/[id]/route");
+    const res = await PATCH(
+      new Request("http://localhost/api/passengers/p1", {
+        method: "PATCH",
+        body: JSON.stringify({ category: "elderly" }),
+      }),
+      { params: Promise.resolve({ id: "p1" }) }
+    );
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/Invalid category/);
   });
 
   it("returns 409 when national_id is duplicate", async () => {

@@ -1,4 +1,5 @@
 import { supabaseErrorResponse } from "@/lib/api-errors";
+import { requireBearerAuth } from "@/lib/api-auth";
 import { createSupabaseClient } from "@/lib/supabase";
 
 const RIDE_REQUEST_FIELDS =
@@ -25,6 +26,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const auth = requireBearerAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: 401 });
+  }
+
   const body = await request.json();
   const { status: newStatus, rejection_reason } = body;
 
@@ -36,7 +42,7 @@ export async function PATCH(
     return Response.json({ error: "rejection_reason is required when rejecting" }, { status: 400 });
   }
 
-  const supabase = createSupabaseClient();
+  const supabase = createSupabaseClient(auth.token);
 
   const { data: current, error: fetchError } = await supabase
     .from("ride_requests")
