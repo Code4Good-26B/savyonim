@@ -1,4 +1,6 @@
 import { validateIntakeRideRequestInput } from "@/lib/intake-contract";
+import { createSupabaseClient } from "@/lib/supabase";
+import { supabaseErrorResponse } from "@/lib/api-errors";
 
 function getCommboxApiKey(): string | null {
   const value = process.env.COMMBOX_INTAKE_API_KEY?.trim();
@@ -54,22 +56,50 @@ export async function POST(request: Request) {
     return Response.json({ error: validation.error }, { status: 400 });
   }
 
-  // This route intentionally blocks writes until migration/type/auth prerequisites land:
-  // - Issue #40 (DB schema fields + enums)
-  // - Issue #41 (TypeScript type updates)
-  // - Existing auth stack alignment for user-context writes
+  const supabase = createSupabaseClient();
+
+  const { data, error } = await supabase.rpc("create_intake_ride_request", {
+    p_caller_full_name: validation.data.caller_full_name,
+    p_caller_id_number: validation.data.caller_id_number,
+    p_caller_phone: validation.data.caller_phone,
+    p_request_for_self: validation.data.request_for_self,
+    p_passenger_full_name: validation.data.passenger?.full_name ?? null,
+    p_passenger_national_id: validation.data.passenger?.national_id ?? null,
+    p_passenger_phone: validation.data.passenger?.phone ?? null,
+    p_passenger_emergency_contact: validation.data.passenger?.emergency_contact ?? null,
+    p_passenger_mobility_need: validation.data.passenger?.mobility_need ?? (validation.data.request_for_self ? "walking" : null),
+    p_passenger_category: validation.data.passenger?.category ?? validation.data.category ?? null,
+    p_trip_type: validation.data.trip_type,
+    p_source_address: validation.data.source_address,
+    p_destination_address: validation.data.destination_address,
+    p_requested_pickup_at: validation.data.requested_pickup_at ?? null,
+    p_requested_arrival_at: validation.data.requested_arrival_at ?? null,
+    p_estimated_departure_at: validation.data.estimated_departure_at ?? null,
+    p_waiting_time_minutes: validation.data.waiting_time_minutes ?? null,
+    p_leisure_window_start: validation.data.leisure_window_start ?? null,
+    p_leisure_window_end: validation.data.leisure_window_end ?? null,
+    p_return_trip_required: validation.data.return_trip_required,
+    p_service_zone_id: validation.data.service_zone_id ?? null,
+  });
+
+  if (error) {
+    if (error.code === "23503" || error.code === "23514" || error.code === "22P02") {
+      return Response.json({ error: error.message }, { status: 400 });
+    }
+    return supabaseErrorResponse(error);
+  }
+
+  const created = Array.isArray(data) ? data[0] : data;
+  if (!created?.ride_request_id || !created?.passenger_id) {
+    return Response.json({ error: "Intake request was not created" }, { status: 500 });
+  }
+
   return Response.json(
     {
-      error: "Intake database write path is not enabled in this spike branch yet",
-      status: "blocked",
-      blocked_by: [40, 41, 35, 36],
-      next_step: "After dependencies are finalized, implement transaction-safe passenger lookup/create + ride_request insert",
-      validation_preview: {
-        caller_full_name: validation.data.caller_full_name,
-        request_for_self: validation.data.request_for_self,
-        trip_type: validation.data.trip_type,
-      },
+      ride_request_id: created.ride_request_id,
+      passenger_id: created.passenger_id,
+      status: created.status,
     },
-    { status: 501 },
+    { status: 201 },
   );
 }
