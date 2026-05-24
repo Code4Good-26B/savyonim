@@ -54,14 +54,6 @@ BEGIN
   END IF;
 END $$;
 
-UPDATE public.passengers
-SET mobility_need = 'walking'
-WHERE mobility_need = 'none';
-
--- Keep backwards compatibility with existing inserts that omit mobility_need.
-ALTER TABLE public.passengers
-  ALTER COLUMN mobility_need SET DEFAULT 'walking';
-
 -- 3) Add new ride_request intake columns
 ALTER TABLE public.ride_requests
   ADD COLUMN IF NOT EXISTS caller_full_name text,
