@@ -18,6 +18,10 @@ function getSupabaseAnonKey() {
   return anonKey;
 }
 
+export function createSupabaseAnonClient() {
+  return createClient(getSupabaseUrl(), getSupabaseAnonKey());
+}
+
 function getSupabaseServiceRoleKey() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) {

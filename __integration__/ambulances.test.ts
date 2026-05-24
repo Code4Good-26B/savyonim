@@ -11,16 +11,24 @@
  *
  * The global setup (setup.ts) resets + re-seeds the DB before each run.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { GET } from "@/app/api/ambulances/route";
+import { createAuthenticatedRequest, signInSeedUser } from "./helpers";
 
 // IDs from seed.sql
 const SEED_AMBULANCE_1 = "44444444-0000-0000-0000-000000000001";
 const SEED_AMBULANCE_2 = "44444444-0000-0000-0000-000000000002";
 
 describe("GET /api/ambulances (integration)", () => {
+  let adminToken: string;
+
+  beforeAll(async () => {
+    adminToken = await signInSeedUser("admin.dispatch@savionim.test");
+  });
+
   it("returns the 2 ambulances seeded in seed.sql", async () => {
-    const res = await GET();
+    const req = createAuthenticatedRequest("http://localhost/api/ambulances", adminToken);
+    const res = await GET(req);
 
     expect(res.status).toBe(200);
 
@@ -34,7 +42,8 @@ describe("GET /api/ambulances (integration)", () => {
   });
 
   it("returns ambulances ordered by license_plate", async () => {
-    const res = await GET();
+    const req = createAuthenticatedRequest("http://localhost/api/ambulances", adminToken);
+    const res = await GET(req);
     const body = await res.json();
     const plates = body.map((a: { license_plate: string }) => a.license_plate);
 
@@ -42,7 +51,8 @@ describe("GET /api/ambulances (integration)", () => {
   });
 
   it("each ambulance has the expected shape", async () => {
-    const res = await GET();
+    const req = createAuthenticatedRequest("http://localhost/api/ambulances", adminToken);
+    const res = await GET(req);
     const [first] = await res.json();
 
     expect(first).toMatchObject({

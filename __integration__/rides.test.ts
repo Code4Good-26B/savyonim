@@ -1,6 +1,6 @@
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, afterAll, beforeAll } from "vitest";
 import { POST } from "@/app/api/rides/route";
-import { createSupabaseClient } from "@/lib/supabase";
+import { createAuthenticatedRequest, getAuthenticatedSupabase, signInSeedUser } from "./helpers";
 
 // Synthetic and Seeded IDs
 const TEST_RIDE_REQUEST_ID = "99999999-9999-9999-9999-999999999999";
@@ -12,18 +12,24 @@ const SEED_AMBULANCE_1 = "44444444-0000-0000-0000-000000000001";
 const SEED_DRIVER_2 = "33333333-0000-0000-0000-000000000002"; // Noa Levi
 const SEED_AMBULANCE_2 = "44444444-0000-0000-0000-000000000002";
 
-const SEED_DISPATCHER_USER = "22222222-0000-0000-0000-000000000003"; // Yossi Mizrahi
+const SEED_ADMIN_USER = "22222222-0000-0000-0000-000000000010"; // System Admin
 
 describe("Rides Race Condition Integration Tests", () => {
+  let adminToken: string;
+
+  beforeAll(async () => {
+    adminToken = await signInSeedUser("admin.dispatch@savionim.test");
+  });
+
   afterAll(async () => {
-    const supabase = createSupabaseClient();
+    const supabase = getAuthenticatedSupabase(adminToken);
     // Clean up created rides and ride requests to prevent database pollution
     await supabase.from("rides").delete().eq("ride_request_id", TEST_RIDE_REQUEST_ID);
     await supabase.from("ride_requests").delete().eq("id", TEST_RIDE_REQUEST_ID);
   });
 
   it("handles concurrent ride assignments gracefully (exactly one succeeds, other gets 409)", async () => {
-    const supabase = createSupabaseClient();
+    const supabase = getAuthenticatedSupabase(adminToken);
 
     // 1. Insert isolated test ride request
     const { error: reqError } = await supabase.from("ride_requests").insert({
@@ -39,23 +45,23 @@ describe("Rides Race Condition Integration Tests", () => {
     }
 
     // 2. Build the concurrent POST requests
-    const req1 = new Request("http://localhost/api/rides", {
+    const req1 = createAuthenticatedRequest("http://localhost/api/rides", adminToken, {
       method: "POST",
       body: JSON.stringify({
         ride_request_id: TEST_RIDE_REQUEST_ID,
         driver_id: SEED_DRIVER_1,
         ambulance_id: SEED_AMBULANCE_1,
-        assigned_by_user_id: SEED_DISPATCHER_USER,
+        assigned_by_user_id: SEED_ADMIN_USER,
       }),
     });
 
-    const req2 = new Request("http://localhost/api/rides", {
+    const req2 = createAuthenticatedRequest("http://localhost/api/rides", adminToken, {
       method: "POST",
       body: JSON.stringify({
         ride_request_id: TEST_RIDE_REQUEST_ID,
         driver_id: SEED_DRIVER_2,
         ambulance_id: SEED_AMBULANCE_2,
-        assigned_by_user_id: SEED_DISPATCHER_USER,
+        assigned_by_user_id: SEED_ADMIN_USER,
       }),
     });
 
