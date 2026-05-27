@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { MOCK_RIDE_REQUESTS, type RideStatus } from "@/lib/mock-data";
+import { createSupabaseClient } from "@/lib/supabase";
 
-const STATUS_LABEL: Record<RideStatus, string> = {
+export const revalidate = 30;
+
+const STATUS_LABEL: Record<string, string> = {
   pending: "ממתין",
   approved: "מאושר",
   waiting_for_representitive: "ממתין לנציג",
@@ -10,7 +12,7 @@ const STATUS_LABEL: Record<RideStatus, string> = {
   rejected: "נדחה",
 };
 
-const STATUS_COLOR: Record<RideStatus, string> = {
+const STATUS_COLOR: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   approved: "bg-blue-100 text-blue-800",
   waiting_for_representitive: "bg-purple-100 text-purple-800",
@@ -19,11 +21,32 @@ const STATUS_COLOR: Record<RideStatus, string> = {
   rejected: "bg-red-100 text-red-800",
 };
 
-export default function DispatcherDashboard() {
-  const total = MOCK_RIDE_REQUESTS.length;
-  const pending = MOCK_RIDE_REQUESTS.filter((r) => r.status === "pending").length;
-  const inProgress = MOCK_RIDE_REQUESTS.filter((r) => r.status === "in_progress").length;
-  const completed = MOCK_RIDE_REQUESTS.filter((r) => r.status === "completed").length;
+type RideRequestRow = {
+  id: string;
+  status: string;
+  source_address: string;
+  destination_address: string;
+  requested_pickup_at: string | null;
+  caller_full_name: string | null;
+};
+
+export default async function DispatcherDashboard() {
+  const supabase = createSupabaseClient();
+
+  const [{ count: total }, { count: pending }, { count: inProgress }, { count: completed }, { data: recentRides }] =
+    await Promise.all([
+      supabase.from("ride_requests").select("*", { count: "exact", head: true }),
+      supabase.from("ride_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("ride_requests").select("*", { count: "exact", head: true }).eq("status", "in_progress"),
+      supabase.from("ride_requests").select("*", { count: "exact", head: true }).eq("status", "completed"),
+      supabase
+        .from("ride_requests")
+        .select("id, status, source_address, destination_address, requested_pickup_at, caller_full_name")
+        .order("requested_pickup_at", { ascending: false })
+        .limit(10),
+    ]);
+
+  const allRides = (recentRides ?? []) as RideRequestRow[];
 
   return (
     <div className="flex flex-col gap-8">
@@ -39,10 +62,10 @@ export default function DispatcherDashboard() {
 
       <section className="grid grid-cols-4 gap-4">
         {[
-          { label: "סה״כ בקשות", value: total },
-          { label: "ממתינות", value: pending },
-          { label: "בביצוע", value: inProgress },
-          { label: "הושלמו", value: completed },
+          { label: "סה״כ בקשות", value: total ?? 0 },
+          { label: "ממתינות", value: pending ?? 0 },
+          { label: "בביצוע", value: inProgress ?? 0 },
+          { label: "הושלמו", value: completed ?? 0 },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl border border-gray-200 bg-white p-5">
             <p className="text-sm text-gray-500">{stat.label}</p>
@@ -58,38 +81,48 @@ export default function DispatcherDashboard() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 text-right text-xs uppercase tracking-wide text-gray-400">
-              <th className="px-6 py-3">נוסע</th>
+              <th className="px-6 py-3">שם מתקשר</th>
               <th className="px-6 py-3">סטטוס</th>
-              <th className="px-6 py-3">נהג משובץ</th>
+              <th className="px-6 py-3">מוצא</th>
               <th className="px-6 py-3">זמן איסוף</th>
               <th className="px-6 py-3">פעולות</th>
             </tr>
           </thead>
           <tbody>
-            {MOCK_RIDE_REQUESTS.map((ride) => (
-              <tr key={ride.id} className="border-b border-gray-50 hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium text-gray-900">{ride.passenger.full_name}</td>
-                <td className="px-6 py-4">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[ride.status]}`}>
-                    {STATUS_LABEL[ride.status]}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-gray-600">{ride.assigned_driver_name ?? "—"}</td>
-                <td className="px-6 py-4 text-gray-600">
-                  {new Date(ride.requested_pickup_at).toLocaleString("he-IL", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </td>
-                <td className="px-6 py-4">
-                  <Link href={`/dispatcher/request/${ride.id}`} className="text-blue-600 hover:underline">
-                    פרטים
-                  </Link>
+            {allRides.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-10 text-center text-gray-400">
+                  אין בקשות נסיעה עדיין
                 </td>
               </tr>
-            ))}
+            ) : (
+              allRides.map((ride) => (
+                <tr key={ride.id} className="border-b border-gray-50 hover:bg-gray-50">
+                  <td className="px-6 py-4 font-medium text-gray-900">{ride.caller_full_name ?? "—"}</td>
+                  <td className="px-6 py-4">
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[ride.status] ?? "bg-gray-100 text-gray-700"}`}>
+                      {STATUS_LABEL[ride.status] ?? ride.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600 max-w-[180px] truncate">{ride.source_address}</td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {ride.requested_pickup_at
+                      ? new Date(ride.requested_pickup_at).toLocaleString("he-IL", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"}
+                  </td>
+                  <td className="px-6 py-4">
+                    <Link href={`/dispatcher/request/${ride.id}`} className="text-blue-600 hover:underline">
+                      פרטים
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </section>
