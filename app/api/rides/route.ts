@@ -19,10 +19,21 @@ export async function POST(request: Request) {
     representitive_user_id,
   } = body;
 
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isValidUuid = (uuid: string) => UUID_REGEX.test(uuid);
+
   if (!ride_request_id) return Response.json({ error: "ride_request_id is required" }, { status: 400 });
+  if (!isValidUuid(ride_request_id)) return Response.json({ error: "Invalid ride_request_id format" }, { status: 400 });
+  
   if (!driver_id) return Response.json({ error: "driver_id is required" }, { status: 400 });
+  if (!isValidUuid(driver_id)) return Response.json({ error: "Invalid driver_id format" }, { status: 400 });
+
   if (!ambulance_id) return Response.json({ error: "ambulance_id is required" }, { status: 400 });
+  if (!isValidUuid(ambulance_id)) return Response.json({ error: "Invalid ambulance_id format" }, { status: 400 });
+
   if (!assigned_by_user_id) return Response.json({ error: "assigned_by_user_id is required" }, { status: 400 });
+  if (!isValidUuid(assigned_by_user_id)) return Response.json({ error: "Invalid assigned_by_user_id format" }, { status: 400 });
+
 
   try {
     const created = await query(
