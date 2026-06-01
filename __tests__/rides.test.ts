@@ -81,7 +81,7 @@ describe("POST /api/rides", () => {
     expect((await res.json()).driver_id).toBe("22222222-2222-2222-2222-222222222222");
   });
 
-  it("returns 400 when ride_request_id is 66666666-6666-6666-6666-666666666666", async () => {
+  it("returns 400 when ride_request_id is missing", async () => {
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
       new Request("http://localhost/api/rides", {
@@ -94,7 +94,7 @@ describe("POST /api/rides", () => {
     expect((await res.json()).error).toBe("ride_request_id is required");
   });
 
-  it("returns 400 when driver_id is 66666666-6666-6666-6666-666666666666", async () => {
+  it("returns 400 when driver_id is missing", async () => {
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
       new Request("http://localhost/api/rides", {
@@ -107,7 +107,7 @@ describe("POST /api/rides", () => {
     expect((await res.json()).error).toBe("driver_id is required");
   });
 
-  it("returns 400 when ambulance_id is 66666666-6666-6666-6666-666666666666", async () => {
+  it("returns 400 when ambulance_id is missing", async () => {
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
       new Request("http://localhost/api/rides", {
@@ -120,7 +120,7 @@ describe("POST /api/rides", () => {
     expect((await res.json()).error).toBe("ambulance_id is required");
   });
 
-  it("returns 400 when assigned_by_user_id is 66666666-6666-6666-6666-666666666666", async () => {
+  it("returns 400 when assigned_by_user_id is missing", async () => {
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
       new Request("http://localhost/api/rides", {
@@ -358,7 +358,7 @@ describe("PATCH /api/rides/[id]/status", () => {
     expect((await res.json()).rejection_reason).toBe("Driver unavailable");
   });
 
-  it("returns 400 when status is 66666666-6666-6666-6666-666666666666", async () => {
+  it("returns 400 when status is missing", async () => {
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
       new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555/status", {
