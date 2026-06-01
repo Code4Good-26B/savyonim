@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseClient } from "@/lib/supabase";
+import { AutoRefresh } from "./AutoRefresh";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "ממתין",
@@ -44,6 +45,7 @@ export default async function RequestDetailPage(props: PageProps<"/dispatcher/re
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
+      <AutoRefresh />
       <div className="flex items-center gap-3">
         <Link href="/dispatcher/requests" className="text-sm text-blue-600 hover:underline">
           ← חזרה לרשימה

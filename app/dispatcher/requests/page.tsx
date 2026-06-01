@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createSupabaseClient } from "@/lib/supabase";
+import { type RideDriver, assignedDriver } from "./assigned-driver";
 
 export const revalidate = 30;
 
@@ -40,6 +41,7 @@ type RideRequestRow = {
   requested_pickup_at: string | null;
   caller_full_name: string | null;
   caller_phone: string | null;
+  rides: RideDriver[];
 };
 
 type ServiceZone = { id: string; name: string; region_code: string };
@@ -64,7 +66,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
     (async () => {
       let q = supabase
         .from("ride_requests")
-        .select("id, status, source_address, destination_address, requested_pickup_at, caller_full_name, caller_phone", { count: "exact" })
+        .select("id, status, source_address, destination_address, requested_pickup_at, caller_full_name, caller_phone, rides(status, drivers(users(full_name)))", { count: "exact" })
         .order("requested_pickup_at", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
       if (activeStatus) q = q.eq("status", activeStatus);
@@ -152,6 +154,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
               <th className="px-6 py-3">מוצא</th>
               <th className="px-6 py-3">יעד</th>
               <th className="px-6 py-3">סטטוס</th>
+              <th className="px-6 py-3">נהג משויך</th>
               <th className="px-6 py-3">זמן איסוף</th>
               <th className="px-6 py-3">פעולות</th>
             </tr>
@@ -159,7 +162,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
           <tbody>
             {rides.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-10 text-center text-gray-400">
+                <td colSpan={8} className="px-6 py-10 text-center text-gray-400">
                   אין בקשות נסיעה
                 </td>
               </tr>
@@ -175,6 +178,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
                       {STATUS_LABEL[ride.status] ?? ride.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-gray-600">{assignedDriver(ride.rides)}</td>
                   <td className="px-6 py-4 text-gray-600">
                     {ride.requested_pickup_at
                       ? new Date(ride.requested_pickup_at).toLocaleString("he-IL", {
