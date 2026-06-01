@@ -1,26 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import * as supabaseModule from "@/lib/supabase";
+import * as dbModule from "@/lib/db";
 
-vi.mock("@/lib/supabase");
+vi.mock("@/lib/db");
 
-function chain(result: object) {
-  const handler: ProxyHandler<object> = {
-    get(_, prop: string) {
-      if (prop === "then")
-        return (res: unknown, rej: unknown) =>
-          Promise.resolve(result).then(res as never, rej as never);
-      if (prop === "catch")
-        return (rej: unknown) => Promise.resolve(result).catch(rej as never);
-      return () => new Proxy({}, handler);
-    },
-  };
-  return new Proxy({}, handler);
-}
-
-function mockDB(result: { data?: unknown; error?: { message: string; code?: string } | null }) {
-  vi.mocked(supabaseModule.createSupabaseClient).mockReturnValue({
-    from: () => chain(result),
-  } as unknown as ReturnType<typeof supabaseModule.createSupabaseClient>);
+function mockDB(result: { data?: unknown; error?: { message: string; code?: string; constraint?: string } | null }) {
+  if (result.error) {
+    // Some tests don't explicitly provide constraint but provide it in message
+    if (result.error.code === "23505" && !result.error.constraint && result.error.message) {
+      if (result.error.message.includes("ux_rides_active_driver")) result.error.constraint = "ux_rides_active_driver";
+      if (result.error.message.includes("ux_rides_active_ambulance")) result.error.constraint = "ux_rides_active_ambulance";
+      if (result.error.message.includes("ux_rides_active_request")) result.error.constraint = "ux_rides_active_request";
+    }
+    vi.mocked(dbModule.query).mockRejectedValueOnce(result.error);
+  } else {
+    vi.mocked(dbModule.query).mockResolvedValueOnce({
+      rows: result.data ? [result.data] : [],
+      rowCount: result.data ? 1 : 0,
+      command: "",
+      oid: 0,
+      fields: [],
+    });
+  }
 }
 
 function mockStatusPatch({
@@ -30,13 +30,14 @@ function mockStatusPatch({
   current: { data?: unknown; error?: { message: string } | null };
   updated?: { data?: unknown; error?: { message: string } | null };
 }) {
-  const fromMock = vi.fn()
-    .mockReturnValueOnce(chain(current))
-    .mockReturnValueOnce(chain(updated ?? { data: null, error: null }));
-
-  vi.mocked(supabaseModule.createSupabaseClient).mockReturnValue({
-    from: fromMock,
-  } as unknown as ReturnType<typeof supabaseModule.createSupabaseClient>);
+  vi.mocked(dbModule.transaction).mockImplementationOnce(async (callback) => {
+    const fakeClient = {
+      query: vi.fn()
+        .mockResolvedValueOnce({ rows: current.data ? [current.data] : [] })
+        .mockResolvedValueOnce({ rows: updated?.data ? [updated.data] : [] })
+    };
+    return callback(fakeClient as any);
+  });
 }
 
 const BASE_RIDE = {
@@ -220,8 +221,8 @@ describe("GET /api/rides/[id]", () => {
     expect(await res.json()).toEqual(BASE_RIDE);
   });
 
-  it("returns 404 on DB error", async () => {
-    mockDB({ data: null, error: { message: "not found", code: "PGRST116" } });
+  it("returns 404 when ride not found", async () => {
+    mockDB({ data: null, error: null });
 
     const { GET } = await import("@/app/api/rides/[id]/route");
     const res = await GET(
