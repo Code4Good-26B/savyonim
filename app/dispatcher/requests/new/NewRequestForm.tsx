@@ -124,13 +124,19 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
 
   return (
     <div className="max-w-2xl flex flex-col gap-6">
-      <div>
-        <Link href="/dispatcher/requests" className="text-sm text-blue-600 hover:underline">
-          ← חזרה לרשימה
+      <div className="flex items-center justify-between">
+        <Link href="/dispatcher/requests" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          חזרה לרשימה
         </Link>
       </div>
 
-      <h1 className="text-2xl font-semibold text-gray-900">בקשת נסיעה חדשה</h1>
+      <div>
+        <h1 className="text-2xl font-semibold text-gray-900">בקשת נסיעה חדשה</h1>
+        <p className="mt-1 text-sm text-gray-500">מלא את כל השדות המסומנים ב-<span className="text-red-500">*</span></p>
+      </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
@@ -516,21 +522,29 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
           </div>
         )}
 
-        <div className="flex items-center gap-4">
+        <div className="rounded-xl border border-gray-200 bg-white px-6 py-4 flex items-center justify-between gap-4">
+          <p className="text-xs text-gray-400">
+            {valid ? "הטופס מוכן לשליחה" : "יש למלא את כל השדות הנדרשים לפני השליחה"}
+          </p>
           <button
             type="submit"
             disabled={!valid || submitting}
-            className={`rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-colors ${
+            className={`flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-colors shadow-sm ${
               valid && !submitting
                 ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-blue-600 opacity-50 cursor-not-allowed"
+                : "bg-blue-300 cursor-not-allowed"
             }`}
           >
-            {submitting ? "שולח..." : "שלח בקשה"}
+            {submitting ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                שולח...
+              </>
+            ) : "שלח בקשה"}
           </button>
-          {!valid && (
-            <p className="text-xs text-gray-400">יש למלא את כל השדות הנדרשים</p>
-          )}
         </div>
       </form>
     </div>

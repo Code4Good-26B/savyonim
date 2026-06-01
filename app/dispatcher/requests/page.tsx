@@ -66,7 +66,10 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
     (async () => {
       let q = supabase
         .from("ride_requests")
-        .select("id, status, source_address, destination_address, requested_pickup_at, caller_full_name, caller_phone, rides(status, drivers(users(full_name)))", { count: "exact" })
+        .select(
+          "id, status, source_address, destination_address, requested_pickup_at, caller_full_name, caller_phone, rides(status, drivers(users(full_name)))",
+          { count: "exact" },
+        )
         .order("requested_pickup_at", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
       if (activeStatus) q = q.eq("status", activeStatus);
@@ -83,103 +86,123 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">בקשות נסיעה</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">בקשות נסיעה</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {totalCount > 0 ? `${totalCount} בקשות סה״כ` : "אין בקשות עדיין"}
+          </p>
+        </div>
         <Link
           href="/dispatcher/requests/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
         >
-          + בקשת נסיעה חדשה
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          בקשה חדשה
         </Link>
       </div>
 
-      <div className="flex flex-wrap gap-4">
-        <div className="flex gap-2">
-          {STATUS_FILTERS.map((f) => (
-            <Link
-              key={f.value}
-              href={buildUrl({ status: f.value, zone: activeZone, page: "1" })}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                activeStatus === f.value
-                  ? "bg-blue-600 text-white"
-                  : "border border-gray-200 bg-white text-gray-600 hover:border-blue-300 hover:text-blue-600"
-              }`}
-            >
-              {f.label}
-            </Link>
-          ))}
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-6">
+        <div className="flex flex-col gap-1.5">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-400">סטטוס</p>
+          <div className="flex flex-wrap gap-1.5">
+            {STATUS_FILTERS.map((f) => (
+              <Link
+                key={f.value}
+                href={buildUrl({ status: f.value, zone: activeZone, page: "1" })}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  activeStatus === f.value
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "border border-gray-200 bg-white text-gray-600 hover:border-blue-300 hover:text-blue-600"
+                }`}
+              >
+                {f.label}
+              </Link>
+            ))}
+          </div>
         </div>
 
         {zones.length > 0 && (
-          <div className="flex gap-2">
-            <Link
-              href={buildUrl({ status: activeStatus, zone: "", page: "1" })}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                activeZone === ""
-                  ? "bg-slate-700 text-white"
-                  : "border border-gray-200 bg-white text-gray-600 hover:border-slate-400 hover:text-slate-700"
-              }`}
-            >
-              כל האזורים
-            </Link>
-            {zones.map((z) => (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">אזור</p>
+            <div className="flex flex-wrap gap-1.5">
               <Link
-                key={z.id}
-                href={buildUrl({ status: activeStatus, zone: z.id, page: "1" })}
-                className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                  activeZone === z.id
-                    ? "bg-slate-700 text-white"
+                href={buildUrl({ status: activeStatus, zone: "", page: "1" })}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  activeZone === ""
+                    ? "bg-slate-700 text-white shadow-sm"
                     : "border border-gray-200 bg-white text-gray-600 hover:border-slate-400 hover:text-slate-700"
                 }`}
               >
-                {z.name}
+                הכל
               </Link>
-            ))}
+              {zones.map((z) => (
+                <Link
+                  key={z.id}
+                  href={buildUrl({ status: activeStatus, zone: z.id, page: "1" })}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    activeZone === z.id
+                      ? "bg-slate-700 text-white shadow-sm"
+                      : "border border-gray-200 bg-white text-gray-600 hover:border-slate-400 hover:text-slate-700"
+                  }`}
+                >
+                  {z.name}
+                </Link>
+              ))}
+            </div>
           </div>
         )}
       </div>
 
-      {error ? (
+      {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           שגיאה בטעינת הבקשות: {error.message}
         </div>
-      ) : null}
+      )}
 
-      <div className="rounded-xl border border-gray-200 bg-white">
+      {/* Table */}
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 text-right text-xs uppercase tracking-wide text-gray-400">
-              <th className="px-6 py-3">שם מתקשר</th>
-              <th className="px-6 py-3">טלפון</th>
-              <th className="px-6 py-3">מוצא</th>
-              <th className="px-6 py-3">יעד</th>
-              <th className="px-6 py-3">סטטוס</th>
-              <th className="px-6 py-3">נהג משויך</th>
-              <th className="px-6 py-3">זמן איסוף</th>
-              <th className="px-6 py-3">פעולות</th>
+            <tr className="border-b border-gray-100 bg-gray-50 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <th className="px-6 py-3.5">שם מתקשר</th>
+              <th className="px-6 py-3.5">טלפון</th>
+              <th className="px-6 py-3.5">מוצא</th>
+              <th className="px-6 py-3.5">יעד</th>
+              <th className="px-6 py-3.5">סטטוס</th>
+              <th className="px-6 py-3.5">נהג משויך</th>
+              <th className="px-6 py-3.5">זמן איסוף</th>
+              <th className="px-6 py-3.5 sr-only">פעולות</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-50">
             {rides.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-10 text-center text-gray-400">
-                  אין בקשות נסיעה
+                <td colSpan={8} className="px-6 py-16 text-center">
+                  <p className="text-gray-400 text-sm">אין בקשות נסיעה התואמות את הסינון</p>
+                  <Link href="/dispatcher/requests/new" className="mt-2 inline-block text-xs text-blue-600 hover:underline">
+                    צור בקשה חדשה →
+                  </Link>
                 </td>
               </tr>
             ) : (
               rides.map((ride) => (
-                <tr key={ride.id} className="border-b border-gray-50 hover:bg-gray-50">
+                <tr key={ride.id} className="hover:bg-blue-50/30 transition-colors group">
                   <td className="px-6 py-4 font-medium text-gray-900">{ride.caller_full_name ?? "—"}</td>
-                  <td className="px-6 py-4 text-gray-600">{ride.caller_phone ?? "—"}</td>
-                  <td className="px-6 py-4 text-gray-600 max-w-[160px] truncate">{ride.source_address}</td>
-                  <td className="px-6 py-4 text-gray-600 max-w-[160px] truncate">{ride.destination_address}</td>
+                  <td className="px-6 py-4 text-gray-500 tabular-nums">{ride.caller_phone ?? "—"}</td>
+                  <td className="px-6 py-4 text-gray-500 max-w-[140px] truncate">{ride.source_address}</td>
+                  <td className="px-6 py-4 text-gray-500 max-w-[140px] truncate">{ride.destination_address}</td>
                   <td className="px-6 py-4">
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[ride.status] ?? "bg-gray-100 text-gray-700"}`}>
                       {STATUS_LABEL[ride.status] ?? ride.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{assignedDriver(ride.rides)}</td>
-                  <td className="px-6 py-4 text-gray-600">
+                  <td className="px-6 py-4 text-gray-500">{assignedDriver(ride.rides)}</td>
+                  <td className="px-6 py-4 text-gray-500 tabular-nums">
                     {ride.requested_pickup_at
                       ? new Date(ride.requested_pickup_at).toLocaleString("he-IL", {
                           day: "2-digit",
@@ -189,8 +212,11 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
                         })
                       : "—"}
                   </td>
-                  <td className="px-6 py-4">
-                    <Link href={`/dispatcher/request/${ride.id}`} className="text-blue-600 hover:underline">
+                  <td className="px-6 py-4 text-left">
+                    <Link
+                      href={`/dispatcher/request/${ride.id}`}
+                      className="rounded-md border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 opacity-0 group-hover:opacity-100 hover:border-blue-300 hover:text-blue-600 transition-all"
+                    >
                       פרטים
                     </Link>
                   </td>
@@ -201,7 +227,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
         </table>
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
+          <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 px-6 py-3">
             <p className="text-xs text-gray-400">
               {offset + 1}–{Math.min(offset + PAGE_SIZE, totalCount)} מתוך {totalCount}
             </p>
@@ -209,7 +235,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
               {page > 1 && (
                 <Link
                   href={buildUrl({ status: activeStatus, zone: activeZone, page: String(page - 1) })}
-                  className="rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+                  className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
                 >
                   ← הקודם
                 </Link>
@@ -217,7 +243,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
               {page < totalPages && (
                 <Link
                   href={buildUrl({ status: activeStatus, zone: activeZone, page: String(page + 1) })}
-                  className="rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+                  className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
                 >
                   הבא →
                 </Link>
