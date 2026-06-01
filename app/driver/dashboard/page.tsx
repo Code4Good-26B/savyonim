@@ -6,9 +6,65 @@ import { useDriverI18n } from "@/components/driver/DriverI18n";
 import { DriverHeader } from "@/components/driver/DriverHeader";
 import { DriverNotice } from "@/components/driver/DriverNotice";
 import { AssignedRideCard, OpenRideCard, RideHistoryCard } from "@/components/driver/RideCard";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { getDriverRides } from "@/lib/driver/api";
 import { getStoredDriverSession } from "@/lib/driver/session";
 import type { DriverApiError, DriverRidesResponse, DriverSession } from "@/lib/driver/types";
+
+function DashboardSection({
+  title,
+  children,
+  count,
+}: {
+  title: string;
+  children: React.ReactNode;
+  count?: number;
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold text-slate-950">{title}</h2>
+        {typeof count === "number" ? (
+          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
+            {count}
+          </span>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function SummaryMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <Card>
+      <CardContent className="py-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+        <p className="mt-2 text-3xl font-semibold text-slate-950">{value}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {[0, 1, 2, 3].map((item) => (
+        <Card key={item}>
+          <CardContent>
+            <div className="h-4 w-32 rounded bg-slate-200" />
+            <div className="mt-3 h-6 w-44 rounded bg-slate-200" />
+            <div className="mt-6 space-y-3">
+              <div className="h-4 rounded bg-slate-200" />
+              <div className="h-4 w-10/12 rounded bg-slate-200" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 export default function DriverDashboardPage() {
   const router = useRouter();
@@ -44,55 +100,66 @@ export default function DriverDashboardPage() {
   }, [load, router, session]);
 
   if (!session) {
-    return <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-700">{t("checkingSession")}</main>;
+    return <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-700">{t("checkingSession")}</main>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-100" dir={direction}>
+    <div className="min-h-screen bg-slate-50" dir={direction}>
       <DriverHeader session={session} />
-      <main className="mx-auto max-w-4xl space-y-6 px-4 py-6">
-        <section>
-          <h2 className="text-xl font-semibold text-slate-950">{t("currentWork")}</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            {t("currentWorkBody")}
-          </p>
+      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
+        <section className="rounded-lg border border-slate-200 bg-white px-5 py-5 shadow-sm shadow-slate-200/70">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{t("appName")}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-950">{t("currentWork")}</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{t("currentWorkBody")}</p>
+            </div>
+          </div>
         </section>
 
         {error ? (
           <DriverNotice title={t("couldNotLoadRides")} kind="error">
             {error}
-            <button
+            <Button
               type="button"
               onClick={() => void load(session)}
-              className="mt-3 block min-h-11 rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white"
+              variant="danger"
+              className="mt-3"
             >
               {t("retry")}
-            </button>
+            </Button>
           </DriverNotice>
         ) : null}
 
         {isLoading ? (
-          <DriverNotice title={t("loadingRides")}>{t("loadingRidesBody")}</DriverNotice>
+          <div className="space-y-4">
+            <DriverNotice title={t("loadingRides")}>{t("loadingRidesBody")}</DriverNotice>
+            <LoadingSkeleton />
+          </div>
         ) : null}
 
         {!isLoading && rides ? (
           <>
-            <section className="space-y-3">
-              <h2 className="text-lg font-semibold text-slate-950">{t("assignedToYou")}</h2>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <SummaryMetric label={t("assignedToYou")} value={rides.assignedRides.length} />
+              <SummaryMetric label={t("openRides")} value={rides.openRides.length} />
+              <SummaryMetric label={t("rideHistory")} value={rides.rideHistory.length} />
+            </div>
+
+            <DashboardSection title={t("assignedToYou")} count={rides.assignedRides.length}>
               {rides.assignedRides.length === 0 ? (
                 <DriverNotice title={t("noAssignedRides")}>{t("noAssignedRidesBody")}</DriverNotice>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 lg:grid-cols-2">
                   {rides.assignedRides.map((ride) => (
                     <AssignedRideCard key={ride.id} ride={ride} />
                   ))}
                 </div>
               )}
-            </section>
+            </DashboardSection>
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <section className="space-y-3">
-                <h2 className="text-lg font-semibold text-slate-950">{t("openRides")}</h2>
+              <DashboardSection title={t("openRides")} count={rides.openRides.length}>
                 {rides.openRides.length === 0 ? (
                   <DriverNotice title={t("noOpenRides")}>{t("noOpenRidesBody")}</DriverNotice>
                 ) : (
@@ -102,10 +169,9 @@ export default function DriverDashboardPage() {
                     ))}
                   </div>
                 )}
-              </section>
+              </DashboardSection>
 
-              <section className="space-y-3">
-                <h2 className="text-lg font-semibold text-slate-950">{t("rideHistory")}</h2>
+              <DashboardSection title={t("rideHistory")} count={rides.rideHistory.length}>
                 {rides.rideHistory.length === 0 ? (
                   <DriverNotice title={t("noRideHistory")} />
                 ) : (
@@ -115,7 +181,7 @@ export default function DriverDashboardPage() {
                     ))}
                   </div>
                 )}
-              </section>
+              </DashboardSection>
             </div>
           </>
         ) : null}

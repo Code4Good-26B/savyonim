@@ -1,0 +1,19 @@
+import type { ComponentPropsWithoutRef } from "react";
+import { cn } from "@/lib/utils";
+
+export function Card({ className, ...props }: ComponentPropsWithoutRef<"div">) {
+  return (
+    <div
+      className={cn("rounded-lg border border-slate-200 bg-white shadow-sm shadow-slate-200/70", className)}
+      {...props}
+    />
+  );
+}
+
+export function CardHeader({ className, ...props }: ComponentPropsWithoutRef<"div">) {
+  return <div className={cn("border-b border-slate-100 px-5 py-4", className)} {...props} />;
+}
+
+export function CardContent({ className, ...props }: ComponentPropsWithoutRef<"div">) {
+  return <div className={cn("px-5 py-4", className)} {...props} />;
+}

@@ -1,58 +1,51 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { LanguageSwitch, useDriverI18n } from "@/components/driver/DriverI18n";
+import { ButtonLink } from "@/components/ui/button";
 
 export default function DriverLandingPage() {
   const { direction, t } = useDriverI18n();
 
   return (
-    <div
-      className="min-h-screen bg-slate-50 bg-cover bg-center text-slate-950"
-      dir={direction}
-      style={{ backgroundImage: "url('/photo%20ambulans.jpeg')" }}
-    >
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-        <Link href="/" className="text-sm font-semibold text-slate-700 transition hover:text-slate-950">
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white" dir={direction}>
+      <Image src="/photo ambulans.jpeg" alt="" fill sizes="100vw" priority className="object-cover" />
+      <div className="absolute inset-0 bg-slate-950/70" />
+
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-5 sm:px-8">
+        <header className="flex items-center justify-between gap-3">
           <Image
             src="/savionim-logo.svg"
             alt={t("savionim")}
             width={178}
             height={212}
             priority
-            className="h-36 w-auto"
+            className="h-16 w-auto rounded-lg bg-white/95 p-2 shadow-lg sm:h-20"
           />
-        </Link>
-        <div className="flex items-center gap-3">
-          <Link href="/" className="rounded-md bg-white px-4 py-2 text-sm font-medium text-black shadow-sm transition hover:text-slate-700">
-            {t("backToHomepage")}
-          </Link>
-          <LanguageSwitch />
-        </div>
-      </header>
-
-      <main className="mx-auto flex w-full max-w-6xl flex-col items-center px-5 pb-10 pt-8 sm:px-8 lg:min-h-[calc(100vh-84px)] lg:justify-start">
-        <section>
-          <div>
-            <h1 className="mb-6 rounded-lg bg-white/90 px-6 py-3 text-center text-4xl font-bold text-slate-950 shadow-lg">Driver Login</h1>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/login"
-                className="inline-flex min-h-12 items-center justify-center rounded-md bg-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                {t("login")}
-              </Link>
-              <Link
-                href="/register-driver"
-                className="inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-blue-300 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                {t("signup")}
-              </Link>
-            </div>
+          <div className="flex items-center gap-2">
+            <ButtonLink href="/" variant="outline" size="md" className="border-white/25 bg-white/95 text-slate-900 hover:bg-white">
+              {t("backToHomepage")}
+            </ButtonLink>
+            <LanguageSwitch className="border-white/25 bg-white/95" />
           </div>
-        </section>
-      </main>
+        </header>
+
+        <main className="grid flex-1 items-center py-10">
+          <section className="max-w-2xl">
+            <p className="text-sm font-semibold uppercase tracking-wide text-blue-200">{t("landingEyebrow")}</p>
+            <h1 className="mt-3 text-4xl font-semibold text-white sm:text-6xl">{t("landingTitle")}</h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-slate-200">{t("landingBody")}</p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <ButtonLink href="/login" size="lg">
+                {t("login")}
+              </ButtonLink>
+              <ButtonLink href="/register-driver" variant="outline" size="lg" className="border-white/25 bg-white/95 text-slate-900 hover:bg-white">
+                {t("signup")}
+              </ButtonLink>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

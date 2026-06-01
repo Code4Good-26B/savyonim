@@ -3,12 +3,15 @@
 import { useState } from "react";
 import {
   acceptOpenRide,
-  updateRideOdometer,
+  completeRide as completeRideRequest,
   updateRideStatus,
 } from "@/lib/driver/api";
 import { useDriverI18n } from "@/components/driver/DriverI18n";
 import type { DriverApiError, DriverSession, RideSummary } from "@/lib/driver/types";
 import { DriverNotice } from "@/components/driver/DriverNotice";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { FieldLabel, Input, Textarea } from "@/components/ui/input";
 
 function ActionButton({
   children,
@@ -21,21 +24,17 @@ function ActionButton({
   onClick: () => void;
   tone?: "primary" | "danger" | "secondary";
 }) {
-  const classes = {
-    primary: "bg-blue-700 text-white disabled:bg-blue-300",
-    danger: "bg-red-700 text-white disabled:bg-red-300",
-    secondary: "bg-slate-950 text-white disabled:bg-slate-300",
-  };
-
   return (
-    <button
+    <Button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`min-h-12 w-full rounded-md px-4 py-3 text-sm font-semibold ${classes[tone]}`}
+      variant={tone}
+      size="lg"
+      className="w-full"
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -78,9 +77,11 @@ export function OpenRideActions({
 
 export function AssignedRideActions({
   ride,
+  session,
   onChanged,
 }: {
   ride: RideSummary;
+  session: DriverSession;
   onChanged: (ride: RideSummary) => void;
 }) {
   const { t } = useDriverI18n();
@@ -111,7 +112,7 @@ export function AssignedRideActions({
       setError(t("odometerStartNumber"));
       return;
     }
-    if (end !== undefined && Number.isNaN(end)) {
+    if (end === undefined || Number.isNaN(end)) {
       setError(t("odometerEndNumber"));
       return;
     }
@@ -121,12 +122,12 @@ export function AssignedRideActions({
     }
 
     await run(async () => {
-      await updateRideOdometer({
+      return completeRideRequest({
         rideId: ride.id,
         odometerStartKm: start,
         odometerEndKm: end,
+        session,
       });
-      return updateRideStatus({ rideId: ride.id, status: "completed" });
     });
   }
 
@@ -137,71 +138,75 @@ export function AssignedRideActions({
       {ride.status === "assigned" ? (
         <ActionButton
           disabled={isPending}
-          onClick={() => void run(() => updateRideStatus({ rideId: ride.id, status: "in_progress" }))}
+          onClick={() => void run(() => updateRideStatus({ rideId: ride.id, status: "in_progress", session }))}
         >
           {isPending ? t("startRidePending") : t("startRide")}
         </ActionButton>
       ) : null}
 
       {ride.status === "in_progress" ? (
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <h2 className="text-base font-semibold text-slate-950">{t("completeRide")}</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <label className="block text-sm font-medium text-slate-700">
-              {t("odometerStart")}
-              <input
-                value={odometerStart}
-                onChange={(event) => setOdometerStart(event.target.value)}
-                inputMode="decimal"
-                className="mt-1 min-h-11 w-full rounded-md border border-slate-300 px-3 text-slate-950"
-              />
-            </label>
-            <label className="block text-sm font-medium text-slate-700">
-              {t("odometerEnd")}
-              <input
-                value={odometerEnd}
-                onChange={(event) => setOdometerEnd(event.target.value)}
-                inputMode="decimal"
-                className="mt-1 min-h-11 w-full rounded-md border border-slate-300 px-3 text-slate-950"
-              />
-            </label>
-          </div>
-          <div className="mt-4">
-            <ActionButton disabled={isPending} onClick={() => void completeRide()} tone="secondary">
-              {isPending ? t("completeRidePending") : t("completeRide")}
-            </ActionButton>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <h2 className="text-base font-semibold text-slate-950">{t("completeRide")}</h2>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FieldLabel>
+                {t("odometerStart")}
+                <Input
+                  value={odometerStart}
+                  onChange={(event) => setOdometerStart(event.target.value)}
+                  inputMode="decimal"
+                />
+              </FieldLabel>
+              <FieldLabel>
+                {t("odometerEnd")}
+                <Input
+                  value={odometerEnd}
+                  onChange={(event) => setOdometerEnd(event.target.value)}
+                  inputMode="decimal"
+                />
+              </FieldLabel>
+            </div>
+            <div className="mt-4">
+              <ActionButton disabled={isPending} onClick={() => void completeRide()} tone="secondary">
+                {isPending ? t("completeRidePending") : t("completeRide")}
+              </ActionButton>
+            </div>
+          </CardContent>
+        </Card>
       ) : null}
 
       {ride.status === "assigned" || ride.status === "in_progress" ? (
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <label className="block text-sm font-medium text-slate-700">
-            {t("rejectCancelReason")}
-            <textarea
-              value={rejectionReason}
-              onChange={(event) => setRejectionReason(event.target.value)}
-              className="mt-1 min-h-24 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-950"
-            />
-          </label>
-          <div className="mt-4">
-            <ActionButton
-              disabled={isPending || rejectionReason.trim().length === 0}
-              onClick={() =>
-                void run(() =>
-                  updateRideStatus({
-                    rideId: ride.id,
-                    status: "rejected",
-                    rejectionReason,
-                  }),
-                )
-              }
-              tone="danger"
-            >
-              {isPending ? t("rejectRidePending") : t("rejectRide")}
-            </ActionButton>
-          </div>
-        </div>
+        <Card>
+          <CardContent>
+            <FieldLabel>
+              {t("rejectCancelReason")}
+              <Textarea
+                value={rejectionReason}
+                onChange={(event) => setRejectionReason(event.target.value)}
+              />
+            </FieldLabel>
+            <div className="mt-4">
+              <ActionButton
+                disabled={isPending || rejectionReason.trim().length === 0}
+                onClick={() =>
+                  void run(() =>
+                    updateRideStatus({
+                      rideId: ride.id,
+                      status: "rejected",
+                      rejectionReason,
+                      session,
+                    }),
+                  )
+                }
+                tone="danger"
+              >
+                {isPending ? t("rejectRidePending") : t("rejectRide")}
+              </ActionButton>
+            </div>
+          </CardContent>
+        </Card>
       ) : null}
     </div>
   );

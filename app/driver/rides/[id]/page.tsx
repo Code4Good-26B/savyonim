@@ -7,6 +7,8 @@ import { useDriverI18n } from "@/components/driver/DriverI18n";
 import { DriverHeader } from "@/components/driver/DriverHeader";
 import { DriverNotice } from "@/components/driver/DriverNotice";
 import { AssignedRideActions, OpenRideActions } from "@/components/driver/RideActions";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { getDriverRideDetail } from "@/lib/driver/api";
 import { getStoredDriverSession } from "@/lib/driver/session";
 import type {
@@ -17,21 +19,34 @@ import type {
   RideSummary,
 } from "@/lib/driver/types";
 
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="grid gap-1 border-b border-slate-100 py-3 last:border-b-0 sm:grid-cols-[10rem_1fr]">
+      <dt className="text-sm font-semibold text-slate-500">{label}</dt>
+      <dd className="text-sm leading-6 text-slate-900">{value}</dd>
+    </div>
+  );
+}
+
 function RideRequestDetails({ ride }: { ride: RideRequestSummary }) {
   const { t } = useDriverI18n();
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">{t("rideDetails")}</p>
-      <div className="mt-4 space-y-3 text-sm leading-6 text-slate-800">
-        <p><span className="font-semibold">{t("from")}</span> {ride.source_address}</p>
-        {ride.source_notes ? <p><span className="font-semibold">{t("pickupNotes")}</span> {ride.source_notes}</p> : null}
-        <p><span className="font-semibold">{t("to")}</span> {ride.destination_address}</p>
-        {ride.destination_notes ? <p><span className="font-semibold">{t("dropoffNotes")}</span> {ride.destination_notes}</p> : null}
-        <p><span className="font-semibold">{t("returnTrip")}</span> {ride.return_trip_required ? t("yes") : t("no")}</p>
-        <p><span className="font-semibold">{t("pickupTime")}</span> {ride.requested_pickup_at ?? t("notSet")}</p>
-      </div>
-    </section>
+    <Card>
+      <CardHeader>
+        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{t("rideDetails")}</p>
+      </CardHeader>
+      <CardContent>
+        <dl>
+          <DetailRow label={t("from")} value={ride.source_address} />
+          {ride.source_notes ? <DetailRow label={t("pickupNotes")} value={ride.source_notes} /> : null}
+          <DetailRow label={t("to")} value={ride.destination_address} />
+          {ride.destination_notes ? <DetailRow label={t("dropoffNotes")} value={ride.destination_notes} /> : null}
+          <DetailRow label={t("returnTrip")} value={ride.return_trip_required ? t("yes") : t("no")} />
+          <DetailRow label={t("pickupTime")} value={ride.requested_pickup_at ?? t("notSet")} />
+        </dl>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -70,17 +85,20 @@ export default function DriverRideDetailPage() {
   }, [load, router, session]);
 
   if (!session) {
-    return <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-700">{t("checkingSession")}</main>;
+    return <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-700">{t("checkingSession")}</main>;
   }
 
   const rideRequest =
     detail?.kind === "open" ? detail.rideRequest : detail?.kind === "assigned" ? detail.ride.ride_request : null;
 
   return (
-    <div className="min-h-screen bg-slate-100" dir={direction}>
+    <div className="min-h-screen bg-slate-50" dir={direction}>
       <DriverHeader session={session} />
-      <main className="mx-auto max-w-3xl space-y-5 px-4 py-6">
-        <Link href="/driver/dashboard" className="inline-flex min-h-11 items-center text-sm font-semibold text-blue-700">
+      <main className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-6">
+        <Link
+          href="/driver/dashboard"
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 transition hover:text-blue-800"
+        >
           {t("backToDashboard")}
         </Link>
 
@@ -89,13 +107,14 @@ export default function DriverRideDetailPage() {
         {error ? (
           <DriverNotice title={t("couldNotLoadRide")} kind="error">
             {error}
-            <button
+            <Button
               type="button"
               onClick={() => void load(session)}
-              className="mt-3 block min-h-11 rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white"
+              variant="danger"
+              className="mt-3"
             >
               {t("retry")}
-            </button>
+            </Button>
           </DriverNotice>
         ) : null}
 
@@ -115,6 +134,7 @@ export default function DriverRideDetailPage() {
         {detail?.kind === "assigned" ? (
           <AssignedRideActions
             ride={detail.ride}
+            session={session}
             onChanged={(ride: RideSummary) => {
               setDetail({ kind: "assigned", ride });
               void load(session);

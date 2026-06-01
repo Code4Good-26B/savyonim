@@ -1,5 +1,7 @@
-import Link from "next/link";
 import { translateStatus, useDriverI18n } from "@/components/driver/DriverI18n";
+import { Badge } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import type { RideRequestSummary, RideSummary } from "@/lib/driver/types";
 
 function formatPickup(value: string | null | undefined, language: "en" | "he", fallback: string) {
@@ -15,19 +17,47 @@ function StatusBadge({ status }: { status: string }) {
   const { t } = useDriverI18n();
   const tone =
     status === "in_progress"
-      ? "bg-blue-100 text-blue-800"
+      ? "blue"
       : status === "assigned"
-        ? "bg-amber-100 text-amber-800"
+        ? "amber"
         : status === "completed"
-          ? "bg-emerald-100 text-emerald-800"
+          ? "emerald"
           : status === "rejected"
-            ? "bg-red-100 text-red-800"
-        : "bg-slate-100 text-slate-700";
+            ? "red"
+            : "slate";
 
+  return <Badge tone={tone}>{translateStatus(status, t)}</Badge>;
+}
+
+function RouteLine({ label, value }: { label: string; value: string }) {
   return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${tone}`}>
-      {translateStatus(status, t)}
-    </span>
+    <p className="grid gap-1 text-sm leading-6 sm:grid-cols-[4rem_1fr]">
+      <span className="font-semibold text-slate-500">{label}</span>
+      <span className="min-w-0 text-slate-900">{value}</span>
+    </p>
+  );
+}
+
+function RideCardFrame({
+  children,
+  href,
+  action,
+  actionTone = "secondary",
+}: {
+  children: React.ReactNode;
+  href: string;
+  action: string;
+  actionTone?: "primary" | "secondary";
+}) {
+  return (
+    <Card className="h-full transition hover:border-blue-200 hover:shadow-md hover:shadow-slate-200/80">
+      <CardContent className="flex h-full flex-col">
+        <div className="flex-1">{children}</div>
+        <ButtonLink href={href} variant={actionTone} className="mt-5 w-full">
+          {action}
+        </ButtonLink>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -35,33 +65,21 @@ export function OpenRideCard({ ride }: { ride: RideRequestSummary }) {
   const { language, t } = useDriverI18n();
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <RideCardFrame href={`/driver/rides/${ride.id}`} action={t("viewDetails")}>
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-slate-500">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             {formatPickup(ride.requested_pickup_at, language, t("pickupTimeNotSet"))}
           </p>
-          <h3 className="mt-1 text-base font-semibold text-slate-950">{t("openRide")}</h3>
+          <h3 className="mt-1 text-lg font-semibold text-slate-950">{t("openRide")}</h3>
         </div>
         <StatusBadge status={ride.status} />
       </div>
-      <div className="mt-4 space-y-3 text-sm">
-        <p>
-          <span className="font-semibold text-slate-700">{t("from")}</span>{" "}
-          <span className="text-slate-900">{ride.source_address}</span>
-        </p>
-        <p>
-          <span className="font-semibold text-slate-700">{t("to")}</span>{" "}
-          <span className="text-slate-900">{ride.destination_address}</span>
-        </p>
+      <div className="mt-5 space-y-3">
+        <RouteLine label={t("from")} value={ride.source_address} />
+        <RouteLine label={t("to")} value={ride.destination_address} />
       </div>
-      <Link
-        href={`/driver/rides/${ride.id}`}
-        className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white"
-      >
-        {t("viewDetails")}
-      </Link>
-    </article>
+    </RideCardFrame>
   );
 }
 
@@ -70,33 +88,21 @@ export function AssignedRideCard({ ride }: { ride: RideSummary }) {
   const request = ride.ride_request;
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <RideCardFrame href={`/driver/rides/${ride.id}`} action={t("continueRide")} actionTone="primary">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-slate-500">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             {formatPickup(request?.requested_pickup_at, language, t("pickupTimeNotSet"))}
           </p>
-          <h3 className="mt-1 text-base font-semibold text-slate-950">{t("yourRide")}</h3>
+          <h3 className="mt-1 text-lg font-semibold text-slate-950">{t("yourRide")}</h3>
         </div>
         <StatusBadge status={ride.status} />
       </div>
-      <div className="mt-4 space-y-3 text-sm">
-        <p>
-          <span className="font-semibold text-slate-700">{t("from")}</span>{" "}
-          <span className="text-slate-900">{request?.source_address ?? t("sourceUnavailable")}</span>
-        </p>
-        <p>
-          <span className="font-semibold text-slate-700">{t("to")}</span>{" "}
-          <span className="text-slate-900">{request?.destination_address ?? t("destinationUnavailable")}</span>
-        </p>
+      <div className="mt-5 space-y-3">
+        <RouteLine label={t("from")} value={request?.source_address ?? t("sourceUnavailable")} />
+        <RouteLine label={t("to")} value={request?.destination_address ?? t("destinationUnavailable")} />
       </div>
-      <Link
-        href={`/driver/rides/${ride.id}`}
-        className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white"
-      >
-        {t("continueRide")}
-      </Link>
-    </article>
+    </RideCardFrame>
   );
 }
 
@@ -106,32 +112,20 @@ export function RideHistoryCard({ ride }: { ride: RideSummary }) {
   const historyDate = ride.completed_at ?? ride.rejected_at ?? request?.requested_pickup_at ?? ride.assigned_at;
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <RideCardFrame href={`/driver/rides/${ride.id}`} action={t("viewDetails")}>
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-slate-500">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             {formatPickup(historyDate, language, t("pickupTimeNotSet"))}
           </p>
-          <h3 className="mt-1 text-base font-semibold text-slate-950">{t("pastRide")}</h3>
+          <h3 className="mt-1 text-lg font-semibold text-slate-950">{t("pastRide")}</h3>
         </div>
         <StatusBadge status={ride.status} />
       </div>
-      <div className="mt-4 space-y-3 text-sm">
-        <p>
-          <span className="font-semibold text-slate-700">{t("from")}</span>{" "}
-          <span className="text-slate-900">{request?.source_address ?? t("sourceUnavailable")}</span>
-        </p>
-        <p>
-          <span className="font-semibold text-slate-700">{t("to")}</span>{" "}
-          <span className="text-slate-900">{request?.destination_address ?? t("destinationUnavailable")}</span>
-        </p>
+      <div className="mt-5 space-y-3">
+        <RouteLine label={t("from")} value={request?.source_address ?? t("sourceUnavailable")} />
+        <RouteLine label={t("to")} value={request?.destination_address ?? t("destinationUnavailable")} />
       </div>
-      <Link
-        href={`/driver/rides/${ride.id}`}
-        className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white"
-      >
-        {t("viewDetails")}
-      </Link>
-    </article>
+    </RideCardFrame>
   );
 }

@@ -1,4 +1,4 @@
-import { query } from "@/lib/db";
+import { transaction } from "@/lib/db";
 import { requireBearerAuth } from "@/lib/api-auth";
 
 const RIDE_FIELDS =
@@ -13,11 +13,11 @@ export async function POST(request: Request) {
   const body = await request.json();
   const {
     ride_request_id,
-    driver_id,
     ambulance_id,
-    assigned_by_user_id,
     representitive_user_id,
   } = body;
+  const driver_id = auth.kind === "driver" ? auth.driver.driverId : body.driver_id;
+  const assigned_by_user_id = auth.kind === "driver" ? auth.driver.sub : body.assigned_by_user_id;
 
   if (!ride_request_id) return Response.json({ error: "ride_request_id is required" }, { status: 400 });
   if (!driver_id) return Response.json({ error: "driver_id is required" }, { status: 400 });
@@ -25,22 +25,46 @@ export async function POST(request: Request) {
   if (!assigned_by_user_id) return Response.json({ error: "assigned_by_user_id is required" }, { status: 400 });
 
   try {
-    const created = await query(
-      `
-        insert into public.rides (
-          ride_request_id,
-          driver_id,
-          ambulance_id,
-          assigned_by_user_id,
-          representitive_user_id
-        )
-        values ($1, $2, $3, $4, $5)
-        returning ${RIDE_FIELDS}
-      `,
-      [ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representitive_user_id],
-    );
+    const created = await transaction(async (client) => {
+      const requestResult = await client.query<{ status: string }>(
+        `
+          select status
+          from public.ride_requests
+          where id = $1::uuid
+          for update
+        `,
+        [ride_request_id],
+      );
 
-    return Response.json(created.rows[0], { status: 201 });
+      const rideRequest = requestResult.rows[0];
+      if (!rideRequest) return { error: "Ride request not found", status: 404 } as const;
+      if (rideRequest.status !== "approved") {
+        return { error: "Ride request is no longer open for assignment", status: 409 } as const;
+      }
+
+      const result = await client.query(
+        `
+          insert into public.rides (
+            ride_request_id,
+            driver_id,
+            ambulance_id,
+            assigned_by_user_id,
+            representitive_user_id
+          )
+          values ($1, $2, $3, $4, $5)
+          returning ${RIDE_FIELDS}
+        `,
+        [ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representitive_user_id],
+      );
+
+      return { ride: result.rows[0] } as const;
+    });
+
+    if ("error" in created) {
+      return Response.json({ error: created.error }, { status: created.status });
+    }
+
+    return Response.json(created.ride, { status: 201 });
   } catch (error) {
     const pgError = error as { code?: string; constraint?: string; message?: string };
     if (pgError.code === "23505") {

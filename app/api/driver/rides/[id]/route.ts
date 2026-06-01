@@ -1,4 +1,5 @@
 import { query } from "@/lib/db";
+import { requireDriverAuth } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -50,14 +51,13 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
-  const { searchParams } = new URL(request.url);
-  const driverId = searchParams.get("driverId");
-  const serviceZoneId = searchParams.get("serviceZoneId");
-
-  if (!driverId) {
-    return Response.json({ error: "driverId is required" }, { status: 400 });
+  const auth = requireDriverAuth(request);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: auth.status });
   }
+
+  const { id } = await params;
+  const driverId = auth.driver.driverId;
 
   const ride = await query<RideRow>(
     `
@@ -81,10 +81,14 @@ export async function GET(
       from public.ride_requests
       where id = $1::uuid
         and status = 'approved'
-        and ($2::uuid is null or service_zone_id = $2::uuid)
+        and (
+          select d.service_zone_id is null or ride_requests.service_zone_id = d.service_zone_id
+          from public.drivers d
+          where d.id = $2::uuid
+        )
       limit 1
     `,
-    [id, serviceZoneId],
+    [id, driverId],
   );
 
   if (!rideRequest.rows[0]) {

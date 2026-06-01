@@ -1,5 +1,6 @@
 import { describe, it, expect, afterAll, beforeAll } from "vitest";
 import { POST } from "@/app/api/rides/route";
+import { signDriverToken } from "@/lib/auth/local-auth";
 import { createAuthenticatedRequest, getAuthenticatedSupabase, signInSeedUser } from "./helpers";
 
 // Synthetic and Seeded IDs
@@ -7,12 +8,12 @@ const TEST_RIDE_REQUEST_ID = "99999999-9999-9999-9999-999999999999";
 const SEED_PASSENGER_ID = "55555555-0000-0000-0000-000000000001"; // Miriam Katz
 
 const SEED_DRIVER_1 = "33333333-0000-0000-0000-000000000001"; // Avi Cohen
+const SEED_DRIVER_USER_1 = "22222222-0000-0000-0000-000000000001";
 const SEED_AMBULANCE_1 = "44444444-0000-0000-0000-000000000001";
 
 const SEED_DRIVER_2 = "33333333-0000-0000-0000-000000000002"; // Noa Levi
+const SEED_DRIVER_USER_2 = "22222222-0000-0000-0000-000000000002";
 const SEED_AMBULANCE_2 = "44444444-0000-0000-0000-000000000002";
-
-const SEED_ADMIN_USER = "22222222-0000-0000-0000-000000000010"; // System Admin
 
 describe("Rides Race Condition Integration Tests", () => {
   let adminToken: string;
@@ -35,7 +36,7 @@ describe("Rides Race Condition Integration Tests", () => {
     const { error: reqError } = await supabase.from("ride_requests").insert({
       id: TEST_RIDE_REQUEST_ID,
       passenger_id: SEED_PASSENGER_ID,
-      status: "pending",
+      status: "approved",
       source_address: "123 Integration Test St",
       destination_address: "456 Integration Test Rd",
     });
@@ -45,23 +46,32 @@ describe("Rides Race Condition Integration Tests", () => {
     }
 
     // 2. Build the concurrent POST requests
-    const req1 = createAuthenticatedRequest("http://localhost/api/rides", adminToken, {
+    const driverToken1 = signDriverToken({
+      sub: SEED_DRIVER_USER_1,
+      driverId: SEED_DRIVER_1,
+      email: "avi.cohen@savionim.test",
+      role: "driver",
+    }).token;
+    const driverToken2 = signDriverToken({
+      sub: SEED_DRIVER_USER_2,
+      driverId: SEED_DRIVER_2,
+      email: "noa.levi@savionim.test",
+      role: "driver",
+    }).token;
+
+    const req1 = createAuthenticatedRequest("http://localhost/api/rides", driverToken1, {
       method: "POST",
       body: JSON.stringify({
         ride_request_id: TEST_RIDE_REQUEST_ID,
-        driver_id: SEED_DRIVER_1,
         ambulance_id: SEED_AMBULANCE_1,
-        assigned_by_user_id: SEED_ADMIN_USER,
       }),
     });
 
-    const req2 = createAuthenticatedRequest("http://localhost/api/rides", adminToken, {
+    const req2 = createAuthenticatedRequest("http://localhost/api/rides", driverToken2, {
       method: "POST",
       body: JSON.stringify({
         ride_request_id: TEST_RIDE_REQUEST_ID,
-        driver_id: SEED_DRIVER_2,
         ambulance_id: SEED_AMBULANCE_2,
-        assigned_by_user_id: SEED_ADMIN_USER,
       }),
     });
 

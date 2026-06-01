@@ -10,10 +10,11 @@ import type {
 type JsonBody = Record<string, unknown>;
 
 export function userMessageForStatus(status: number, fallback: string): string {
+  if (status === 401) return "Your session expired. Log in again to continue.";
+  if (status === 403) return "You do not have permission to perform this driver action.";
   if (status === 409) return "This ride changed while you were working. Refresh and try again.";
   if (status === 404) return "This ride could not be found. It may have been removed or reassigned.";
-  if (status === 422) return "This ride cannot move to that status right now. Refresh to see the latest state.";
-  if (status === 403) return "This action is blocked locally. Set BLOCK_API_WRITES=false when testing write actions.";
+  if (status === 422) return fallback || "Check the odometer and ride status, then try again.";
   if (status >= 500) return "The server had a problem. Wait a moment and try again.";
   return fallback || "Something went wrong. Try again.";
 }
@@ -35,19 +36,33 @@ async function readError(response: Response): Promise<DriverApiError> {
 }
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch {
+    throw {
+      status: 0,
+      title: "Network error",
+      detail: "Network connection failed. Check your connection and try again.",
+    } satisfies DriverApiError;
+  }
 
   if (!response.ok) {
     throw await readError(response);
   }
 
   return (await response.json()) as T;
+}
+
+function driverAuthHeaders(session: DriverSession): HeadersInit {
+  if (!session.token) return {};
+  return { Authorization: `Bearer ${session.token}` };
 }
 
 export async function loginDriver(email: string, password: string): Promise<DriverSession> {
@@ -71,35 +86,29 @@ export async function registerDriver(input: {
 }
 
 export async function getDriverRides(session: DriverSession): Promise<DriverRidesResponse> {
-  const params = new URLSearchParams({
-    driverId: session.driverId,
+  return requestJson<DriverRidesResponse>("/api/driver/rides", {
+    headers: driverAuthHeaders(session),
   });
-
-  if (session.serviceZoneId) params.set("serviceZoneId", session.serviceZoneId);
-
-  return requestJson<DriverRidesResponse>(`/api/driver/rides?${params.toString()}`);
 }
 
 export async function getDriverRideDetail(
   id: string,
   session: DriverSession,
 ): Promise<DriverRideDetail> {
-  const params = new URLSearchParams({
-    driverId: session.driverId,
+  return requestJson<DriverRideDetail>(`/api/driver/rides/${id}`, {
+    headers: driverAuthHeaders(session),
   });
-
-  if (session.serviceZoneId) params.set("serviceZoneId", session.serviceZoneId);
-
-  return requestJson<DriverRideDetail>(`/api/driver/rides/${id}?${params.toString()}`);
 }
 
-async function getAvailableAmbulanceId(serviceZoneId: string | null): Promise<string> {
+async function getAvailableAmbulanceId(session: DriverSession): Promise<string> {
   const availability = await requestJson<{
     ambulances: Array<{ id: string; service_zone_id: string | null }>;
-  }>("/api/availability");
+  }>("/api/availability", {
+    headers: driverAuthHeaders(session),
+  });
 
   const zoneMatch = availability.ambulances.find(
-    (ambulance) => serviceZoneId && ambulance.service_zone_id === serviceZoneId,
+    (ambulance) => session.serviceZoneId && ambulance.service_zone_id === session.serviceZoneId,
   );
   const fallback = availability.ambulances[0];
   const selected = zoneMatch ?? fallback;
@@ -119,15 +128,14 @@ export async function acceptOpenRide(input: {
   rideRequestId: string;
   session: DriverSession;
 }): Promise<RideSummary> {
-  const ambulanceId = await getAvailableAmbulanceId(input.session.serviceZoneId);
+  const ambulanceId = await getAvailableAmbulanceId(input.session);
 
   return requestJson<RideSummary>("/api/rides", {
     method: "POST",
+    headers: driverAuthHeaders(input.session),
     body: JSON.stringify({
       ride_request_id: input.rideRequestId,
-      driver_id: input.session.driverId,
       ambulance_id: ambulanceId,
-      assigned_by_user_id: input.session.userId,
     }),
   });
 }
@@ -136,12 +144,14 @@ export async function updateRideStatus(input: {
   rideId: string;
   status: "in_progress" | "completed" | "rejected";
   rejectionReason?: string;
+  session: DriverSession;
 }): Promise<RideSummary> {
   const body: JsonBody = { status: input.status };
   if (input.rejectionReason) body.rejection_reason = input.rejectionReason;
 
   return requestJson<RideSummary>(`/api/rides/${input.rideId}/status`, {
     method: "PATCH",
+    headers: driverAuthHeaders(input.session),
     body: JSON.stringify(body),
   });
 }
@@ -150,10 +160,29 @@ export async function updateRideOdometer(input: {
   rideId: string;
   odometerStartKm?: number;
   odometerEndKm?: number;
+  session: DriverSession;
 }): Promise<RideSummary> {
   return requestJson<RideSummary>(`/api/rides/${input.rideId}`, {
     method: "PATCH",
+    headers: driverAuthHeaders(input.session),
     body: JSON.stringify({
+      odometer_start_km: input.odometerStartKm,
+      odometer_end_km: input.odometerEndKm,
+    }),
+  });
+}
+
+export async function completeRide(input: {
+  rideId: string;
+  odometerStartKm?: number;
+  odometerEndKm: number;
+  session: DriverSession;
+}): Promise<RideSummary> {
+  return requestJson<RideSummary>(`/api/rides/${input.rideId}/status`, {
+    method: "PATCH",
+    headers: driverAuthHeaders(input.session),
+    body: JSON.stringify({
+      status: "completed",
       odometer_start_km: input.odometerStartKm,
       odometer_end_km: input.odometerEndKm,
     }),
