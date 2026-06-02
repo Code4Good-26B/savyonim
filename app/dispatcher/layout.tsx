@@ -1,5 +1,10 @@
 import Link from "next/link";
 
+// All dispatcher pages read live data via the Supabase service-role client,
+// which only has its env vars at runtime. Force dynamic rendering for the
+// whole segment so Next never tries to prerender these pages at build time.
+export const dynamic = "force-dynamic";
+
 export default function DispatcherLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-gray-50">

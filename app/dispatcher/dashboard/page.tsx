@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { createSupabaseClient } from "@/lib/supabase";
 
-export const dynamic = "force-dynamic";
-
 const STATUS_LABEL: Record<string, string> = {
   pending: "ממתין",
   approved: "מאושר",

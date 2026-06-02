@@ -2,8 +2,6 @@ import Link from "next/link";
 import { createSupabaseClient } from "@/lib/supabase";
 import { type RideDriver, assignedDriver } from "./assigned-driver";
 
-export const dynamic = "force-dynamic";
-
 const PAGE_SIZE = 20;
 
 const STATUS_LABEL: Record<string, string> = {
