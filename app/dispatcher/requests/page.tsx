@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createSupabaseClient } from "@/lib/supabase";
 import { type RideDriver, assignedDriver } from "./assigned-driver";
 
-export const revalidate = 30;
+export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
 
