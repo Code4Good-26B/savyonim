@@ -20,22 +20,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const ride = await query<{
-    id: string;
-    ride_request_id: string;
-    driver_id: string;
-    ambulance_id: string;
-    assigned_by_user_id: string | null;
-    representitive_user_id: string | null;
-    status: string;
-    assigned_at: string | null;
-    in_progress_at: string | null;
-    completed_at: string | null;
-    rejected_at: string | null;
-    rejection_reason: string | null;
-    odometer_start_km: string | null;
-    odometer_end_km: string | null;
-  }>(
+  const ride = await query(
     `
       select ${RIDE_FIELDS}
       from public.rides
@@ -62,6 +47,12 @@ export async function PATCH(
   }
 
   const { id } = await params;
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isValidUuid = (uuid: string) => UUID_REGEX.test(uuid);
+
+  if (!isValidUuid(id)) {
+    return Response.json({ error: "Invalid ID format" }, { status: 400 });
+  }
   const body = await request.json();
   const { odometer_start_km, odometer_end_km } = body;
 

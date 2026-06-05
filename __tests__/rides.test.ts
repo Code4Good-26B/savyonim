@@ -1,26 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import * as supabaseModule from "@/lib/supabase";
+import * as dbModule from "@/lib/db";
 
-vi.mock("@/lib/supabase");
+vi.mock("@/lib/db");
 
-function chain(result: object) {
-  const handler: ProxyHandler<object> = {
-    get(_, prop: string) {
-      if (prop === "then")
-        return (res: unknown, rej: unknown) =>
-          Promise.resolve(result).then(res as never, rej as never);
-      if (prop === "catch")
-        return (rej: unknown) => Promise.resolve(result).catch(rej as never);
-      return () => new Proxy({}, handler);
-    },
-  };
-  return new Proxy({}, handler);
-}
-
-function mockDB(result: { data?: unknown; error?: { message: string; code?: string } | null }) {
-  vi.mocked(supabaseModule.createSupabaseClient).mockReturnValue({
-    from: () => chain(result),
-  } as unknown as ReturnType<typeof supabaseModule.createSupabaseClient>);
+function mockDB(result: { data?: unknown; error?: { message: string; code?: string; constraint?: string } | null }) {
+  if (result.error) {
+    // Some tests don't explicitly provide constraint but provide it in message
+    if (result.error.code === "23505" && !result.error.constraint && result.error.message) {
+      if (result.error.message.includes("ux_rides_active_driver")) result.error.constraint = "ux_rides_active_driver";
+      if (result.error.message.includes("ux_rides_active_ambulance")) result.error.constraint = "ux_rides_active_ambulance";
+      if (result.error.message.includes("ux_rides_active_request")) result.error.constraint = "ux_rides_active_request";
+    }
+    vi.mocked(dbModule.query).mockRejectedValueOnce(result.error);
+  } else {
+    vi.mocked(dbModule.query).mockResolvedValueOnce({
+      rows: result.data ? [result.data] : [],
+      rowCount: result.data ? 1 : 0,
+      command: "",
+      oid: 0,
+      fields: [],
+    });
+  }
 }
 
 function mockStatusPatch({
@@ -30,21 +30,22 @@ function mockStatusPatch({
   current: { data?: unknown; error?: { message: string } | null };
   updated?: { data?: unknown; error?: { message: string } | null };
 }) {
-  const fromMock = vi.fn()
-    .mockReturnValueOnce(chain(current))
-    .mockReturnValueOnce(chain(updated ?? { data: null, error: null }));
-
-  vi.mocked(supabaseModule.createSupabaseClient).mockReturnValue({
-    from: fromMock,
-  } as unknown as ReturnType<typeof supabaseModule.createSupabaseClient>);
+  vi.mocked(dbModule.transaction).mockImplementationOnce(async (callback) => {
+    const fakeClient = {
+      query: vi.fn()
+        .mockResolvedValueOnce({ rows: current.data ? [current.data] : [] })
+        .mockResolvedValueOnce({ rows: updated?.data ? [updated.data] : [] })
+    };
+    return callback(fakeClient as any);
+  });
 }
 
 const BASE_RIDE = {
-  id: "ride1",
-  ride_request_id: "rr1",
-  driver_id: "d1",
-  ambulance_id: "a1",
-  assigned_by_user_id: "u1",
+  id: "55555555-5555-5555-5555-555555555555",
+  ride_request_id: "11111111-1111-1111-1111-111111111111",
+  driver_id: "22222222-2222-2222-2222-222222222222",
+  ambulance_id: "33333333-3333-3333-3333-333333333333",
+  assigned_by_user_id: "44444444-4444-4444-4444-444444444444",
   representitive_user_id: null,
   status: "assigned",
   assigned_at: "2026-05-07T10:00:00.000Z",
@@ -55,6 +56,7 @@ const BASE_RIDE = {
   odometer_start_km: null,
   odometer_end_km: null,
 };
+
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -68,24 +70,24 @@ describe("POST /api/rides", () => {
       new Request("http://localhost/api/rides", {
         method: "POST",
         body: JSON.stringify({
-          ride_request_id: "rr1",
-          driver_id: "d1",
-          ambulance_id: "a1",
-          assigned_by_user_id: "u1",
+          ride_request_id: "11111111-1111-1111-1111-111111111111",
+          driver_id: "22222222-2222-2222-2222-222222222222",
+          ambulance_id: "33333333-3333-3333-3333-333333333333",
+          assigned_by_user_id: "44444444-4444-4444-4444-444444444444",
         }),
       })
     );
 
     expect(res.status).toBe(201);
-    expect((await res.json()).driver_id).toBe("d1");
+    expect((await res.json()).driver_id).toBe("22222222-2222-2222-2222-222222222222");
   });
 
-  it("returns 400 when ride_request_id is missing", async () => {
+  it("returns 400 when ride_request_id is 66666666-6666-6666-6666-666666666666", async () => {
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
       new Request("http://localhost/api/rides", {
         method: "POST",
-        body: JSON.stringify({ driver_id: "d1", ambulance_id: "a1", assigned_by_user_id: "u1" }),
+        body: JSON.stringify({ driver_id: "22222222-2222-2222-2222-222222222222", ambulance_id: "33333333-3333-3333-3333-333333333333", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
       })
     );
 
@@ -93,12 +95,12 @@ describe("POST /api/rides", () => {
     expect((await res.json()).error).toBe("ride_request_id is required");
   });
 
-  it("returns 400 when driver_id is missing", async () => {
+  it("returns 400 when driver_id is 66666666-6666-6666-6666-666666666666", async () => {
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
       new Request("http://localhost/api/rides", {
         method: "POST",
-        body: JSON.stringify({ ride_request_id: "rr1", ambulance_id: "a1", assigned_by_user_id: "u1" }),
+        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", ambulance_id: "33333333-3333-3333-3333-333333333333", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
       })
     );
 
@@ -106,12 +108,12 @@ describe("POST /api/rides", () => {
     expect((await res.json()).error).toBe("driver_id is required");
   });
 
-  it("returns 400 when ambulance_id is missing", async () => {
+  it("returns 400 when ambulance_id is 66666666-6666-6666-6666-666666666666", async () => {
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
       new Request("http://localhost/api/rides", {
         method: "POST",
-        body: JSON.stringify({ ride_request_id: "rr1", driver_id: "d1", assigned_by_user_id: "u1" }),
+        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", driver_id: "22222222-2222-2222-2222-222222222222", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
       })
     );
 
@@ -119,12 +121,12 @@ describe("POST /api/rides", () => {
     expect((await res.json()).error).toBe("ambulance_id is required");
   });
 
-  it("returns 400 when assigned_by_user_id is missing", async () => {
+  it("returns 400 when assigned_by_user_id is 66666666-6666-6666-6666-666666666666", async () => {
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
       new Request("http://localhost/api/rides", {
         method: "POST",
-        body: JSON.stringify({ ride_request_id: "rr1", driver_id: "d1", ambulance_id: "a1" }),
+        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", driver_id: "22222222-2222-2222-2222-222222222222", ambulance_id: "33333333-3333-3333-3333-333333333333" }),
       })
     );
 
@@ -144,7 +146,7 @@ describe("POST /api/rides", () => {
     const res = await POST(
       new Request("http://localhost/api/rides", {
         method: "POST",
-        body: JSON.stringify({ ride_request_id: "rr1", driver_id: "d1", ambulance_id: "a1", assigned_by_user_id: "u1" }),
+        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", driver_id: "22222222-2222-2222-2222-222222222222", ambulance_id: "33333333-3333-3333-3333-333333333333", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
       })
     );
 
@@ -162,7 +164,7 @@ describe("POST /api/rides", () => {
     const res = await POST(
       new Request("http://localhost/api/rides", {
         method: "POST",
-        body: JSON.stringify({ ride_request_id: "rr1", driver_id: "d1", ambulance_id: "a1", assigned_by_user_id: "u1" }),
+        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", driver_id: "22222222-2222-2222-2222-222222222222", ambulance_id: "33333333-3333-3333-3333-333333333333", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
       })
     );
 
@@ -180,7 +182,7 @@ describe("POST /api/rides", () => {
     const res = await POST(
       new Request("http://localhost/api/rides", {
         method: "POST",
-        body: JSON.stringify({ ride_request_id: "rr1", driver_id: "d1", ambulance_id: "a1", assigned_by_user_id: "u1" }),
+        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", driver_id: "22222222-2222-2222-2222-222222222222", ambulance_id: "33333333-3333-3333-3333-333333333333", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
       })
     );
 
@@ -195,7 +197,7 @@ describe("POST /api/rides", () => {
     const res = await POST(
       new Request("http://localhost/api/rides", {
         method: "POST",
-        body: JSON.stringify({ ride_request_id: "bad", driver_id: "d1", ambulance_id: "a1", assigned_by_user_id: "u1" }),
+        body: JSON.stringify({ ride_request_id: "77777777-7777-7777-7777-777777777777", driver_id: "22222222-2222-2222-2222-222222222222", ambulance_id: "33333333-3333-3333-3333-333333333333", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
       })
     );
 
@@ -211,21 +213,21 @@ describe("GET /api/rides/[id]", () => {
 
     const { GET } = await import("@/app/api/rides/[id]/route");
     const res = await GET(
-      new Request("http://localhost/api/rides/ride1"),
-      { params: Promise.resolve({ id: "ride1" }) }
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555"),
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(BASE_RIDE);
   });
 
-  it("returns 404 on DB error", async () => {
-    mockDB({ data: null, error: { message: "not found", code: "PGRST116" } });
+  it("returns 404 when ride not found", async () => {
+    mockDB({ data: null, error: null });
 
     const { GET } = await import("@/app/api/rides/[id]/route");
     const res = await GET(
-      new Request("http://localhost/api/rides/missing"),
-      { params: Promise.resolve({ id: "missing" }) }
+      new Request("http://localhost/api/rides/66666666-6666-6666-6666-666666666666"),
+      { params: Promise.resolve({ id: "66666666-6666-6666-6666-666666666666" }) }
     );
 
     expect(res.status).toBe(404);
@@ -239,11 +241,11 @@ describe("PATCH /api/rides/[id] (odometer)", () => {
 
     const { PATCH } = await import("@/app/api/rides/[id]/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/ride1", {
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555", {
         method: "PATCH",
         body: JSON.stringify({ odometer_start_km: 12345.0 }),
       }),
-      { params: Promise.resolve({ id: "ride1" }) }
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(200);
@@ -255,11 +257,11 @@ describe("PATCH /api/rides/[id] (odometer)", () => {
 
     const { PATCH } = await import("@/app/api/rides/[id]/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/ride1", {
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555", {
         method: "PATCH",
         body: JSON.stringify({ odometer_end_km: 12360.0 }),
       }),
-      { params: Promise.resolve({ id: "ride1" }) }
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(200);
@@ -269,11 +271,11 @@ describe("PATCH /api/rides/[id] (odometer)", () => {
   it("returns 400 when end is less than start", async () => {
     const { PATCH } = await import("@/app/api/rides/[id]/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/ride1", {
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555", {
         method: "PATCH",
         body: JSON.stringify({ odometer_start_km: 12360.0, odometer_end_km: 12300.0 }),
       }),
-      { params: Promise.resolve({ id: "ride1" }) }
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(400);
@@ -283,11 +285,11 @@ describe("PATCH /api/rides/[id] (odometer)", () => {
   it("returns 400 when no fields provided", async () => {
     const { PATCH } = await import("@/app/api/rides/[id]/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/ride1", {
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555", {
         method: "PATCH",
         body: JSON.stringify({}),
       }),
-      { params: Promise.resolve({ id: "ride1" }) }
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(400);
@@ -306,11 +308,11 @@ describe("PATCH /api/rides/[id]/status", () => {
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/ride1/status", {
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555/status", {
         method: "PATCH",
         body: JSON.stringify({ status: "in_progress" }),
       }),
-      { params: Promise.resolve({ id: "ride1" }) }
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(200);
@@ -326,11 +328,11 @@ describe("PATCH /api/rides/[id]/status", () => {
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/ride1/status", {
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555/status", {
         method: "PATCH",
         body: JSON.stringify({ status: "completed" }),
       }),
-      { params: Promise.resolve({ id: "ride1" }) }
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(200);
@@ -346,25 +348,25 @@ describe("PATCH /api/rides/[id]/status", () => {
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/ride1/status", {
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555/status", {
         method: "PATCH",
         body: JSON.stringify({ status: "rejected", rejection_reason: "Driver unavailable" }),
       }),
-      { params: Promise.resolve({ id: "ride1" }) }
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(200);
     expect((await res.json()).rejection_reason).toBe("Driver unavailable");
   });
 
-  it("returns 400 when status is missing", async () => {
+  it("returns 400 when status is 66666666-6666-6666-6666-666666666666", async () => {
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/ride1/status", {
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555/status", {
         method: "PATCH",
         body: JSON.stringify({}),
       }),
-      { params: Promise.resolve({ id: "ride1" }) }
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(400);
@@ -374,11 +376,11 @@ describe("PATCH /api/rides/[id]/status", () => {
   it("returns 400 when rejecting without rejection_reason", async () => {
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/ride1/status", {
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555/status", {
         method: "PATCH",
         body: JSON.stringify({ status: "rejected" }),
       }),
-      { params: Promise.resolve({ id: "ride1" }) }
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(400);
@@ -390,11 +392,11 @@ describe("PATCH /api/rides/[id]/status", () => {
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/ride1/status", {
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555/status", {
         method: "PATCH",
         body: JSON.stringify({ status: "completed" }),
       }),
-      { params: Promise.resolve({ id: "ride1" }) }
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(422);
@@ -406,11 +408,11 @@ describe("PATCH /api/rides/[id]/status", () => {
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/ride1/status", {
+      new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555/status", {
         method: "PATCH",
         body: JSON.stringify({ status: "rejected", rejection_reason: "oops" }),
       }),
-      { params: Promise.resolve({ id: "ride1" }) }
+      { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
     expect(res.status).toBe(422);
@@ -421,11 +423,11 @@ describe("PATCH /api/rides/[id]/status", () => {
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
-      new Request("http://localhost/api/rides/missing/status", {
+      new Request("http://localhost/api/rides/66666666-6666-6666-6666-666666666666/status", {
         method: "PATCH",
         body: JSON.stringify({ status: "in_progress" }),
       }),
-      { params: Promise.resolve({ id: "missing" }) }
+      { params: Promise.resolve({ id: "66666666-6666-6666-6666-666666666666" }) }
     );
 
     expect(res.status).toBe(404);
