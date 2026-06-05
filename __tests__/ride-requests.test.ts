@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as supabaseModule from "@/lib/supabase";
 
 vi.mock("@/lib/supabase");
+vi.mock("@/lib/api-auth", () => ({
+  requireBearerAuth: () => ({ ok: true, token: "test-token", kind: "user", claims: { sub: "test-user", exp: 9999999999 } }),
+}));
 
 function chain(result: object) {
   const handler: ProxyHandler<object> = {

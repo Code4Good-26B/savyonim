@@ -144,7 +144,7 @@ export function AssignedRideActions({
         </ActionButton>
       ) : null}
 
-      {ride.status === "in_progress" ? (
+      {ride.status === "assigned" || ride.status === "in_progress" ? (
         <Card>
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-950">{t("completeRide")}</h2>

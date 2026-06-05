@@ -124,6 +124,27 @@ describe("driver API client", () => {
     }));
   });
 
+  it("shows the ride already accepted message for assignment conflicts", async () => {
+    const session = driverSession();
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ambulances: [{ id: "ambulance-1", service_zone_id: session.serviceZoneId }] }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        statusText: "Conflict",
+        json: async () => ({ error: "Ride request is no longer open for assignment" }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(acceptOpenRide({ rideRequestId: "ride-request-1", session })).rejects.toMatchObject({
+      status: 409,
+      detail: "This ride was already accepted by another driver",
+    });
+  });
+
   it("uses the atomic complete endpoint with odometer data", async () => {
     const session = driverSession();
     const fetchMock = vi.fn().mockResolvedValue({

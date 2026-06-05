@@ -4,6 +4,9 @@ import * as dbModule from "@/lib/db";
 
 vi.mock("@/lib/supabase");
 vi.mock("@/lib/db");
+vi.mock("@/lib/api-auth", () => ({
+  requireBearerAuth: () => ({ ok: true, token: "test-token", kind: "user", claims: { sub: "test-user", exp: 9999999999 } }),
+}));
 
 function chain(result: object) {
   const handler: ProxyHandler<object> = {
@@ -58,7 +61,7 @@ describe("GET /api/passengers", () => {
     mockSql({ rows: [BASE_PASSENGER] });
 
     const { GET } = await import("@/app/api/passengers/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/passengers"));
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual([BASE_PASSENGER]);
@@ -68,7 +71,7 @@ describe("GET /api/passengers", () => {
     mockSql({ error: { message: "connection failed" } });
 
     const { GET } = await import("@/app/api/passengers/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/passengers"));
 
     expect(res.status).toBe(500);
   });

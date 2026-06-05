@@ -4,7 +4,7 @@ import { requireDriverAuth } from "@/lib/api-auth";
 export const runtime = "nodejs";
 
 const REQUEST_FIELDS =
-  "id, passenger_id, requested_by_user_id, service_zone_id, status, source_address, source_notes, destination_address, destination_notes, return_trip_required, requested_pickup_at, approved_at, assigned_at, started_at, completed_at, rejected_at, rejection_reason";
+  "rr.id, rr.passenger_id, rr.requested_by_user_id, rr.service_zone_id, rr.status, rr.source_address, rr.source_notes, rr.destination_address, rr.destination_notes, rr.return_trip_required, rr.requested_pickup_at, rr.approved_at, rr.assigned_at, rr.started_at, rr.completed_at, rr.rejected_at, rr.rejection_reason, rr.caller_full_name, rr.caller_id_number, rr.caller_phone, rr.request_for_self, rr.trip_type, rr.requested_arrival_at, rr.estimated_departure_at, rr.waiting_time_minutes, rr.leisure_window_start, rr.leisure_window_end";
 
 const RIDE_SELECT =
   "r.id, r.ride_request_id, r.driver_id, r.ambulance_id, r.assigned_by_user_id, r.representitive_user_id, r.status, r.assigned_at, r.in_progress_at, r.completed_at, r.rejected_at, r.rejection_reason, r.odometer_start_km, r.odometer_end_km";
@@ -27,6 +27,24 @@ type RideRequestRow = {
   completed_at: string | null;
   rejected_at: string | null;
   rejection_reason: string | null;
+  caller_full_name: string | null;
+  caller_id_number: string | null;
+  caller_phone: string | null;
+  request_for_self: boolean;
+  trip_type: string | null;
+  requested_arrival_at: string | null;
+  estimated_departure_at: string | null;
+  waiting_time_minutes: number | null;
+  leisure_window_start: string | null;
+  leisure_window_end: string | null;
+  passenger: {
+    id: string;
+    full_name: string;
+    phone: string | null;
+    emergency_contact: string | null;
+    mobility_need: string;
+    category: string | null;
+  } | null;
 };
 
 type RideRow = {
@@ -58,14 +76,26 @@ export async function GET(request: Request) {
   const openRides = await query<RideRequestRow>(
     `
       select ${REQUEST_FIELDS}
-      from public.ride_requests
-      where status = 'approved'
+        , case
+            when p.id is null then null
+            else jsonb_build_object(
+              'id', p.id,
+              'full_name', p.full_name,
+              'phone', p.phone,
+              'emergency_contact', p.emergency_contact,
+              'mobility_need', p.mobility_need,
+              'category', p.category
+            )
+          end as passenger
+      from public.ride_requests rr
+      left join public.passengers p on p.id = rr.passenger_id
+      where rr.status = 'approved'
         and (
-          select d.service_zone_id is null or ride_requests.service_zone_id = d.service_zone_id
+          select d.service_zone_id is null or rr.service_zone_id = d.service_zone_id
           from public.drivers d
           where d.id = $1::uuid
         )
-      order by requested_pickup_at asc nulls last
+      order by rr.requested_pickup_at asc nulls last
     `,
     [driverId],
   );
@@ -74,9 +104,23 @@ export async function GET(request: Request) {
     `
       select
         ${RIDE_SELECT},
-        to_jsonb(rr.*) as ride_request
+        to_jsonb(rr.*) || jsonb_build_object(
+          'passenger',
+          case
+            when p.id is null then null
+            else jsonb_build_object(
+              'id', p.id,
+              'full_name', p.full_name,
+              'phone', p.phone,
+              'emergency_contact', p.emergency_contact,
+              'mobility_need', p.mobility_need,
+              'category', p.category
+            )
+          end
+        ) as ride_request
       from public.rides r
       left join public.ride_requests rr on rr.id = r.ride_request_id
+      left join public.passengers p on p.id = rr.passenger_id
       where r.driver_id = $1::uuid
         and r.status in ('assigned', 'in_progress')
       order by r.assigned_at desc
@@ -88,9 +132,23 @@ export async function GET(request: Request) {
     `
       select
         ${RIDE_SELECT},
-        to_jsonb(rr.*) as ride_request
+        to_jsonb(rr.*) || jsonb_build_object(
+          'passenger',
+          case
+            when p.id is null then null
+            else jsonb_build_object(
+              'id', p.id,
+              'full_name', p.full_name,
+              'phone', p.phone,
+              'emergency_contact', p.emergency_contact,
+              'mobility_need', p.mobility_need,
+              'category', p.category
+            )
+          end
+        ) as ride_request
       from public.rides r
       left join public.ride_requests rr on rr.id = r.ride_request_id
+      left join public.passengers p on p.id = rr.passenger_id
       where r.driver_id = $1::uuid
         and r.status in ('completed', 'rejected')
       order by coalesce(r.completed_at, r.rejected_at, r.assigned_at) desc

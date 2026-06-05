@@ -42,6 +42,16 @@ export type RideRequestSummary = {
   completed_at?: string | null;
   rejected_at?: string | null;
   rejection_reason?: string | null;
+  passenger?: PassengerSummary | null;
+};
+
+export type PassengerSummary = {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  emergency_contact: string | null;
+  mobility_need: string;
+  category: string | null;
 };
 
 export type RideSummary = {

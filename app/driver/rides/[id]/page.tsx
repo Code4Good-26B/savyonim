@@ -28,8 +28,9 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
   );
 }
 
-function RideRequestDetails({ ride }: { ride: RideRequestSummary }) {
+export function RideRequestDetails({ ride }: { ride: RideRequestSummary }) {
   const { t } = useDriverI18n();
+  const passenger = ride.passenger;
 
   return (
     <Card>
@@ -44,6 +45,41 @@ function RideRequestDetails({ ride }: { ride: RideRequestSummary }) {
           {ride.destination_notes ? <DetailRow label={t("dropoffNotes")} value={ride.destination_notes} /> : null}
           <DetailRow label={t("returnTrip")} value={ride.return_trip_required ? t("yes") : t("no")} />
           <DetailRow label={t("pickupTime")} value={ride.requested_pickup_at ?? t("notSet")} />
+          <DetailRow
+            label={t("passengerInfo")}
+            value={
+              passenger ? (
+                <div className="space-y-1">
+                  <p>
+                    <span className="font-semibold">{t("passengerName")}</span> {passenger.full_name}
+                  </p>
+                  {passenger.phone ? (
+                    <p>
+                      <span className="font-semibold">{t("passengerPhone")}</span> {passenger.phone}
+                    </p>
+                  ) : null}
+                  {passenger.emergency_contact ? (
+                    <p>
+                      <span className="font-semibold">{t("passengerEmergencyContact")}</span>{" "}
+                      {passenger.emergency_contact}
+                    </p>
+                  ) : null}
+                  <p>
+                    <span className="font-semibold">{t("passengerMobility")}</span>{" "}
+                    {passenger.mobility_need.replaceAll("_", " ")}
+                  </p>
+                  {passenger.category ? (
+                    <p>
+                      <span className="font-semibold">{t("passengerCategory")}</span>{" "}
+                      {passenger.category.replaceAll("_", " ")}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                t("passengerUnavailable")
+              )
+            }
+          />
         </dl>
       </CardContent>
     </Card>

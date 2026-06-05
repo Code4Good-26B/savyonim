@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as supabaseModule from "@/lib/supabase";
 
 vi.mock("@/lib/supabase");
+vi.mock("@/lib/api-auth", () => ({
+  requireBearerAuth: () => ({ ok: true, token: "test-token", kind: "user", claims: { sub: "test-user", exp: 9999999999 } }),
+}));
 
 function chain(result: object) {
   const handler: ProxyHandler<object> = {
@@ -39,7 +42,7 @@ describe("GET /api/ambulances", () => {
     mockDB({ data: [BASE_AMBULANCE], error: null });
 
     const { GET } = await import("@/app/api/ambulances/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/ambulances"));
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual([BASE_AMBULANCE]);
@@ -49,7 +52,7 @@ describe("GET /api/ambulances", () => {
     mockDB({ data: null, error: { message: "connection failed" } });
 
     const { GET } = await import("@/app/api/ambulances/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/ambulances"));
 
     expect(res.status).toBe(500);
   });

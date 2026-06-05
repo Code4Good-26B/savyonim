@@ -86,7 +86,10 @@ describe("Rides Race Condition Integration Tests", () => {
     // 5. Assert the error message on the conflicting request
     const failedRes = res1.status === 409 ? res1 : res2;
     const body = await failedRes.json();
-    expect(body.error).toBe("Ride request already has an active assignment");
+    expect([
+      "Ride request already has an active assignment",
+      "Ride request is no longer open for assignment",
+    ]).toContain(body.error);
 
     // 6. Double check database state to make sure only one ride exists
     const { data: dbRides, error: fetchError } = await supabase

@@ -45,6 +45,14 @@ function postAuthRequest(body: Record<string, unknown>, token = driverToken()) {
   });
 }
 
+function getAuthRequest(url: string, token = driverToken()) {
+  return new Request(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
 function mockTransaction(queryResults: unknown[]) {
   let clientRef: { query: ReturnType<typeof vi.fn> } | null = null;
   vi.mocked(db.transaction).mockImplementation(async (callback) => {
@@ -151,6 +159,34 @@ describe("driver accept ride", () => {
     expect(res.status).toBe(409);
     expect((await res.json()).error).toMatch(/active assignment/);
   });
+
+  it("allows Driver A to accept and returns a conflict when Driver B accepts the same ride", async () => {
+    const { POST } = await import("@/app/api/rides/route");
+    mockTransaction([
+      { rows: [{ status: "approved" }] },
+      { rows: [{ ...assignedRide, driver_id: DRIVER_ID }] },
+    ]);
+
+    const driverAResponse = await POST(postAuthRequest({
+      ride_request_id: RIDE_REQUEST_ID,
+      ambulance_id: AMBULANCE_ID,
+    }));
+    expect(driverAResponse.status).toBe(201);
+
+    mockTransaction([{ rows: [{ status: "waiting_for_representitive" }] }]);
+
+    const driverBResponse = await POST(postAuthRequest(
+      {
+        ride_request_id: RIDE_REQUEST_ID,
+        ambulance_id: AMBULANCE_ID,
+      },
+      driverToken(OTHER_DRIVER_ID, "22222222-0000-0000-0000-000000000002"),
+    ));
+    const body = await driverBResponse.json();
+
+    expect(driverBResponse.status).toBe(409);
+    expect(body.error).toBe("Ride request is no longer open for assignment");
+  });
 });
 
 describe("driver complete ride with odometer", () => {
@@ -194,6 +230,36 @@ describe("driver complete ride with odometer", () => {
     expect(db.transaction).toHaveBeenCalledOnce();
   });
 
+  it("completes an assigned ride and stores odometer and completed_at", async () => {
+    mockCompletion(
+      {
+        status: "assigned",
+        driver_id: DRIVER_ID,
+        odometer_start_km: null,
+        odometer_end_km: null,
+      },
+      {
+        odometer_end_km: "121.5",
+        completed_at: "2026-05-29T11:00:00.000Z",
+      },
+    );
+
+    const { PATCH } = await import("@/app/api/rides/[id]/status/route");
+    const res = await PATCH(
+      authRequest("http://localhost/api/rides/ride-id/status", {
+        status: "completed",
+        odometer_end_km: 121.5,
+      }),
+      { params: Promise.resolve({ id: RIDE_ID }) },
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.status).toBe("completed");
+    expect(body.odometer_end_km).toBe("121.5");
+    expect(body.completed_at).toBe("2026-05-29T11:00:00.000Z");
+  });
+
   it("fails completion when odometer is blank and does not run an update", async () => {
     mockTransaction([
       { rows: [{ status: "in_progress", driver_id: DRIVER_ID, odometer_start_km: "100", odometer_end_km: null }] },
@@ -206,6 +272,7 @@ describe("driver complete ride with odometer", () => {
     );
 
     expect(res.status).toBe(422);
+    expect((await res.json()).error).toBe("odometer_end_km is required and must be a number");
   });
 
   it("fails completion when odometer is negative", async () => {
@@ -223,6 +290,7 @@ describe("driver complete ride with odometer", () => {
     );
 
     expect(res.status).toBe(422);
+    expect((await res.json()).error).toBe("odometer values must be non-negative");
   });
 
   it("fails completion when end odometer is lower than start odometer", async () => {
@@ -240,6 +308,7 @@ describe("driver complete ride with odometer", () => {
     );
 
     expect(res.status).toBe(422);
+    expect((await res.json()).error).toBe("odometer_end_km must be greater than or equal to odometer_start_km");
   });
 
   it("blocks a driver from completing another driver's ride", async () => {
@@ -257,5 +326,93 @@ describe("driver complete ride with odometer", () => {
     );
 
     expect(res.status).toBe(403);
+  });
+});
+
+describe("driver ride details and history", () => {
+  it("returns passenger details for an open ride when available", async () => {
+    vi.mocked(db.query)
+      .mockResolvedValueOnce({ rows: [] } as never)
+      .mockResolvedValueOnce({
+        rows: [{
+          id: RIDE_REQUEST_ID,
+          passenger_id: "55555555-0000-0000-0000-000000000001",
+          status: "approved",
+          source_address: "12 Arlozorov Street, Tel Aviv",
+          destination_address: "Ichilov Hospital, Tel Aviv",
+          passenger: {
+            id: "55555555-0000-0000-0000-000000000001",
+            full_name: "Miriam Katz",
+            phone: "050-1111111",
+            emergency_contact: "050-9991111",
+            mobility_need: "walking",
+            category: "other",
+          },
+        }],
+      } as never);
+
+    const { GET } = await import("@/app/api/driver/rides/[id]/route");
+    const res = await GET(
+      getAuthRequest(`http://localhost/api/driver/rides/${RIDE_REQUEST_ID}`),
+      { params: Promise.resolve({ id: RIDE_REQUEST_ID }) },
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.kind).toBe("open");
+    expect(body.rideRequest.passenger.full_name).toBe("Miriam Katz");
+    expect(body.rideRequest.passenger.phone).toBe("050-1111111");
+  });
+
+  it("returns null passenger details when passenger information is missing", async () => {
+    vi.mocked(db.query)
+      .mockResolvedValueOnce({ rows: [] } as never)
+      .mockResolvedValueOnce({
+        rows: [{
+          id: RIDE_REQUEST_ID,
+          passenger_id: "55555555-0000-0000-0000-000000000001",
+          status: "approved",
+          source_address: "Unknown pickup",
+          destination_address: "Unknown destination",
+          passenger: null,
+        }],
+      } as never);
+
+    const { GET } = await import("@/app/api/driver/rides/[id]/route");
+    const res = await GET(
+      getAuthRequest(`http://localhost/api/driver/rides/${RIDE_REQUEST_ID}`),
+      { params: Promise.resolve({ id: RIDE_REQUEST_ID }) },
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.kind).toBe("open");
+    expect(body.rideRequest.passenger).toBeNull();
+  });
+
+  it("returns completed rides in history and keeps active rides out of history", async () => {
+    const activeRide = { ...assignedRide, id: "77777777-0000-0000-0000-000000000002", status: "assigned" };
+    const completedRide = {
+      ...assignedRide,
+      id: "77777777-0000-0000-0000-000000000003",
+      status: "completed",
+      completed_at: "2026-05-29T11:00:00.000Z",
+      odometer_end_km: "121.5",
+    };
+
+    vi.mocked(db.query)
+      .mockResolvedValueOnce({ rows: [] } as never)
+      .mockResolvedValueOnce({ rows: [activeRide] } as never)
+      .mockResolvedValueOnce({ rows: [completedRide] } as never);
+
+    const { GET } = await import("@/app/api/driver/rides/route");
+    const res = await GET(getAuthRequest("http://localhost/api/driver/rides"));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.assignedRides).toEqual([activeRide]);
+    expect(body.rideHistory).toEqual([completedRide]);
+    expect(body.rideHistory).not.toContainEqual(activeRide);
+    expect(vi.mocked(db.query).mock.calls[2][0]).toContain("r.status in ('completed', 'rejected')");
   });
 });

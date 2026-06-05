@@ -36,7 +36,7 @@ function mockDBMultiple(results: Array<{ data?: unknown; error?: { message: stri
 }
 
 function mockAuthAndDB(
-  authResult: { data: { user: any } | null; error: any },
+  authResult: { data: { user: unknown } | null; error: unknown },
   dbResult: { data?: unknown; error?: { message: string } | null }
 ) {
   vi.mocked(supabaseModule.createSupabaseClient).mockReturnValue({

@@ -19,7 +19,19 @@ export function userMessageForStatus(status: number, fallback: string): string {
   return fallback || "Something went wrong. Try again.";
 }
 
-async function readError(response: Response): Promise<DriverApiError> {
+function isRideAssignmentConflict(path: string, status: number, fallback: string) {
+  if (path !== "/api/rides" || status !== 409) return false;
+
+  const message = fallback.toLowerCase();
+  return (
+    message.includes("active assignment") ||
+    message.includes("already accepted") ||
+    message.includes("already taken") ||
+    message.includes("no longer open for assignment")
+  );
+}
+
+async function readError(path: string, response: Response): Promise<DriverApiError> {
   let payload: ApiErrorPayload = {};
   try {
     payload = (await response.json()) as ApiErrorPayload;
@@ -28,10 +40,14 @@ async function readError(response: Response): Promise<DriverApiError> {
   }
 
   const fallback = payload.message || payload.error || response.statusText;
+  const detail = isRideAssignmentConflict(path, response.status, fallback)
+    ? "This ride was already accepted by another driver"
+    : userMessageForStatus(response.status, fallback);
+
   return {
     status: response.status,
     title: response.statusText || "Request failed",
-    detail: userMessageForStatus(response.status, fallback),
+    detail,
   };
 }
 
@@ -54,7 +70,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!response.ok) {
-    throw await readError(response);
+    throw await readError(path, response);
   }
 
   return (await response.json()) as T;

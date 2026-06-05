@@ -12,7 +12,7 @@ type RideState = {
 };
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  assigned: ["in_progress", "rejected"],
+  assigned: ["in_progress", "completed", "rejected"],
   in_progress: ["completed", "rejected"],
   completed: [],
   rejected: [],

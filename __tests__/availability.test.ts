@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as db from "@/lib/db";
 
 vi.mock("@/lib/db", () => ({ query: vi.fn() }));
+vi.mock("@/lib/api-auth", () => ({
+  requireBearerAuth: () => ({ ok: true, token: "test-token", kind: "user", claims: { sub: "test-user", exp: 9999999999 } }),
+}));
 
 const DRIVER_1 = { id: "d1", user_id: "u1", contact_phone: "050-1111111", service_zone_id: "z1", is_active: true };
 const DRIVER_2 = { id: "d2", user_id: "u2", contact_phone: "050-2222222", service_zone_id: "z1", is_active: true };
@@ -22,7 +25,7 @@ describe("GET /api/availability", () => {
     mockQueries([DRIVER_1, DRIVER_2], [AMBULANCE_1, AMBULANCE_2]);
 
     const { GET } = await import("@/app/api/availability/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/availability"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -34,7 +37,7 @@ describe("GET /api/availability", () => {
     mockQueries([DRIVER_2], [AMBULANCE_2]);
 
     const { GET } = await import("@/app/api/availability/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/availability"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -46,7 +49,7 @@ describe("GET /api/availability", () => {
     mockQueries([DRIVER_1], [AMBULANCE_1]);
 
     const { GET } = await import("@/app/api/availability/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/availability"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -58,7 +61,7 @@ describe("GET /api/availability", () => {
     mockQueries([], []);
 
     const { GET } = await import("@/app/api/availability/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/availability"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -70,7 +73,7 @@ describe("GET /api/availability", () => {
     vi.mocked(db.query).mockRejectedValueOnce(new Error("drivers DB error"));
 
     const { GET } = await import("@/app/api/availability/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/availability"));
 
     expect(res.status).toBe(500);
     expect((await res.json()).error).toBe("drivers DB error");
@@ -82,7 +85,7 @@ describe("GET /api/availability", () => {
       .mockRejectedValueOnce(new Error("ambulances DB error"));
 
     const { GET } = await import("@/app/api/availability/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/availability"));
 
     expect(res.status).toBe(500);
     expect((await res.json()).error).toBe("ambulances DB error");
@@ -92,7 +95,7 @@ describe("GET /api/availability", () => {
     mockQueries([], []);
 
     const { GET } = await import("@/app/api/availability/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/availability"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
