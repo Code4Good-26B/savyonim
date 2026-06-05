@@ -123,10 +123,9 @@ A request may transition to `rejected` from any non-terminal operational state a
 The migration includes partial unique indexes on active rides:
 
 - One active ride per request (`ride_request_id`) where status is `assigned` or `in_progress`.
-- One active ride per driver (`driver_id`) where status is `assigned` or `in_progress`.
 - One active ride per ambulance (`ambulance_id`) where status is `assigned` or `in_progress`.
 
-These constraints block conflicting concurrent assignments at the database level.
+These constraints block conflicting concurrent assignments at the database level while allowing a driver to hold multiple active rides.
 
 ## Enum Values
 

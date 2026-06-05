@@ -21,7 +21,7 @@ function errorMessage(error: unknown) {
 
 /**
  * Accepts a ride request by creating a ride entry.
- * Handles race conditions gracefully if driver, ambulance, or request is already active.
+ * Handles race conditions gracefully if ambulance or request is already active.
  */
 export async function acceptRide(
   rideRequestId: string,
@@ -55,9 +55,6 @@ export async function acceptRide(
 
     if (error) {
       if (error.code === "23505") {
-        if (error.message?.includes("ux_rides_active_driver")) {
-          return { success: false, message: "Driver already has an active ride", error: "Driver already has an active ride" };
-        }
         if (error.message?.includes("ux_rides_active_ambulance")) {
           return { success: false, message: "Ambulance already has an active ride", error: "Ambulance already has an active ride" };
         }
@@ -73,9 +70,6 @@ export async function acceptRide(
   } catch (err: unknown) {
     const pgError = err as { code?: string; message?: string };
     if (pgError.code === "23505") {
-      if (pgError.message?.includes("ux_rides_active_driver")) {
-        return { success: false, message: "Driver already has an active ride", error: "Driver already has an active ride" };
-      }
       if (pgError.message?.includes("ux_rides_active_ambulance")) {
         return { success: false, message: "Ambulance already has an active ride", error: "Ambulance already has an active ride" };
       }

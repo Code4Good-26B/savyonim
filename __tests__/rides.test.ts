@@ -10,7 +10,6 @@ function mockDB(result: { data?: unknown; error?: { message: string; code?: stri
   if (result.error) {
     // Some tests don't explicitly provide constraint but provide it in message
     if (result.error.code === "23505" && !result.error.constraint && result.error.message) {
-      if (result.error.message.includes("ux_rides_active_driver")) result.error.constraint = "ux_rides_active_driver";
       if (result.error.message.includes("ux_rides_active_ambulance")) result.error.constraint = "ux_rides_active_ambulance";
       if (result.error.message.includes("ux_rides_active_request")) result.error.constraint = "ux_rides_active_request";
     }
@@ -172,27 +171,6 @@ describe("POST /api/rides", () => {
 
   // ── Race condition tests ───────────────────────────────────────────────────
 
-  it("returns 409 when driver already has an active ride (race condition)", async () => {
-    mockRidePost({
-      error: {
-        message: 'duplicate key value violates unique constraint "ux_rides_active_driver"',
-        code: "23505",
-        constraint: "ux_rides_active_driver",
-      },
-    });
-
-    const { POST } = await import("@/app/api/rides/route");
-    const res = await POST(
-      new Request("http://localhost/api/rides", {
-        method: "POST",
-        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", driver_id: "22222222-2222-2222-2222-222222222222", ambulance_id: "33333333-3333-3333-3333-333333333333", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
-      })
-    );
-
-    expect(res.status).toBe(409);
-    expect((await res.json()).error).toBe("Driver already has an active ride");
-  });
-
   it("returns 409 when ambulance already has an active ride (race condition)", async () => {
     mockRidePost({
       error: {
@@ -233,6 +211,45 @@ describe("POST /api/rides", () => {
 
     expect(res.status).toBe(409);
     expect((await res.json()).error).toBe("Ride request already has an active assignment");
+  });
+
+  it("allows the same driver to create multiple active rides for different requests", async () => {
+    const secondRide = {
+      ...BASE_RIDE,
+      id: "55555555-5555-5555-5555-555555555556",
+      ride_request_id: "11111111-1111-1111-1111-111111111112",
+      ambulance_id: "33333333-3333-3333-3333-333333333334",
+    };
+    mockRidePost({ ride: BASE_RIDE });
+    mockRidePost({ ride: secondRide });
+
+    const { POST } = await import("@/app/api/rides/route");
+    const first = await POST(
+      new Request("http://localhost/api/rides", {
+        method: "POST",
+        body: JSON.stringify({
+          ride_request_id: BASE_RIDE.ride_request_id,
+          driver_id: BASE_RIDE.driver_id,
+          ambulance_id: BASE_RIDE.ambulance_id,
+          assigned_by_user_id: BASE_RIDE.assigned_by_user_id,
+        }),
+      })
+    );
+    const second = await POST(
+      new Request("http://localhost/api/rides", {
+        method: "POST",
+        body: JSON.stringify({
+          ride_request_id: secondRide.ride_request_id,
+          driver_id: BASE_RIDE.driver_id,
+          ambulance_id: secondRide.ambulance_id,
+          assigned_by_user_id: BASE_RIDE.assigned_by_user_id,
+        }),
+      })
+    );
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    expect((await second.json()).driver_id).toBe(BASE_RIDE.driver_id);
   });
 
   it("returns 400 when referenced IDs do not exist", async () => {

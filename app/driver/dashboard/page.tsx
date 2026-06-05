@@ -69,7 +69,8 @@ function LoadingSkeleton() {
 export default function DriverDashboardPage() {
   const router = useRouter();
   const { direction, t } = useDriverI18n();
-  const [session] = useState<DriverSession | null>(() => getStoredDriverSession());
+  const [session, setSession] = useState<DriverSession | null>(null);
+  const [hasCheckedSession, setHasCheckedSession] = useState(false);
   const [rides, setRides] = useState<DriverRidesResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,6 +90,16 @@ export default function DriverDashboardPage() {
   }, []);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const storedSession = getStoredDriverSession();
+      setSession(storedSession);
+      setHasCheckedSession(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!hasCheckedSession) return;
     if (!session || session.role !== "driver") {
       router.replace("/login");
       return;
@@ -97,94 +108,96 @@ export default function DriverDashboardPage() {
       void load(session);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [load, router, session]);
-
-  if (!session) {
-    return <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-700">{t("checkingSession")}</main>;
-  }
+  }, [hasCheckedSession, load, router, session]);
 
   return (
     <div className="min-h-screen bg-slate-50" dir={direction}>
-      <DriverHeader session={session} />
+      {session ? <DriverHeader session={session} /> : null}
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
-        <section className="rounded-lg border border-slate-200 bg-white px-5 py-5 shadow-sm shadow-slate-200/70">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{t("appName")}</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950">{t("currentWork")}</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{t("currentWorkBody")}</p>
-            </div>
-          </div>
-        </section>
-
-        {error ? (
-          <DriverNotice title={t("couldNotLoadRides")} kind="error">
-            {error}
-            <Button
-              type="button"
-              onClick={() => void load(session)}
-              variant="danger"
-              className="mt-3"
-            >
-              {t("retry")}
-            </Button>
-          </DriverNotice>
-        ) : null}
-
-        {isLoading ? (
-          <div className="space-y-4">
-            <DriverNotice title={t("loadingRides")}>{t("loadingRidesBody")}</DriverNotice>
-            <LoadingSkeleton />
-          </div>
-        ) : null}
-
-        {!isLoading && rides ? (
+        {!session ? (
+          <p className="text-slate-700">{t("checkingSession")}</p>
+        ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <SummaryMetric label={t("assignedToYou")} value={rides.assignedRides.length} />
-              <SummaryMetric label={t("openRides")} value={rides.openRides.length} />
-              <SummaryMetric label={t("rideHistory")} value={rides.rideHistory.length} />
-            </div>
-
-            <DashboardSection title={t("assignedToYou")} count={rides.assignedRides.length}>
-              {rides.assignedRides.length === 0 ? (
-                <DriverNotice title={t("noAssignedRides")}>{t("noAssignedRidesBody")}</DriverNotice>
-              ) : (
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {rides.assignedRides.map((ride) => (
-                    <AssignedRideCard key={ride.id} ride={ride} />
-                  ))}
+            <section className="rounded-lg border border-slate-200 bg-white px-5 py-5 shadow-sm shadow-slate-200/70">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{t("appName")}</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-950">{t("currentWork")}</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{t("currentWorkBody")}</p>
                 </div>
-              )}
-            </DashboardSection>
+              </div>
+            </section>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              <DashboardSection title={t("openRides")} count={rides.openRides.length}>
-                {rides.openRides.length === 0 ? (
-                  <DriverNotice title={t("noOpenRides")}>{t("noOpenRidesBody")}</DriverNotice>
-                ) : (
-                  <div className="grid gap-4">
-                    {rides.openRides.map((ride) => (
-                      <OpenRideCard key={ride.id} ride={ride} />
-                    ))}
-                  </div>
-                )}
-              </DashboardSection>
+            {error ? (
+              <DriverNotice title={t("couldNotLoadRides")} kind="error">
+                {error}
+                <Button
+                  type="button"
+                  onClick={() => void load(session)}
+                  variant="danger"
+                  className="mt-3"
+                >
+                  {t("retry")}
+                </Button>
+              </DriverNotice>
+            ) : null}
 
-              <DashboardSection title={t("rideHistory")} count={rides.rideHistory.length}>
-                {rides.rideHistory.length === 0 ? (
-                  <DriverNotice title={t("noRideHistory")} />
-                ) : (
-                  <div className="grid gap-4">
-                    {rides.rideHistory.map((ride) => (
-                      <RideHistoryCard key={ride.id} ride={ride} />
-                    ))}
-                  </div>
-                )}
-              </DashboardSection>
-            </div>
+            {isLoading ? (
+              <div className="space-y-4">
+                <DriverNotice title={t("loadingRides")}>{t("loadingRidesBody")}</DriverNotice>
+                <LoadingSkeleton />
+              </div>
+            ) : null}
+
+            {!isLoading && rides ? (
+              <>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <SummaryMetric label={t("assignedToYou")} value={rides.assignedRides.length} />
+                  <SummaryMetric label={t("openRides")} value={rides.openRides.length} />
+                  <SummaryMetric label={t("rideHistory")} value={rides.rideHistory.length} />
+                </div>
+
+                <DashboardSection title={t("assignedToYou")} count={rides.assignedRides.length}>
+                  {rides.assignedRides.length === 0 ? (
+                    <DriverNotice title={t("noAssignedRides")}>{t("noAssignedRidesBody")}</DriverNotice>
+                  ) : (
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      {rides.assignedRides.map((ride) => (
+                        <AssignedRideCard key={ride.id} ride={ride} />
+                      ))}
+                    </div>
+                  )}
+                </DashboardSection>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <DashboardSection title={t("openRides")} count={rides.openRides.length}>
+                    {rides.openRides.length === 0 ? (
+                      <DriverNotice title={t("noOpenRides")}>{t("noOpenRidesBody")}</DriverNotice>
+                    ) : (
+                      <div className="grid gap-4">
+                        {rides.openRides.map((ride) => (
+                          <OpenRideCard key={ride.id} ride={ride} />
+                        ))}
+                      </div>
+                    )}
+                  </DashboardSection>
+
+                  <DashboardSection title={t("rideHistory")} count={rides.rideHistory.length}>
+                    {rides.rideHistory.length === 0 ? (
+                      <DriverNotice title={t("noRideHistory")} />
+                    ) : (
+                      <div className="grid gap-4">
+                        {rides.rideHistory.map((ride) => (
+                          <RideHistoryCard key={ride.id} ride={ride} />
+                        ))}
+                      </div>
+                    )}
+                  </DashboardSection>
+                </div>
+              </>
+            ) : null}
           </>
-        ) : null}
+        )}
       </main>
     </div>
   );

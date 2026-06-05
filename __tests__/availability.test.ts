@@ -33,39 +33,39 @@ describe("GET /api/availability", () => {
     expect(body.ambulances).toHaveLength(2);
   });
 
-  it("excludes driver and ambulance currently in an assigned ride", async () => {
-    mockQueries([DRIVER_2], [AMBULANCE_2]);
+  it("keeps drivers available but excludes an ambulance currently in an assigned ride", async () => {
+    mockQueries([DRIVER_1, DRIVER_2], [AMBULANCE_2]);
 
     const { GET } = await import("@/app/api/availability/route");
     const res = await GET(new Request("http://localhost/api/availability"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body.drivers).toEqual([DRIVER_2]);
+    expect(body.drivers).toEqual([DRIVER_1, DRIVER_2]);
     expect(body.ambulances).toEqual([AMBULANCE_2]);
   });
 
-  it("excludes driver and ambulance currently in an in_progress ride", async () => {
-    mockQueries([DRIVER_1], [AMBULANCE_1]);
+  it("keeps drivers available but excludes an ambulance currently in an in_progress ride", async () => {
+    mockQueries([DRIVER_1, DRIVER_2], [AMBULANCE_1]);
 
     const { GET } = await import("@/app/api/availability/route");
     const res = await GET(new Request("http://localhost/api/availability"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body.drivers).toEqual([DRIVER_1]);
+    expect(body.drivers).toEqual([DRIVER_1, DRIVER_2]);
     expect(body.ambulances).toEqual([AMBULANCE_1]);
   });
 
-  it("returns empty lists when all resources are in active rides", async () => {
-    mockQueries([], []);
+  it("returns active drivers when all ambulances are in active rides", async () => {
+    mockQueries([DRIVER_1, DRIVER_2], []);
 
     const { GET } = await import("@/app/api/availability/route");
     const res = await GET(new Request("http://localhost/api/availability"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body.drivers).toHaveLength(0);
+    expect(body.drivers).toEqual([DRIVER_1, DRIVER_2]);
     expect(body.ambulances).toHaveLength(0);
   });
 
@@ -92,14 +92,14 @@ describe("GET /api/availability", () => {
   });
 
   it("handles multiple overlapping active rides correctly", async () => {
-    mockQueries([], []);
+    mockQueries([DRIVER_1, DRIVER_2], []);
 
     const { GET } = await import("@/app/api/availability/route");
     const res = await GET(new Request("http://localhost/api/availability"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body.drivers).toEqual([]);
+    expect(body.drivers).toEqual([DRIVER_1, DRIVER_2]);
     expect(body.ambulances).toEqual([]);
   });
 });

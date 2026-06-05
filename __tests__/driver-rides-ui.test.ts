@@ -5,6 +5,7 @@ import {
   acceptOpenRide,
   completeRide,
   getDriverRides,
+  updateRideStatus,
   userMessageForStatus,
 } from "@/lib/driver/api";
 import type { DriverSession } from "@/lib/driver/types";
@@ -166,6 +167,36 @@ describe("driver API client", () => {
         status: "completed",
         odometer_start_km: 100,
         odometer_end_km: 120,
+      }),
+    }));
+  });
+
+  it("sends reject/cancel status updates with a rejection reason", async () => {
+    const session = driverSession();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: "ride-1",
+        ride_request_id: "ride-request-1",
+        driver_id: DRIVER_ID,
+        status: "rejected",
+        rejection_reason: "Schedule conflict",
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await updateRideStatus({
+      rideId: "ride-1",
+      status: "rejected",
+      rejectionReason: "Schedule conflict",
+      session,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/rides/ride-1/status", expect.objectContaining({
+      method: "PATCH",
+      body: JSON.stringify({
+        status: "rejected",
+        rejection_reason: "Schedule conflict",
       }),
     }));
   });

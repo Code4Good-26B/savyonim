@@ -16,12 +16,6 @@ export async function GET(request: Request) {
         select ${DRIVER_FIELDS}
         from public.drivers d
         where d.is_active = true
-          and not exists (
-            select 1
-            from public.rides r
-            where r.driver_id = d.id
-              and r.status in ('assigned', 'in_progress')
-          )
         order by d.created_at asc
       `,
     );

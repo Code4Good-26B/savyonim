@@ -6,6 +6,7 @@ const RIDE_FIELDS =
 
 type RideState = {
   status: string;
+  ride_request_id: string;
   driver_id: string;
   odometer_start_km: string | null;
   odometer_end_km: string | null;
@@ -57,9 +58,9 @@ export async function PATCH(
   }
 
   const updated = await transaction(async (client) => {
-    const currentResult = await client.query<RideState>(
+      const currentResult = await client.query<RideState>(
       `
-        select status, driver_id, odometer_start_km, odometer_end_km
+        select status, ride_request_id, driver_id, odometer_start_km, odometer_end_km
         from public.rides
         where id = $1::uuid
         for update
@@ -118,6 +119,40 @@ export async function PATCH(
       `,
       [id, ...Object.values(patch)],
     );
+
+    if (newStatus === "completed") {
+      await client.query(
+        `
+          update public.ride_requests
+          set
+            status = 'completed',
+            completed_at = coalesce(completed_at, timezone('utc', now()))
+          where id = $1::uuid
+            and status in ('waiting_for_representitive', 'in_progress', 'completed')
+        `,
+        [current.ride_request_id],
+      );
+    }
+
+    if (newStatus === "rejected") {
+      await client.query(
+        `
+          update public.ride_requests
+          set
+            status = 'approved',
+            rejected_at = null,
+            rejection_reason = null
+          where id = $1::uuid
+            and not exists (
+              select 1
+              from public.rides active
+              where active.ride_request_id = $1::uuid
+                and active.status in ('assigned', 'in_progress')
+            )
+        `,
+        [current.ride_request_id],
+      );
+    }
 
     return { ride: result.rows[0] };
   });

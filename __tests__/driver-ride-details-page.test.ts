@@ -3,7 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { DriverI18nProvider } from "@/components/driver/DriverI18n";
 import { RideRequestDetails } from "@/app/driver/rides/[id]/page";
-import type { RideRequestSummary } from "@/lib/driver/types";
+import { AssignedRideActions } from "@/components/driver/RideActions";
+import type { DriverSession, RideRequestSummary, RideSummary } from "@/lib/driver/types";
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "ride-request-1" }),
@@ -44,6 +45,49 @@ function renderDetails(ride: RideRequestSummary) {
   );
 }
 
+const assignedRide: RideSummary = {
+  id: "77777777-0000-0000-0000-000000000001",
+  ride_request_id: baseRide.id,
+  driver_id: "33333333-0000-0000-0000-000000000001",
+  ambulance_id: "44444444-0000-0000-0000-000000000001",
+  assigned_by_user_id: "22222222-0000-0000-0000-000000000001",
+  representitive_user_id: null,
+  status: "assigned",
+  assigned_at: "2026-06-05T09:00:00.000Z",
+  in_progress_at: null,
+  completed_at: null,
+  rejected_at: null,
+  rejection_reason: null,
+  odometer_start_km: null,
+  odometer_end_km: null,
+  ride_request: baseRide,
+};
+
+const session: DriverSession = {
+  userId: "22222222-0000-0000-0000-000000000001",
+  driverId: "33333333-0000-0000-0000-000000000001",
+  fullName: "Driver One",
+  email: "driver@example.test",
+  role: "driver",
+  serviceZoneId: baseRide.service_zone_id,
+  token: "driver-token",
+  expiresAt: "2026-06-06T09:00:00.000Z",
+};
+
+function renderAssignedActions(ride: RideSummary) {
+  return renderToStaticMarkup(
+    React.createElement(
+      DriverI18nProvider,
+      null,
+      React.createElement(AssignedRideActions, {
+        ride,
+        session,
+        onChanged: vi.fn(),
+      }),
+    ),
+  );
+}
+
 describe("driver ride details page passenger rendering", () => {
   it("renders passenger information when available", () => {
     const html = renderDetails({
@@ -70,5 +114,14 @@ describe("driver ride details page passenger rendering", () => {
 
     expect(html).toContain("Passenger information is not available for this ride.");
     expect(html).not.toContain("Miriam Katz");
+  });
+});
+
+describe("driver assigned ride actions", () => {
+  it("renders Complete ride for an assigned ride and does not render Start ride", () => {
+    const html = renderAssignedActions(assignedRide);
+
+    expect(html).toContain("Complete ride");
+    expect(html).not.toContain("Start ride");
   });
 });

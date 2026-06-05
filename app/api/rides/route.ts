@@ -79,9 +79,6 @@ export async function POST(request: Request) {
   } catch (error) {
     const pgError = error as { code?: string; constraint?: string; message?: string };
     if (pgError.code === "23505") {
-      if (pgError.constraint === "ux_rides_active_driver") {
-        return Response.json({ error: "Driver already has an active ride" }, { status: 409 });
-      }
       if (pgError.constraint === "ux_rides_active_ambulance") {
         return Response.json({ error: "Ambulance already has an active ride" }, { status: 409 });
       }

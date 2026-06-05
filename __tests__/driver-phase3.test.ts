@@ -12,7 +12,10 @@ const OTHER_DRIVER_ID = "33333333-0000-0000-0000-000000000002";
 const USER_ID = "22222222-0000-0000-0000-000000000001";
 const RIDE_ID = "77777777-0000-0000-0000-000000000001";
 const RIDE_REQUEST_ID = "99999999-0000-0000-0000-000000000001";
+const SECOND_RIDE_ID = "77777777-0000-0000-0000-000000000002";
+const SECOND_RIDE_REQUEST_ID = "99999999-0000-0000-0000-000000000002";
 const AMBULANCE_ID = "44444444-0000-0000-0000-000000000001";
+const SECOND_AMBULANCE_ID = "44444444-0000-0000-0000-000000000002";
 
 function driverToken(driverId = DRIVER_ID, userId = USER_ID) {
   return signDriverToken({
@@ -56,6 +59,23 @@ function getAuthRequest(url: string, token = driverToken()) {
 function mockTransaction(queryResults: unknown[]) {
   let clientRef: { query: ReturnType<typeof vi.fn> } | null = null;
   vi.mocked(db.transaction).mockImplementation(async (callback) => {
+    const client = {
+      query: vi.fn(),
+    };
+    clientRef = client;
+
+    for (const result of queryResults) {
+      client.query.mockResolvedValueOnce(result);
+    }
+
+    return callback(client as never);
+  });
+  return () => clientRef;
+}
+
+function mockTransactionOnce(queryResults: unknown[]) {
+  let clientRef: { query: ReturnType<typeof vi.fn> } | null = null;
+  vi.mocked(db.transaction).mockImplementationOnce(async (callback) => {
     const client = {
       query: vi.fn(),
     };
@@ -186,6 +206,39 @@ describe("driver accept ride", () => {
 
     expect(driverBResponse.status).toBe(409);
     expect(body.error).toBe("Ride request is no longer open for assignment");
+  });
+
+  it("allows the same driver to accept multiple different open rides", async () => {
+    const secondAssignedRide = {
+      ...assignedRide,
+      id: SECOND_RIDE_ID,
+      ride_request_id: SECOND_RIDE_REQUEST_ID,
+      ambulance_id: SECOND_AMBULANCE_ID,
+    };
+
+    mockTransactionOnce([
+      { rows: [{ status: "approved" }] },
+      { rows: [assignedRide] },
+    ]);
+    mockTransactionOnce([
+      { rows: [{ status: "approved" }] },
+      { rows: [secondAssignedRide] },
+    ]);
+
+    const { POST } = await import("@/app/api/rides/route");
+    const first = await POST(postAuthRequest({
+      ride_request_id: RIDE_REQUEST_ID,
+      ambulance_id: AMBULANCE_ID,
+    }));
+    const second = await POST(postAuthRequest({
+      ride_request_id: SECOND_RIDE_REQUEST_ID,
+      ambulance_id: SECOND_AMBULANCE_ID,
+    }));
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    expect((await first.json()).driver_id).toBe(DRIVER_ID);
+    expect((await second.json()).driver_id).toBe(DRIVER_ID);
   });
 });
 
@@ -326,6 +379,104 @@ describe("driver complete ride with odometer", () => {
     );
 
     expect(res.status).toBe(403);
+  });
+});
+
+describe("driver reject/cancel ride", () => {
+  it("returns an assigned ride request to open rides when the driver rejects it", async () => {
+    const getClient = mockTransaction([
+      {
+        rows: [{
+          status: "assigned",
+          ride_request_id: RIDE_REQUEST_ID,
+          driver_id: DRIVER_ID,
+          odometer_start_km: null,
+          odometer_end_km: null,
+        }],
+      },
+      {
+        rows: [{
+          ...assignedRide,
+          status: "rejected",
+          rejected_at: "2026-05-29T10:30:00.000Z",
+          rejection_reason: "Schedule conflict",
+        }],
+      },
+      { rows: [] },
+    ]);
+
+    const { PATCH } = await import("@/app/api/rides/[id]/status/route");
+    const res = await PATCH(
+      authRequest("http://localhost/api/rides/ride-id/status", {
+        status: "rejected",
+        rejection_reason: "Schedule conflict",
+      }),
+      { params: Promise.resolve({ id: RIDE_ID }) },
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.status).toBe("rejected");
+    expect(getClient()?.query.mock.calls[2][0]).toContain("status = 'approved'");
+    expect(getClient()?.query.mock.calls[2][0]).toContain("not exists");
+    expect(getClient()?.query.mock.calls[2][1]).toEqual([RIDE_REQUEST_ID]);
+  });
+
+  it("allows a rejected ride request to be accepted again by another driver", async () => {
+    mockTransactionOnce([
+      {
+        rows: [{
+          status: "assigned",
+          ride_request_id: RIDE_REQUEST_ID,
+          driver_id: DRIVER_ID,
+          odometer_start_km: null,
+          odometer_end_km: null,
+        }],
+      },
+      {
+        rows: [{
+          ...assignedRide,
+          status: "rejected",
+          rejected_at: "2026-05-29T10:30:00.000Z",
+          rejection_reason: "Schedule conflict",
+        }],
+      },
+      { rows: [] },
+    ]);
+    mockTransactionOnce([
+      { rows: [{ status: "approved" }] },
+      {
+        rows: [{
+          ...assignedRide,
+          id: SECOND_RIDE_ID,
+          driver_id: OTHER_DRIVER_ID,
+          ambulance_id: SECOND_AMBULANCE_ID,
+        }],
+      },
+    ]);
+
+    const { PATCH } = await import("@/app/api/rides/[id]/status/route");
+    const rejected = await PATCH(
+      authRequest("http://localhost/api/rides/ride-id/status", {
+        status: "rejected",
+        rejection_reason: "Schedule conflict",
+      }),
+      { params: Promise.resolve({ id: RIDE_ID }) },
+    );
+    expect(rejected.status).toBe(200);
+
+    const { POST } = await import("@/app/api/rides/route");
+    const acceptedAgain = await POST(postAuthRequest(
+      {
+        ride_request_id: RIDE_REQUEST_ID,
+        ambulance_id: SECOND_AMBULANCE_ID,
+      },
+      driverToken(OTHER_DRIVER_ID, "22222222-0000-0000-0000-000000000002"),
+    ));
+    const body = await acceptedAgain.json();
+
+    expect(acceptedAgain.status).toBe(201);
+    expect(body.driver_id).toBe(OTHER_DRIVER_ID);
   });
 });
 

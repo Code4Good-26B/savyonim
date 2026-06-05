@@ -135,15 +135,6 @@ export function AssignedRideActions({
     <div className="space-y-4">
       {error ? <DriverNotice title={t("actionFailed")} kind="error">{error}</DriverNotice> : null}
 
-      {ride.status === "assigned" ? (
-        <ActionButton
-          disabled={isPending}
-          onClick={() => void run(() => updateRideStatus({ rideId: ride.id, status: "in_progress", session }))}
-        >
-          {isPending ? t("startRidePending") : t("startRide")}
-        </ActionButton>
-      ) : null}
-
       {ride.status === "assigned" || ride.status === "in_progress" ? (
         <Card>
           <CardHeader>
