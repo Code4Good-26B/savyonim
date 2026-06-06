@@ -1,5 +1,94 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Team-Safe Local Development
+
+This project includes an API write guard to reduce accidental writes to shared databases:
+
+- In development, `POST`, `PUT`, `PATCH`, and `DELETE` requests under `/api/*` are blocked by default.
+- To temporarily allow local writes, set `BLOCK_API_WRITES=false` in your local env.
+- Keep `BLOCK_API_WRITES=true` for normal day-to-day development.
+
+### Environment Setup
+
+1. Copy `.env.example` to `.env.local`.
+2. Fill in your local or non-production Supabase credentials.
+3. Run the app with `npm run dev`.
+
+### Driver Interface Local Testing
+
+The mobile-first driver UI is available at:
+
+- `/login`
+- `/register-driver`
+- `/driver`
+- `/driver/rides/[id]`
+
+Seeded local test driver:
+
+- Email: `driver.one@example.test`
+- Password: `LocalTestPassword123!`
+
+Driver write actions call local API routes. In development, writes are blocked by default to protect shared databases. To test registration, taking a ride, starting a ride, rejecting a ride, or completing a ride, set this in `.env.local`:
+
+```bash
+BLOCK_API_WRITES=false
+```
+
+Then restart `npm run dev`.
+
+Required local env values are listed in `.env.example`: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_ANON_KEY`, `DATABASE_URL`, `SUPABASE_DB_URL`, `LOCAL_DEV_ONLY=true`, and `BLOCK_API_WRITES`.
+
+### Recommended Team Workflow
+
+1. Use **local Supabase** for feature development and tests.
+2. Use a separate **staging Supabase** project for integration testing.
+3. Restrict production credentials and avoid using them in local `.env.local`.
+
+### Optional: Run Supabase Locally
+
+If Supabase CLI and Docker are installed:
+
+```bash
+supabase start
+supabase db reset
+```
+
+Then point `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_ANON_KEY` to the local project values.
+
+## Mock Commbox Webhooks (Phase 1)
+
+This repository now includes secure webhook endpoints and a mock sender CLI for integration testing.
+
+1. Start the app:
+
+```bash
+npm run dev
+```
+
+2. In another terminal, trigger a mock ride broadcast:
+
+```bash
+npm run mock:broadcast-ride
+```
+
+The mock command posts to `POST /api/webhooks/ride-request`, creates a `ride_requests` row, and returns a preview of drivers who would receive WhatsApp notifications.
+
+API contract docs: `docs/commbox-webhook-contract.md`.
+
+## Intake API Draft (Issues #42 / #43)
+
+This branch includes a draft intake contract and a guarded intake route:
+
+- `docs/api/intake-ride-request.md`
+- `app/api/intake/ride-request/route.ts`
+
+Current behavior:
+
+- Bearer API-key auth + full contract validation are implemented.
+- Database writes are intentionally blocked with `501` in this spike branch.
+
+Do not merge this spike to `dev` until Issues #40, #41, and #42 are finalized.
+
 ## Getting Started
 
 First, run the development server:
