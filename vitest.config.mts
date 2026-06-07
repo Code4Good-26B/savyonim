@@ -20,8 +20,6 @@ export default defineConfig({
           name: "integration",
           include: ["__integration__/**/*.test.ts"],
           environment: "node",
-          // Runs once before all integration tests to reset the DB
-          globalSetup: ["__integration__/setup.ts"],
           // Loads .env.test.local into each test worker process
           setupFiles: ["__integration__/load-env.ts"],
           // Give integration tests more time (real DB calls)
