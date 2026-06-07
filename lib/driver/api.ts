@@ -102,9 +102,17 @@ export async function registerDriver(input: {
 }
 
 export async function getDriverRides(session: DriverSession): Promise<DriverRidesResponse> {
-  return requestJson<DriverRidesResponse>("/api/driver/rides", {
+  const rides = await requestJson<DriverRidesResponse>("/api/driver/rides", {
     headers: driverAuthHeaders(session),
   });
+
+  return {
+    openRides: rides.openRides.filter((ride) => ride.status === "approved"),
+    assignedRides: rides.assignedRides.filter(
+      (ride) => ride.status === "assigned" || ride.status === "in_progress",
+    ),
+    rideHistory: rides.rideHistory.filter((ride) => ride.status === "completed"),
+  };
 }
 
 export async function getDriverRideDetail(

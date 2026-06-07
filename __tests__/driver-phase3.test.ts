@@ -541,7 +541,7 @@ describe("driver ride details and history", () => {
     expect(body.rideRequest.passenger).toBeNull();
   });
 
-  it("returns completed rides in history and keeps active rides out of history", async () => {
+  it("returns only completed rides in history", async () => {
     const activeRide = { ...assignedRide, id: "77777777-0000-0000-0000-000000000002", status: "assigned" };
     const completedRide = {
       ...assignedRide,
@@ -564,6 +564,7 @@ describe("driver ride details and history", () => {
     expect(body.assignedRides).toEqual([activeRide]);
     expect(body.rideHistory).toEqual([completedRide]);
     expect(body.rideHistory).not.toContainEqual(activeRide);
-    expect(vi.mocked(db.query).mock.calls[2][0]).toContain("r.status in ('completed', 'rejected')");
+    expect(vi.mocked(db.query).mock.calls[2][0]).toContain("r.status = 'completed'");
+    expect(vi.mocked(db.query).mock.calls[2][0]).not.toContain("r.status in ('completed', 'rejected')");
   });
 });

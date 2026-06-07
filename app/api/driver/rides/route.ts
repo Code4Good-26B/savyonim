@@ -150,8 +150,8 @@ export async function GET(request: Request) {
       left join public.ride_requests rr on rr.id = r.ride_request_id
       left join public.passengers p on p.id = rr.passenger_id
       where r.driver_id = $1::uuid
-        and r.status in ('completed', 'rejected')
-      order by coalesce(r.completed_at, r.rejected_at, r.assigned_at) desc
+        and r.status = 'completed'
+      order by coalesce(r.completed_at, r.assigned_at) desc
     `,
     [driverId],
   );

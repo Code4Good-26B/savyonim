@@ -102,6 +102,34 @@ describe("driver API client", () => {
     }));
   });
 
+  it("keeps rejected rides out of dashboard history and status counters", async () => {
+    const session = driverSession();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        openRides: [
+          { id: "request-open", status: "approved" },
+          { id: "request-stale", status: "rejected" },
+        ],
+        assignedRides: [
+          { id: "ride-active", status: "assigned" },
+          { id: "ride-rejected", status: "rejected" },
+        ],
+        rideHistory: [
+          { id: "ride-completed", status: "completed" },
+          { id: "ride-rejected", status: "rejected" },
+        ],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const rides = await getDriverRides(session);
+
+    expect(rides.openRides.map((ride) => ride.id)).toEqual(["request-open"]);
+    expect(rides.assignedRides.map((ride) => ride.id)).toEqual(["ride-active"]);
+    expect(rides.rideHistory.map((ride) => ride.id)).toEqual(["ride-completed"]);
+  });
+
   it("sends the driver Authorization header when accepting a ride", async () => {
     const session = driverSession();
     const fetchMock = vi.fn()

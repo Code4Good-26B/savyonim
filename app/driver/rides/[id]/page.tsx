@@ -172,6 +172,10 @@ export default function DriverRideDetailPage() {
             ride={detail.ride}
             session={session}
             onChanged={(ride: RideSummary) => {
+              if (ride.status === "rejected") {
+                router.replace("/driver/dashboard");
+                return;
+              }
               setDetail({ kind: "assigned", ride });
               void load(session);
             }}
