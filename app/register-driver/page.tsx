@@ -18,7 +18,6 @@ export default function RegisterDriverPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [serviceZoneId, setServiceZoneId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -34,7 +33,6 @@ export default function RegisterDriverPage() {
         email,
         phone,
         password,
-        serviceZoneId: serviceZoneId || undefined,
       });
       storeDriverSession(session);
       router.replace("/driver/dashboard");
@@ -80,14 +78,6 @@ export default function RegisterDriverPage() {
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
             autoComplete="tel"
-          />
-        </FieldLabel>
-        <FieldLabel>
-          {t("serviceZoneId")}
-          <Input
-            value={serviceZoneId}
-            onChange={(event) => setServiceZoneId(event.target.value)}
-            placeholder={t("optionalServiceZone")}
           />
         </FieldLabel>
         <FieldLabel>

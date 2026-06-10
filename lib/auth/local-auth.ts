@@ -20,6 +20,17 @@ export type VerifiedDriverToken = TokenPayload & {
   exp: number;
 };
 
+type RepresentativeTokenPayload = {
+  sub: string;
+  email: string;
+  role: "representative";
+};
+
+export type VerifiedRepresentativeToken = RepresentativeTokenPayload & {
+  iat: number;
+  exp: number;
+};
+
 function base64Url(input: Buffer | string) {
   return Buffer.from(input).toString("base64url");
 }
@@ -79,6 +90,54 @@ export function signDriverToken(payload: TokenPayload) {
     token: `${encodedHeader}.${encodedPayload}.${signature}`,
     expiresAt: new Date((now + TOKEN_TTL_SECONDS) * 1000).toISOString(),
   };
+}
+
+export function signRepresentativeToken(payload: RepresentativeTokenPayload) {
+  const now = Math.floor(Date.now() / 1000);
+  const body = { ...payload, iat: now, exp: now + TOKEN_TTL_SECONDS };
+  const encodedHeader = base64Url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const encodedPayload = base64Url(JSON.stringify(body));
+  const signature = createHmac("sha256", tokenSecret())
+    .update(`${encodedHeader}.${encodedPayload}`)
+    .digest("base64url");
+  return {
+    token: `${encodedHeader}.${encodedPayload}.${signature}`,
+    expiresAt: new Date((now + TOKEN_TTL_SECONDS) * 1000).toISOString(),
+  };
+}
+
+export function verifyRepresentativeToken(token: string): VerifiedRepresentativeToken | null {
+  const [encodedHeader, encodedPayload, signature] = token.split(".");
+  if (!encodedHeader || !encodedPayload || !signature) return null;
+
+  const expectedSignature = createHmac("sha256", tokenSecret())
+    .update(`${encodedHeader}.${encodedPayload}`)
+    .digest("base64url");
+
+  const actualSignature = Buffer.from(signature);
+  const expectedSignatureBuffer = Buffer.from(expectedSignature);
+  if (
+    actualSignature.length !== expectedSignatureBuffer.length ||
+    !timingSafeEqual(actualSignature, expectedSignatureBuffer)
+  ) return null;
+
+  let payload: Partial<VerifiedRepresentativeToken>;
+  try {
+    payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
+  } catch {
+    return null;
+  }
+
+  if (
+    typeof payload.sub !== "string" ||
+    typeof payload.email !== "string" ||
+    payload.role !== "representative" ||
+    typeof payload.iat !== "number" ||
+    typeof payload.exp !== "number"
+  ) return null;
+
+  if (payload.exp <= Math.floor(Date.now() / 1000)) return null;
+  return payload as VerifiedRepresentativeToken;
 }
 
 export function verifyDriverToken(token: string): VerifiedDriverToken | null {

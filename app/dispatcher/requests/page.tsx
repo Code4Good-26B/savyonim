@@ -42,8 +42,6 @@ type RideRequestRow = {
   rides: RideDriver[];
 };
 
-type ServiceZone = { id: string; name: string; region_code: string };
-
 function buildUrl(params: Record<string, string>) {
   const filtered = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== ""));
   const qs = new URLSearchParams(filtered).toString();
@@ -53,30 +51,24 @@ function buildUrl(params: Record<string, string>) {
 export default async function RequestsPage(props: PageProps<"/dispatcher/requests">) {
   const searchParams = (await props.searchParams) as Record<string, string>;
   const activeStatus = searchParams?.status ?? "";
-  const activeZone = searchParams?.zone ?? "";
   const page = Math.max(1, parseInt(searchParams?.page ?? "1", 10));
   const offset = (page - 1) * PAGE_SIZE;
 
   const supabase = createSupabaseClient();
 
-  const [zonesResult, ridesResult] = await Promise.all([
-    supabase.from("service_zones").select("id, name, region_code").order("name"),
-    (async () => {
-      let q = supabase
-        .from("ride_requests")
-        .select(
-          "id, status, source_address, destination_address, requested_pickup_at, caller_full_name, caller_phone, rides(status, drivers(users(full_name)))",
-          { count: "exact" },
-        )
-        .order("requested_pickup_at", { ascending: false })
-        .range(offset, offset + PAGE_SIZE - 1);
-      if (activeStatus) q = q.eq("status", activeStatus);
-      if (activeZone) q = q.eq("service_zone_id", activeZone);
-      return q;
-    })(),
-  ]);
+  let q = supabase
+    .from("ride_requests")
+    .select(
+      "id, status, source_address, destination_address, requested_pickup_at, caller_full_name, caller_phone, rides(status, drivers(users(full_name)))",
+      { count: "exact" },
+    )
+    .order("requested_pickup_at", { ascending: false })
+    .range(offset, offset + PAGE_SIZE - 1);
 
-  const zones = (zonesResult.data ?? []) as ServiceZone[];
+  if (activeStatus) q = q.eq("status", activeStatus);
+
+  const ridesResult = await q;
+
   const rides = (ridesResult.data ?? []) as RideRequestRow[];
   const totalCount = ridesResult.count ?? 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -103,57 +95,24 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
         </Link>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-6">
-        <div className="flex flex-col gap-1.5">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-400">סטטוס</p>
-          <div className="flex flex-wrap gap-1.5">
-            {STATUS_FILTERS.map((f) => (
-              <Link
-                key={f.value}
-                href={buildUrl({ status: f.value, zone: activeZone, page: "1" })}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  activeStatus === f.value
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "border border-gray-200 bg-white text-gray-600 hover:border-blue-300 hover:text-blue-600"
-                }`}
-              >
-                {f.label}
-              </Link>
-            ))}
-          </div>
+      {/* Status filters */}
+      <div className="flex flex-col gap-1.5">
+        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">סטטוס</p>
+        <div className="flex flex-wrap gap-1.5">
+          {STATUS_FILTERS.map((f) => (
+            <Link
+              key={f.value}
+              href={buildUrl({ status: f.value, page: "1" })}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                activeStatus === f.value
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "border border-gray-200 bg-white text-gray-600 hover:border-blue-300 hover:text-blue-600"
+              }`}
+            >
+              {f.label}
+            </Link>
+          ))}
         </div>
-
-        {zones.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">אזור</p>
-            <div className="flex flex-wrap gap-1.5">
-              <Link
-                href={buildUrl({ status: activeStatus, zone: "", page: "1" })}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  activeZone === ""
-                    ? "bg-slate-700 text-white shadow-sm"
-                    : "border border-gray-200 bg-white text-gray-600 hover:border-slate-400 hover:text-slate-700"
-                }`}
-              >
-                הכל
-              </Link>
-              {zones.map((z) => (
-                <Link
-                  key={z.id}
-                  href={buildUrl({ status: activeStatus, zone: z.id, page: "1" })}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    activeZone === z.id
-                      ? "bg-slate-700 text-white shadow-sm"
-                      : "border border-gray-200 bg-white text-gray-600 hover:border-slate-400 hover:text-slate-700"
-                  }`}
-                >
-                  {z.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {error && (
@@ -232,7 +191,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
             <div className="flex gap-2">
               {page > 1 && (
                 <Link
-                  href={buildUrl({ status: activeStatus, zone: activeZone, page: String(page - 1) })}
+                  href={buildUrl({ status: activeStatus, page: String(page - 1) })}
                   className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
                 >
                   ← הקודם
@@ -240,7 +199,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
               )}
               {page < totalPages && (
                 <Link
-                  href={buildUrl({ status: activeStatus, zone: activeZone, page: String(page + 1) })}
+                  href={buildUrl({ status: activeStatus, page: String(page + 1) })}
                   className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
                 >
                   הבא →
