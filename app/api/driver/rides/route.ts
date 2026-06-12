@@ -7,7 +7,7 @@ const REQUEST_FIELDS =
   "rr.id, rr.passenger_id, rr.requested_by_user_id, rr.service_zone_id, rr.status, rr.source_address, rr.source_notes, rr.destination_address, rr.destination_notes, rr.return_trip_required, rr.requested_pickup_at, rr.approved_at, rr.assigned_at, rr.started_at, rr.completed_at, rr.rejected_at, rr.rejection_reason, rr.caller_full_name, rr.caller_id_number, rr.caller_phone, rr.request_for_self, rr.trip_type, rr.requested_arrival_at, rr.estimated_departure_at, rr.waiting_time_minutes, rr.leisure_window_start, rr.leisure_window_end";
 
 const RIDE_SELECT =
-  "r.id, r.ride_request_id, r.driver_id, r.ambulance_id, r.assigned_by_user_id, r.representitive_user_id, r.status, r.assigned_at, r.in_progress_at, r.completed_at, r.rejected_at, r.rejection_reason, r.odometer_start_km, r.odometer_end_km";
+  "r.id, r.ride_request_id, r.driver_id, r.ambulance_id, r.assigned_by_user_id, r.representative_user_id, r.status, r.assigned_at, r.in_progress_at, r.completed_at, r.rejected_at, r.rejection_reason, r.odometer_start_km, r.odometer_end_km";
 
 type RideRequestRow = {
   id: string;
@@ -53,7 +53,7 @@ type RideRow = {
   driver_id: string;
   ambulance_id: string;
   assigned_by_user_id: string | null;
-  representitive_user_id: string | null;
+  representative_user_id: string | null;
   status: string;
   assigned_at: string | null;
   in_progress_at: string | null;

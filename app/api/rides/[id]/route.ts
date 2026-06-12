@@ -2,7 +2,7 @@ import { query, transaction } from "@/lib/db";
 import { requireBearerAuth } from "@/lib/api-auth";
 
 const RIDE_FIELDS =
-  "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representitive_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
+  "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representative_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
 
 type RideState = {
   driver_id: string;

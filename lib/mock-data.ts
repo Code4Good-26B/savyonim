@@ -42,7 +42,7 @@ export const MOCK_SERVICE_ZONES: ServiceZone[] = [
 export type RideStatus =
   | "pending"
   | "approved"
-  | "waiting_for_representitive"
+  | "waiting_for_representative"
   | "in_progress"
   | "completed"
   | "rejected";

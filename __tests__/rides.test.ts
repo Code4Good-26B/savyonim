@@ -81,7 +81,7 @@ const BASE_RIDE = {
   driver_id: "22222222-2222-2222-2222-222222222222",
   ambulance_id: "33333333-3333-3333-3333-333333333333",
   assigned_by_user_id: "44444444-4444-4444-4444-444444444444",
-  representitive_user_id: null,
+  representative_user_id: null,
   status: "assigned",
   assigned_at: "2026-05-07T10:00:00.000Z",
   in_progress_at: null,

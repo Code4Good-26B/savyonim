@@ -84,7 +84,7 @@ erDiagram
         uuid driver_id FK
         uuid ambulance_id FK
         uuid assigned_by_user_id FK
-        uuid representitive_user_id FK
+        uuid representative_user_id FK
         ride_status status
         numeric odometer_start_km
         numeric odometer_end_km
@@ -100,7 +100,7 @@ erDiagram
     users ||--o{ ride_requests : requested_by
     service_zones ||--o{ ride_requests : request_zone
     users ||--o{ rides : assigned_by
-    users ||--o{ rides : representitive
+    users ||--o{ rides : representative
     users ||--|| drivers : profile
     service_zones ||--o{ drivers : covers
     service_zones ||--o{ ambulances : contains
@@ -114,7 +114,7 @@ erDiagram
 
 `ride_requests.status` is constrained to this lifecycle:
 
-`pending -> approved -> waiting_for_representitive -> in_progress -> completed`
+`pending -> approved -> waiting_for_representative -> in_progress -> completed`
 
 A request may transition to `rejected` from any non-terminal operational state according to business handling.
 
@@ -130,5 +130,5 @@ These constraints block conflicting concurrent assignments at the database level
 ## Enum Values
 
 - `user_role`: `admin`, `dispatcher`, `driver`, `representative`
-- `request_status`: `pending`, `approved`, `waiting_for_representitive`, `in_progress`, `completed`, `rejected`
+- `request_status`: `pending`, `approved`, `waiting_for_representative`, `in_progress`, `completed`, `rejected`
 - `mobility_requirement`: `none`, `wheelchair`, `walker`, `cane`

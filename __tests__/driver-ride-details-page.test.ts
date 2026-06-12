@@ -51,7 +51,7 @@ const assignedRide: RideSummary = {
   driver_id: "33333333-0000-0000-0000-000000000001",
   ambulance_id: "44444444-0000-0000-0000-000000000001",
   assigned_by_user_id: "22222222-0000-0000-0000-000000000001",
-  representitive_user_id: null,
+  representative_user_id: null,
   status: "assigned",
   assigned_at: "2026-06-05T09:00:00.000Z",
   in_progress_at: null,

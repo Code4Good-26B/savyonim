@@ -96,7 +96,7 @@ const assignedRide = {
   driver_id: DRIVER_ID,
   ambulance_id: AMBULANCE_ID,
   assigned_by_user_id: USER_ID,
-  representitive_user_id: null,
+  representative_user_id: null,
   status: "assigned",
   assigned_at: "2026-05-29T10:00:00.000Z",
   in_progress_at: null,
@@ -152,7 +152,7 @@ describe("driver accept ride", () => {
   });
 
   it("returns 409 when the ride request is no longer approved", async () => {
-    mockTransaction([{ rows: [{ status: "waiting_for_representitive" }] }]);
+    mockTransaction([{ rows: [{ status: "waiting_for_representative" }] }]);
 
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(postAuthRequest({
@@ -193,7 +193,7 @@ describe("driver accept ride", () => {
     }));
     expect(driverAResponse.status).toBe(201);
 
-    mockTransaction([{ rows: [{ status: "waiting_for_representitive" }] }]);
+    mockTransaction([{ rows: [{ status: "waiting_for_representative" }] }]);
 
     const driverBResponse = await POST(postAuthRequest(
       {

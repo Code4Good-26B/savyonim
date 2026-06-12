@@ -7,8 +7,8 @@ const RIDE_REQUEST_FIELDS =
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   pending: ["approved", "rejected"],
-  approved: ["waiting_for_representitive", "rejected"],
-  waiting_for_representitive: ["in_progress", "rejected"],
+  approved: ["waiting_for_representative", "rejected"],
+  waiting_for_representative: ["in_progress", "rejected"],
   in_progress: ["completed", "rejected"],
   completed: [],
   rejected: [],

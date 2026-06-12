@@ -1,5 +1,5 @@
 -- Fix typo in enum value for user_role.
--- representitive -> representative
+-- representative -> representative
 
 do $$
 begin
@@ -16,7 +16,7 @@ begin
     join pg_namespace n on n.oid = t.typnamespace
     where n.nspname = 'public'
       and t.typname = 'user_role'
-      and e.enumlabel = 'representitive'
+      and e.enumlabel = 'representative'
   )
   and not exists (
     select 1
@@ -27,6 +27,6 @@ begin
       and t.typname = 'user_role'
       and e.enumlabel = 'representative'
   ) then
-    alter type public.user_role rename value 'representitive' to 'representative';
+    alter type public.user_role rename value 'representative' to 'representative';
   end if;
 end $$;

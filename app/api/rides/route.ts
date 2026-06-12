@@ -2,7 +2,7 @@ import { transaction } from "@/lib/db";
 import { requireBearerAuth } from "@/lib/api-auth";
 
 const RIDE_FIELDS =
-  "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representitive_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
+  "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representative_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
 
 export async function POST(request: Request) {
   const auth = requireBearerAuth(request);
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const {
     ride_request_id,
     ambulance_id,
-    representitive_user_id,
+    representative_user_id,
   } = body;
   const driver_id = auth.kind === "driver" ? auth.driver.driverId : body.driver_id;
   const assigned_by_user_id = auth.kind === "driver" ? auth.driver.sub : body.assigned_by_user_id;
@@ -60,12 +60,12 @@ export async function POST(request: Request) {
             driver_id,
             ambulance_id,
             assigned_by_user_id,
-            representitive_user_id
+            representative_user_id
           )
           values ($1, $2, $3, $4, $5)
           returning ${RIDE_FIELDS}
         `,
-        [ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representitive_user_id],
+        [ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representative_user_id],
       );
 
       return { ride: result.rows[0] } as const;

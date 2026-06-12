@@ -7,7 +7,7 @@ const PAGE_SIZE = 20;
 const STATUS_LABEL: Record<string, string> = {
   pending: "ממתין",
   approved: "מאושר",
-  waiting_for_representitive: "ממתין לנציג",
+  waiting_for_representative: "ממתין לנציג",
   in_progress: "בדרך",
   completed: "הושלם",
   rejected: "נדחה",
@@ -16,7 +16,7 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_COLOR: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   approved: "bg-blue-100 text-blue-800",
-  waiting_for_representitive: "bg-purple-100 text-purple-800",
+  waiting_for_representative: "bg-purple-100 text-purple-800",
   in_progress: "bg-cyan-100 text-cyan-800",
   completed: "bg-green-100 text-green-800",
   rejected: "bg-red-100 text-red-800",

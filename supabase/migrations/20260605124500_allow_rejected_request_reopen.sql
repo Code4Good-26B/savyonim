@@ -15,9 +15,9 @@ begin
 
 	if old.status = 'pending' and new.status in ('approved', 'rejected') then
 		return new;
-	elsif old.status = 'approved' and new.status in ('waiting_for_representitive', 'rejected') then
+	elsif old.status = 'approved' and new.status in ('waiting_for_representative', 'rejected') then
 		return new;
-	elsif old.status = 'waiting_for_representitive' and new.status in ('in_progress', 'completed', 'rejected') then
+	elsif old.status = 'waiting_for_representative' and new.status in ('in_progress', 'completed', 'rejected') then
 		return new;
 	elsif old.status = 'in_progress' and new.status in ('completed', 'rejected') then
 		return new;

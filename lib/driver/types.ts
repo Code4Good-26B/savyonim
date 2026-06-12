@@ -60,7 +60,7 @@ export type RideSummary = {
   driver_id: string;
   ambulance_id: string;
   assigned_by_user_id: string | null;
-  representitive_user_id: string | null;
+  representative_user_id: string | null;
   status: "assigned" | "in_progress" | "completed" | "rejected";
   assigned_at: string | null;
   in_progress_at: string | null;
