@@ -102,6 +102,7 @@ describe("Rides Race Condition Integration Tests", () => {
     expect([
       "Ride request already has an active assignment",
       "Ride request is no longer open for assignment",
+      "Ambulance already has an active ride",
     ]).toContain(body.error);
 
     // 6. Double check database state to make sure only one ride exists

@@ -4,6 +4,7 @@ import { POST as POST_RIDE } from "@/app/api/rides/route";
 import { PATCH as PATCH_RIDE_STATUS } from "@/app/api/rides/[id]/status/route";
 import { signDriverToken } from "@/lib/auth/local-auth";
 import { createAuthenticatedRequest, getAuthenticatedSupabase, signInSeedUser } from "./helpers";
+import { createClient } from "@supabase/supabase-js";
 
 const SEED_PASSENGER_ID = "55555555-0000-0000-0000-000000000001"; // Miriam Katz
 const SEED_DRIVER_1 = "33333333-0000-0000-0000-000000000001"; // Avi Cohen
@@ -50,6 +51,7 @@ describe("Phase 5: Full E2E Ride Lifecycle Scenario", () => {
         source_address: "123 E2E Test Source",
         destination_address: "456 E2E Test Dest",
         requested_pickup_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        requested_arrival_at: new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString(),
         caller_full_name: "Dispatcher Test",
         caller_phone: "0500000000",
         request_for_self: false,
@@ -63,12 +65,16 @@ describe("Phase 5: Full E2E Ride Lifecycle Scenario", () => {
     
     const body = await res.json();
     expect(body).toHaveProperty("id");
-    expect(body.status).toBe("approved"); // from ride-requests POST, default is approved usually or pending
+    expect(body.status).toBe("pending"); // from ride-requests POST, default is pending
     createdRideRequestId = body.id;
   });
 
   it("Step 2: Driver accepts the ride using driver token", async () => {
     expect(createdRideRequestId).toBeDefined();
+
+    // First we must approve the request because drivers can only accept 'approved' requests
+    const adminSupabase = getAuthenticatedSupabase(adminToken);
+    await adminSupabase.from("ride_requests").update({ status: "approved" }).eq("id", createdRideRequestId);
 
     const req = createAuthenticatedRequest("http://localhost/api/rides", driverToken, {
       method: "POST",
@@ -94,8 +100,8 @@ describe("Phase 5: Full E2E Ride Lifecycle Scenario", () => {
       method: "PATCH",
       body: JSON.stringify({
         status: "completed",
-        odometer_start: 1000,
-        odometer_end: 1010,
+        odometer_start_km: 1000,
+        odometer_end_km: 1010,
       }),
     });
 
@@ -104,8 +110,8 @@ describe("Phase 5: Full E2E Ride Lifecycle Scenario", () => {
 
     const body = await res.json();
     expect(body.status).toBe("completed");
-    expect(body.odometer_start).toBe(1000);
-    expect(body.odometer_end).toBe(1010);
+    expect(Number(body.odometer_start_km)).toBe(1000);
+    expect(Number(body.odometer_end_km)).toBe(1010);
   });
 
   it("Step 4: Verify the database reflects the fully completed ride and linked request", async () => {
