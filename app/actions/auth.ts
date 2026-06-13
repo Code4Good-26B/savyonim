@@ -100,7 +100,7 @@ export async function completeOnboarding(
 
   try {
     // 1. Set Password via Admin Auth
-    const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
+    const { error: updateError } = await supabase.auth.admin.updateUserById(claims.sub, {
       password: formData.password,
       app_metadata: { app_role: role },
       user_metadata: { full_name: formData.fullName }
@@ -122,7 +122,7 @@ export async function completeOnboarding(
            role = excluded.role,
            status = 'pending',
            national_id = excluded.national_id`,
-        [user.id, formData.fullName, formData.phone, role, formData.nationalId]
+        [claims.sub, formData.fullName, formData.phone, role, formData.nationalId]
       );
 
       // Insert drivers if needed
@@ -143,7 +143,7 @@ export async function completeOnboarding(
             consent_criminal_record = excluded.consent_criminal_record,
             owns_vehicle_ambulatory = excluded.owns_vehicle_ambulatory`,
           [
-            user.id, formData.phone, formData.location, formData.birthYear, 
+            claims.sub, formData.phone, formData.location, formData.birthYear, 
             formData.gender, formData.licenseType, formData.licenseIssueYear, 
             formData.licensePhotoPath, formData.consentCriminalRecord ?? false, 
             formData.ownsVehicleAmbulatory ?? false
@@ -156,7 +156,7 @@ export async function completeOnboarding(
         `update public.invitations 
          set status = 'accepted', accepted_at = timezone('utc', now()), auth_user_id = $1
          where id = $2`,
-        [user.id, invite.id]
+        [claims.sub, invite.id]
       );
     });
 
@@ -180,13 +180,13 @@ export async function approveUser(adminToken: string, targetUserId: string): Pro
         `select role, status, can_approve_drivers from public.users where id = $1`,
         [claims.sub]
       );
-      if (res.rowCount === 0) throw new Error("Current user not found in public.users");
+      if (res.rows.length === 0) throw new Error("Current user not found in public.users");
       
       const adminUser = res.rows[0];
       if (adminUser.status !== 'approved') throw new Error("Only approved users can approve others");
 
       const targetRes = await client.query(`select role from public.users where id = $1`, [targetUserId]);
-      if (targetRes.rowCount === 0) throw new Error("Target user not found");
+      if (targetRes.rows.length === 0) throw new Error("Target user not found");
       const targetRole = targetRes.rows[0].role;
 
       // Permission matrix
@@ -225,13 +225,13 @@ export async function rejectUser(adminToken: string, targetUserId: string, reaso
         `select role, status, can_approve_drivers from public.users where id = $1`,
         [claims.sub]
       );
-      if (res.rowCount === 0) throw new Error("Current user not found in public.users");
+      if (res.rows.length === 0) throw new Error("Current user not found in public.users");
       
       const adminUser = res.rows[0];
       if (adminUser.status !== 'approved') throw new Error("Only approved users can reject others");
 
       const targetRes = await client.query(`select role from public.users where id = $1`, [targetUserId]);
-      if (targetRes.rowCount === 0) throw new Error("Target user not found");
+      if (targetRes.rows.length === 0) throw new Error("Target user not found");
       const targetRole = targetRes.rows[0].role;
 
       if (adminUser.role !== 'admin') {

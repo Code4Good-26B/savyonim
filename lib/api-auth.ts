@@ -66,7 +66,9 @@ export function requireBearerAuth(request: Request): AuthContext {
   return { ok: false, error: "Invalid or expired Authorization token" };
 }
 
-export function requireDriverAuth(request: Request): AuthContext | { ok: false; error: string; status: number } {
+export function requireDriverAuth(request: Request): 
+  | { ok: true; token: string; kind: "user"; claims: SupabaseClaims }
+  | { ok: false; error: string; status: number } {
   const auth = requireBearerAuth(request);
   if (!auth.ok) return { ...auth, status: 401 };
   

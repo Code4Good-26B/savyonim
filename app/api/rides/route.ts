@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   if (!driver_id) {
     const { getPool } = await import("@/lib/db");
     const res = await getPool().query('select id from public.drivers where user_id = $1', [auth.claims.sub]);
-    if (res.rowCount > 0) driver_id = res.rows[0].id;
+    if (res.rows.length > 0) driver_id = res.rows[0].id;
   }
   if (!assigned_by_user_id) {
     assigned_by_user_id = auth.claims.sub;

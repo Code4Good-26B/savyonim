@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { POST as POST_RIDE } from "@/app/api/rides/route";
-import { signDriverToken } from "@/lib/auth/local-auth";
 import { createAuthenticatedRequest, signInSeedUser } from "./helpers";
 
 const SEED_DRIVER_1 = "33333333-0000-0000-0000-000000000001"; // Avi Cohen
