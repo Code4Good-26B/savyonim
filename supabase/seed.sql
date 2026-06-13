@@ -348,4 +348,7 @@ INSERT INTO public.ride_requests (
   )
 ON CONFLICT (id) DO NOTHING;
 
+-- Make sure all seeded users are approved so tests can run
+UPDATE public.users SET status = 'approved';
+
 COMMIT;

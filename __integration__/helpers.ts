@@ -50,6 +50,8 @@ export async function signInSeedUser(email: string, password = DEFAULT_SEED_PASS
     return data.session.access_token;
   }
 
+  console.error("signInWithPassword failed in integration test:", error?.message);
+
   // Fallback for local stacks where password sign-in is disabled/misconfigured.
 
   const seededByEmail: Record<string, string> = {

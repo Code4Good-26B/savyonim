@@ -70,9 +70,13 @@ export async function PATCH(
 
     const current = currentResult.rows[0];
     if (!current) return null;
-    if (auth.kind === "driver" && current.driver_id !== auth.driver.driverId) {
-      return { forbidden: true };
-    }
+    if ((auth.claims.role === "driver" || auth.claims.app_metadata?.app_role === "driver") && current.driver_id !== await (async () => {
+      const { getPool } = await import("@/lib/db");
+      const res = await getPool().query('select id from public.drivers where user_id = $1', [auth.claims.sub]);
+      return res.rows[0]?.id;
+    })()) {
+      throw new Error("403");
+    };
 
     const allowed = VALID_TRANSITIONS[current.status] ?? [];
     if (!allowed.includes(newStatus)) {

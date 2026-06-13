@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { POST as POST_RIDE_REQUEST } from "@/app/api/ride-requests/route";
 import { POST as POST_RIDE } from "@/app/api/rides/route";
 import { PATCH as PATCH_RIDE_STATUS } from "@/app/api/rides/[id]/status/route";
-import { signDriverToken } from "@/lib/auth/local-auth";
 import { createAuthenticatedRequest, getAuthenticatedSupabase, signInSeedUser } from "./helpers";
 import { createClient } from "@supabase/supabase-js";
 
@@ -20,12 +19,7 @@ describe("Phase 5: Full E2E Ride Lifecycle Scenario", () => {
 
   beforeAll(async () => {
     adminToken = await signInSeedUser("admin.dispatch@savionim.test");
-    driverToken = signDriverToken({
-      sub: SEED_DRIVER_USER_1,
-      driverId: SEED_DRIVER_1,
-      email: "avi.cohen@savionim.test",
-      role: "driver",
-    }).token;
+    driverToken = await signInSeedUser("avi.cohen@savionim.test");
   });
 
   afterAll(async () => {

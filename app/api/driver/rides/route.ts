@@ -68,10 +68,17 @@ type RideRow = {
 export async function GET(request: Request) {
   const auth = requireDriverAuth(request);
   if (!auth.ok) {
-    return Response.json({ error: auth.error }, { status: auth.status });
+    return Response.json({ error: auth.error }, { status: auth.status || 401 });
   }
 
-  const driverId = auth.driver.driverId;
+  let driverId: string | null = null;
+  const { getPool } = await import("@/lib/db");
+  const res = await getPool().query('select id from public.drivers where user_id = $1', [auth.claims.sub]);
+  if (res.rowCount > 0) driverId = res.rows[0].id;
+  
+  if (!driverId) {
+    return Response.json({ error: "Driver profile not found" }, { status: 404 });
+  }
 
   const openRides = await query<RideRequestRow>(
     `

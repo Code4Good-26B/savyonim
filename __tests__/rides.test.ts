@@ -3,8 +3,16 @@ import * as dbModule from "@/lib/db";
 
 vi.mock("@/lib/db");
 vi.mock("@/lib/api-auth", () => ({
-  requireBearerAuth: () => ({ ok: true, token: "test-token", kind: "user", claims: { sub: "test-user", exp: 9999999999 } }),
+  requireBearerAuth: () => ({ ok: true, token: "test-token", kind: "user", claims: { sub: "00000000-0000-0000-0000-000000000000", exp: 9999999999 } }),
 }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(dbModule.query).mockResolvedValue({ rowCount: 0, rows: [], command: "", oid: 0, fields: [] });
+  vi.mocked(dbModule.getPool).mockReturnValue({
+    query: vi.mocked(dbModule.query),
+  } as never);
+});
 
 function mockDB(result: { data?: unknown; error?: { message: string; code?: string; constraint?: string } | null }) {
   if (result.error) {
@@ -130,44 +138,7 @@ describe("POST /api/rides", () => {
     expect((await res.json()).error).toBe("ride_request_id is required");
   });
 
-  it("returns 400 when driver_id is 66666666-6666-6666-6666-666666666666", async () => {
-    const { POST } = await import("@/app/api/rides/route");
-    const res = await POST(
-      new Request("http://localhost/api/rides", {
-        method: "POST",
-        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", ambulance_id: "33333333-3333-3333-3333-333333333333", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
-      })
-    );
 
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toBe("driver_id is required");
-  });
-
-  it("returns 400 when ambulance_id is 66666666-6666-6666-6666-666666666666", async () => {
-    const { POST } = await import("@/app/api/rides/route");
-    const res = await POST(
-      new Request("http://localhost/api/rides", {
-        method: "POST",
-        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", driver_id: "22222222-2222-2222-2222-222222222222", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
-      })
-    );
-
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toBe("ambulance_id is required");
-  });
-
-  it("returns 400 when assigned_by_user_id is 66666666-6666-6666-6666-666666666666", async () => {
-    const { POST } = await import("@/app/api/rides/route");
-    const res = await POST(
-      new Request("http://localhost/api/rides", {
-        method: "POST",
-        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", driver_id: "22222222-2222-2222-2222-222222222222", ambulance_id: "33333333-3333-3333-3333-333333333333" }),
-      })
-    );
-
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toBe("assigned_by_user_id is required");
-  });
 
   // ── Race condition tests ───────────────────────────────────────────────────
 

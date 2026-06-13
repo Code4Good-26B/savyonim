@@ -2,7 +2,6 @@ import { describe, it, expect, afterAll, beforeAll } from "vitest";
 import { POST } from "@/app/api/rides/route";
 import { PATCH } from "@/app/api/rides/[id]/status/route";
 import { GET as getDriverRides } from "@/app/api/driver/rides/route";
-import { signDriverToken } from "@/lib/auth/local-auth";
 import { createAuthenticatedRequest, getAuthenticatedSupabase, signInSeedUser } from "./helpers";
 
 // Synthetic and Seeded IDs
@@ -59,18 +58,8 @@ describe("Rides Race Condition Integration Tests", () => {
     }
 
     // 2. Build the concurrent POST requests
-    const driverToken1 = signDriverToken({
-      sub: SEED_DRIVER_USER_1,
-      driverId: SEED_DRIVER_1,
-      email: "avi.cohen@savionim.test",
-      role: "driver",
-    }).token;
-    const driverToken2 = signDriverToken({
-      sub: SEED_DRIVER_USER_2,
-      driverId: SEED_DRIVER_2,
-      email: "noa.levi@savionim.test",
-      role: "driver",
-    }).token;
+    const driverToken1 = await signInSeedUser("avi.cohen@savionim.test");
+    const driverToken2 = await signInSeedUser("noa.levi@savionim.test");
 
     const req1 = createAuthenticatedRequest("http://localhost/api/rides", driverToken1, {
       method: "POST",
@@ -130,18 +119,8 @@ describe("Rides Race Condition Integration Tests", () => {
       throw new Error(`Failed to insert reopen test ride request: ${reqError.message}`);
     }
 
-    const driverToken1 = signDriverToken({
-      sub: SEED_DRIVER_USER_1,
-      driverId: SEED_DRIVER_1,
-      email: "avi.cohen@savionim.test",
-      role: "driver",
-    }).token;
-    const driverToken2 = signDriverToken({
-      sub: SEED_DRIVER_USER_2,
-      driverId: SEED_DRIVER_2,
-      email: "noa.levi@savionim.test",
-      role: "driver",
-    }).token;
+    const driverToken1 = await signInSeedUser("avi.cohen@savionim.test");
+    const driverToken2 = await signInSeedUser("noa.levi@savionim.test");
 
     const accepted = await POST(createAuthenticatedRequest(
       "http://localhost/api/rides",
