@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { LanguageSwitch, useDriverI18n } from "@/components/driver/DriverI18n";
-import { ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 export default function DriverLandingPage() {
   const { direction, t } = useDriverI18n();
@@ -23,9 +24,9 @@ export default function DriverLandingPage() {
             className="h-16 w-auto rounded-lg bg-white/95 p-2 shadow-lg sm:h-20"
           />
           <div className="flex items-center gap-2">
-            <ButtonLink href="/" variant="outline" size="md" className="border-white/25 bg-white/95 text-slate-900 hover:bg-white">
-              {t("backToHomepage")}
-            </ButtonLink>
+            <Button asChild variant="outline" className="border-white/25 bg-white/95 text-slate-900 hover:bg-white">
+              <Link href="/">{t("backToHomepage")}</Link>
+            </Button>
             <LanguageSwitch className="border-white/25 bg-white/95" />
           </div>
         </header>
@@ -36,12 +37,12 @@ export default function DriverLandingPage() {
             <h1 className="mt-3 text-4xl font-semibold text-white sm:text-6xl">{t("landingTitle")}</h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-slate-200">{t("landingBody")}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/login" size="lg">
-                {t("login")}
-              </ButtonLink>
-              <ButtonLink href="/register-driver" variant="outline" size="lg" className="border-white/25 bg-white/95 text-slate-900 hover:bg-white">
-                {t("signup")}
-              </ButtonLink>
+              <Button asChild size="lg">
+                <Link href="/login">{t("login")}</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="border-white/25 bg-white/95 text-slate-900 hover:bg-white">
+                <Link href="/register-driver">{t("signup")}</Link>
+              </Button>
             </div>
           </section>
         </main>

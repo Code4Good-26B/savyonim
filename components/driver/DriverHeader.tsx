@@ -41,7 +41,6 @@ export function DriverHeader({ session }: { session: DriverSession }) {
             aria-label={t("logout")}
             title={t("logout")}
             variant="outline"
-            size="md"
             className="border-red-200 text-red-700 hover:border-red-300 hover:bg-red-50 hover:text-red-800 focus-visible:ring-red-500"
           >
             {t("logout")}
