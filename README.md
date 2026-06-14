@@ -36,7 +36,7 @@ BLOCK_API_WRITES=false
 
 Then restart `npm run dev`.
 
-Required local env values are listed in `.env.example`: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_ANON_KEY`, `DATABASE_URL`, `SUPABASE_DB_URL`, `LOCAL_DEV_ONLY=true`, and `BLOCK_API_WRITES`.
+Required local env values are listed in `.env.example`, including the public Supabase URL and anon key plus the server-only service-role key.
 
 ### Recommended Team Workflow
 
@@ -53,7 +53,30 @@ supabase start
 supabase db reset
 ```
 
-Then point `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_ANON_KEY` to the local project values.
+Then point `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to the local project values printed by `supabase status -o env`.
+
+### Invite-Only Authentication
+
+Local Supabase Auth is configured for administrator-issued invitations only. Public email signup is disabled. Invites are valid for 24 hours and link to `http://localhost:3000/onboarding`.
+
+To test locally:
+
+1. Start the app and Supabase with `npm run dev` and `supabase start`.
+2. Generate an invite with the Supabase admin API using `SUPABASE_SERVICE_ROLE_KEY`.
+3. Open the local mail catcher (Inbucket/Mailpit) at `http://localhost:54324`, select the invite email, and follow the registration link.
+
+The `/onboarding` page exchanges the one-time invite token for a usable Supabase session.
+
+For production, configure these application environment variables without committing their values:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only)
+- `APP_URL` (the public site URL)
+
+In the hosted Supabase Auth settings, set the Site URL to `APP_URL`, add `APP_URL/onboarding` to the redirect allow-list, keep public email signup disabled, and configure the invite template to link to `/onboarding`.
+
+Configure a production SMTP provider in the Supabase dashboard or deployment environment with `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_ADMIN_EMAIL`, and `SMTP_SENDER_NAME`. Local development uses the bundled Inbucket/Mailpit mail catcher and does not need production SMTP credentials.
 
 ## Mock Commbox Webhooks (Phase 1)
 

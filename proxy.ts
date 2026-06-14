@@ -14,9 +14,12 @@ function isWriteGuardEnabled(): boolean {
 }
 
 export function proxy(request: NextRequest) {
-  // Webhook handlers have their own signature verification and rate limiting.
-  // Allow them even when local API write guard is enabled.
-  if (request.nextUrl.pathname.startsWith("/api/webhooks/")) {
+  // Authentication and webhook handlers perform their own validation.
+  // They must remain reachable while other local API writes are guarded.
+  if (
+    request.nextUrl.pathname.startsWith("/api/auth/") ||
+    request.nextUrl.pathname.startsWith("/api/webhooks/")
+  ) {
     return NextResponse.next();
   }
 

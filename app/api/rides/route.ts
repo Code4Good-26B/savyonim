@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  let {
+  const {
     ride_request_id,
     ambulance_id,
     representative_user_id,
