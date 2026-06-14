@@ -1,7 +1,7 @@
 "use server";
 
 import { createSupabaseClient } from "@/lib/supabase";
-import { transaction } from "@/lib/db";
+import { transaction, getPool } from "@/lib/db";
 
 export type ActionResponse<T = unknown> = {
   success: boolean;
@@ -210,6 +210,88 @@ export async function approveUser(adminToken: string, targetUserId: string): Pro
     return { success: true, message: "User approved successfully" };
   } catch (err: unknown) {
     return { success: false, message: "Approval failed", error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+export async function sendInvite(
+  callerToken: string,
+  email: string,
+  invitedRole: "driver" | "representative",
+): Promise<ActionResponse> {
+  const { verifySupabaseJwt } = await import("@/lib/api-auth");
+  const claims = verifySupabaseJwt(callerToken);
+  if (!claims) return { success: false, message: "Unauthorized" };
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { success: false, message: "Valid email address is required" };
+  }
+  if (invitedRole !== "driver" && invitedRole !== "representative") {
+    return { success: false, message: "Invalid role" };
+  }
+
+  try {
+    const callerRes = await getPool().query(
+      `select role, status, can_approve_drivers from public.users where id = $1`,
+      [claims.sub],
+    );
+    const caller = callerRes.rows[0];
+    if (!caller) return { success: false, message: "Caller not found" };
+    if (caller.status !== "approved")
+      return { success: false, message: "Only approved users can send invitations" };
+
+    // Permission matrix: admin → any role; rep with can_approve_drivers → driver only
+    if (caller.role === "admin") {
+      // no further restriction
+    } else if (caller.role === "representative" && caller.can_approve_drivers === true) {
+      if (invitedRole !== "driver") {
+        return { success: false, message: "Representatives can only invite drivers" };
+      }
+    } else {
+      return { success: false, message: "You do not have permission to send invitations" };
+    }
+
+    // Duplicate pending-invite check (DB constraint also enforces this at insert time)
+    const existing = await getPool().query(
+      `select id from public.invitations where lower(email) = lower($1) and status = 'pending' limit 1`,
+      [email],
+    );
+    if (existing.rows.length > 0) {
+      return { success: false, message: "A pending invitation for this email already exists" };
+    }
+
+    // Send the invite through Supabase Auth Admin API
+    const supabase = createSupabaseClient();
+    const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+    const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+      email,
+      {
+        redirectTo: `${appUrl}/onboarding`,
+        data: { invited_role: invitedRole },
+      },
+    );
+
+    if (inviteError) {
+      if (inviteError.message.toLowerCase().includes("already")) {
+        return { success: false, message: "This email address already has an account" };
+      }
+      return { success: false, message: "Failed to send invitation", error: inviteError.message };
+    }
+
+    // Record the invitation
+    await getPool().query(
+      `insert into public.invitations (email, invited_role, invited_by, status, auth_user_id)
+       values ($1, $2, $3, 'pending', $4)
+       on conflict do nothing`,
+      [email.toLowerCase(), invitedRole, claims.sub, inviteData.user?.id ?? null],
+    );
+
+    return { success: true, message: `Invitation sent to ${email}` };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: "Failed to send invitation",
+      error: err instanceof Error ? err.message : "Unknown error",
+    };
   }
 }
 
