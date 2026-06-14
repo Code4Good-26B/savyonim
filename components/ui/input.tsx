@@ -1,11 +1,16 @@
-import type { ComponentPropsWithoutRef } from "react";
+import * as React from "react";
+
 import { cn } from "@/lib/utils";
 
-export function Input({ className, ...props }: ComponentPropsWithoutRef<"input">) {
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
     <input
+      type={type}
+      data-slot="input"
       className={cn(
-        "mt-1 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm transition placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100",
+        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base bg-input-background transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
         className,
       )}
       {...props}
@@ -13,7 +18,12 @@ export function Input({ className, ...props }: ComponentPropsWithoutRef<"input">
   );
 }
 
-export function Textarea({ className, ...props }: ComponentPropsWithoutRef<"textarea">) {
+// Preserved from the original component (not part of the Figma input export)
+// so existing call sites importing Textarea / FieldLabel keep working.
+function Textarea({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"textarea">) {
   return (
     <textarea
       className={cn(
@@ -25,6 +35,16 @@ export function Textarea({ className, ...props }: ComponentPropsWithoutRef<"text
   );
 }
 
-export function FieldLabel({ className, ...props }: ComponentPropsWithoutRef<"label">) {
-  return <label className={cn("block text-sm font-medium text-slate-700", className)} {...props} />;
+function FieldLabel({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"label">) {
+  return (
+    <label
+      className={cn("block text-sm font-medium text-slate-700", className)}
+      {...props}
+    />
+  );
 }
+
+export { Input, Textarea, FieldLabel };
