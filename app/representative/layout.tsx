@@ -1,3 +1,4 @@
+import { Toaster } from "sonner";
 import { SidebarNav } from "./SidebarNav";
 
 // All dispatcher pages read live data via the Supabase service-role client,
@@ -7,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default function DispatcherLayout({ children }: { children: React.ReactNode }) {
   return (
+    <>
     <div className="flex min-h-screen bg-gray-50">
       <aside className="w-60 shrink-0 border-r border-gray-200 bg-white flex flex-col">
         <div className="px-5 py-5 border-b border-gray-100">
@@ -32,5 +34,7 @@ export default function DispatcherLayout({ children }: { children: React.ReactNo
 
       <main className="flex-1 p-8 overflow-auto">{children}</main>
     </div>
+    <Toaster position="top-center" richColors />
+    </>
   );
 }

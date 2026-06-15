@@ -13,12 +13,20 @@ function isWriteGuardEnabled(): boolean {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Auth guard for dispatcher routes
   if (pathname.startsWith("/representative") && pathname !== "/representative/login") {
     const token = request.cookies.get("savionim-rep-token")?.value;
     if (!token) {
       const url = request.nextUrl.clone();
       url.pathname = "/representative/login";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    const token = request.cookies.get("savionim-admin-token")?.value;
+    if (!token) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/login";
       return NextResponse.redirect(url);
     }
   }
@@ -48,5 +56,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/:path*", "/representative/:path*"],
+  matcher: ["/api/:path*", "/representative/:path*", "/admin/:path*"],
 };

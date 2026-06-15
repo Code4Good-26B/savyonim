@@ -60,7 +60,7 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
   );
 }
 
-export default async function RequestDetailPage(props: PageProps<"/representative/request/[id]">) {
+export default async function RequestDetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
 
   const supabase = createSupabaseClient();

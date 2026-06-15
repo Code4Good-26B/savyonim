@@ -48,7 +48,7 @@ function buildUrl(params: Record<string, string>) {
   return `/representative/requests${qs ? `?${qs}` : ""}`;
 }
 
-export default async function RequestsPage(props: PageProps<"/representative/requests">) {
+export default async function RequestsPage(props: { searchParams: Promise<Record<string, string>> }) {
   const searchParams = (await props.searchParams) as Record<string, string>;
   const activeStatus = searchParams?.status ?? "";
   const page = Math.max(1, parseInt(searchParams?.page ?? "1", 10));
