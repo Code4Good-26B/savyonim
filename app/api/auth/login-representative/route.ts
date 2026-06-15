@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     expiresAt,
   };
 
-  // Set an HttpOnly cookie so middleware can gate dispatcher routes server-side
+  // Set an HttpOnly cookie so middleware can gate representative routes server-side
   const cookieMaxAge = 60 * 60 * 24; // 24 hours
   const response = Response.json(session, { status: 200 });
   response.headers.set(

@@ -2,7 +2,7 @@ import { supabaseErrorResponse } from "@/lib/api-errors";
 import { requireBearerAuth } from "@/lib/api-auth";
 import { createSupabaseClient } from "@/lib/supabase";
 
-const VALID_ROLES = ["admin", "dispatcher", "driver"] as const;
+const VALID_ROLES = ["admin", "representative", "driver"] as const;
 type UserRole = (typeof VALID_ROLES)[number];
 
 export async function GET(
