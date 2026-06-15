@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { isValid, buildPayload, EMPTY_FORM, type FormState } from "@/app/representative/requests/new/form-logic";
-import { assignedDriver, type RideDriver } from "@/app/representative/requests/assigned-driver";
+import { isValid, buildPayload, EMPTY_FORM, type FormState } from "@/app/representative/(portal)/requests/new/form-logic";
+import { assignedDriver, type RideDriver } from "@/app/representative/(portal)/requests/assigned-driver";
 import { validateIntakeRideRequestInput } from "@/lib/intake-contract";
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -22,20 +22,19 @@ export async function sendInvite(
   } = await adminClient.auth.getUser(token);
   if (authError || !user) return { error: "Invalid session" };
 
-  const result = await query<{ role: string; is_active: boolean }>(
-    `SELECT role, is_active FROM public.users WHERE id = $1`,
+  const result = await query<{ role: string; is_active: boolean; can_approve_drivers: boolean }>(
+    `SELECT role, is_active, can_approve_drivers FROM public.users WHERE id = $1`,
     [user.id],
   );
 
   const dbUser = result.rows[0];
   if (!dbUser || !dbUser.is_active) return { error: "Account not active" };
 
-  if (dbUser.role !== "admin" && dbUser.role !== "representative") {
-    return { error: "Insufficient permissions" };
-  }
-  if (dbUser.role === "representative" && role !== "driver") {
-    return { error: "Representatives can only invite drivers" };
-  }
+  const isAdmin = dbUser.role === "admin";
+  const isApprover = dbUser.role === "representative" && dbUser.can_approve_drivers;
+
+  if (!isAdmin && !isApprover) return { error: "אין לך הרשאה לשלוח הזמנות" };
+  if (!isAdmin && role !== "driver") return { error: "נציגים יכולים להזמין נהגים בלבד" };
 
   const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { role },

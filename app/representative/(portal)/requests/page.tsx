@@ -14,12 +14,12 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  approved: "bg-blue-100 text-blue-800",
-  waiting_for_representative: "bg-purple-100 text-purple-800",
-  in_progress: "bg-cyan-100 text-cyan-800",
-  completed: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
+  pending: "bg-amber-50 text-amber-700 border border-amber-100",
+  approved: "bg-blue-50 text-blue-700 border border-blue-100",
+  waiting_for_representative: "bg-purple-50 text-purple-700 border border-purple-100",
+  in_progress: "bg-cyan-50 text-cyan-700 border border-cyan-100",
+  completed: "bg-green-50 text-green-700 border border-green-100",
+  rejected: "bg-red-50 text-red-700 border border-red-100",
 };
 
 const STATUS_FILTERS = [
@@ -75,18 +75,17 @@ export default async function RequestsPage(props: { searchParams: Promise<Record
   const error = ridesResult.error;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-6" dir="rtl">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">בקשות נסיעה</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-xl font-semibold text-gray-900">בקשות נסיעה</h1>
+          <p className="mt-1 text-sm text-gray-400">
             {totalCount > 0 ? `${totalCount} בקשות סה״כ` : "אין בקשות עדיין"}
           </p>
         </div>
         <Link
           href="/representative/requests/new"
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -95,24 +94,20 @@ export default async function RequestsPage(props: { searchParams: Promise<Record
         </Link>
       </div>
 
-      {/* Status filters */}
-      <div className="flex flex-col gap-1.5">
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">סטטוס</p>
-        <div className="flex flex-wrap gap-1.5">
-          {STATUS_FILTERS.map((f) => (
-            <Link
-              key={f.value}
-              href={buildUrl({ status: f.value, page: "1" })}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                activeStatus === f.value
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "border border-gray-200 bg-white text-gray-600 hover:border-blue-300 hover:text-blue-600"
-              }`}
-            >
-              {f.label}
-            </Link>
-          ))}
-        </div>
+      <div className="flex flex-wrap gap-1.5">
+        {STATUS_FILTERS.map((f) => (
+          <Link
+            key={f.value}
+            href={buildUrl({ status: f.value, page: "1" })}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              activeStatus === f.value
+                ? "bg-slate-900 text-white"
+                : "bg-white border border-gray-100 text-gray-500 hover:border-gray-200 hover:text-gray-800"
+            }`}
+          >
+            {f.label}
+          </Link>
+        ))}
       </div>
 
       {error && (
@@ -121,19 +116,18 @@ export default async function RequestsPage(props: { searchParams: Promise<Record
         </div>
       )}
 
-      {/* Table */}
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-xl bg-white border border-gray-100 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
-              <th className="px-6 py-3.5">שם מתקשר</th>
-              <th className="px-6 py-3.5">טלפון</th>
-              <th className="px-6 py-3.5">מוצא</th>
-              <th className="px-6 py-3.5">יעד</th>
-              <th className="px-6 py-3.5">סטטוס</th>
-              <th className="px-6 py-3.5">נהג משויך</th>
-              <th className="px-6 py-3.5">זמן איסוף</th>
-              <th className="px-6 py-3.5 sr-only">פעולות</th>
+            <tr className="border-b border-gray-100 bg-gray-50 text-right text-xs text-gray-400">
+              <th className="px-6 py-3 font-medium">שם מתקשר</th>
+              <th className="px-6 py-3 font-medium">טלפון</th>
+              <th className="px-6 py-3 font-medium">מוצא</th>
+              <th className="px-6 py-3 font-medium">יעד</th>
+              <th className="px-6 py-3 font-medium">סטטוס</th>
+              <th className="px-6 py-3 font-medium">נהג משויך</th>
+              <th className="px-6 py-3 font-medium">זמן איסוף</th>
+              <th className="px-6 py-3"><span className="sr-only">פעולות</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -148,7 +142,7 @@ export default async function RequestsPage(props: { searchParams: Promise<Record
               </tr>
             ) : (
               rides.map((ride) => (
-                <tr key={ride.id} className="hover:bg-blue-50/30 transition-colors group">
+                <tr key={ride.id} className="hover:bg-gray-50/60 transition-colors group">
                   <td className="px-6 py-4 font-medium text-gray-900">{ride.caller_full_name ?? "—"}</td>
                   <td className="px-6 py-4 text-gray-500 tabular-nums">{ride.caller_phone ?? "—"}</td>
                   <td className="px-6 py-4 text-gray-500 max-w-[140px] truncate">{ride.source_address}</td>

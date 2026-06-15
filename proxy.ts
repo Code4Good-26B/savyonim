@@ -16,18 +16,14 @@ export function proxy(request: NextRequest) {
   if (pathname.startsWith("/representative") && pathname !== "/representative/login") {
     const token = request.cookies.get("savionim-rep-token")?.value;
     if (!token) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/representative/login";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(new URL("/representative/login", request.url));
     }
   }
 
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
     const token = request.cookies.get("savionim-admin-token")?.value;
     if (!token) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/admin/login";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(new URL("/admin/login", request.url));
     }
   }
 

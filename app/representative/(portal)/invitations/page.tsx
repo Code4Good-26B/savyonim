@@ -12,10 +12,10 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  accepted: "bg-green-100 text-green-700",
+  pending: "bg-amber-50 text-amber-700 border border-amber-100",
+  accepted: "bg-green-50 text-green-700 border border-green-100",
   expired: "bg-gray-100 text-gray-500",
-  revoked: "bg-red-100 text-red-700",
+  revoked: "bg-red-50 text-red-700 border border-red-100",
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -35,8 +35,8 @@ async function getCurrentUser() {
   } = await adminClient.auth.getUser(token);
   if (!user) return null;
 
-  const result = await query<{ role: string; full_name: string }>(
-    `SELECT role, full_name FROM public.users WHERE id = $1`,
+  const result = await query<{ role: string; full_name: string; can_approve_drivers: boolean }>(
+    `SELECT role, full_name, can_approve_drivers FROM public.users WHERE id = $1`,
     [user.id],
   );
 
@@ -63,21 +63,27 @@ export default async function InvitationsPage() {
 
   if (!currentUser) {
     return (
-      <div className="flex flex-col gap-6">
-        <h1 className="text-2xl font-semibold text-gray-900">הזמנות</h1>
+      <div className="flex flex-col gap-6" dir="rtl">
+        <h1 className="text-xl font-semibold text-gray-900">הזמנות</h1>
         <p className="text-sm text-red-600">אין הרשאה לצפייה בדף זה.</p>
       </div>
     );
   }
 
   const isAdmin = currentUser.role === "admin";
-  const canSendInvites = isAdmin || currentUser.role === "representative";
+  const canSendInvites = isAdmin || (currentUser.role === "representative" && currentUser.can_approve_drivers);
 
   if (!canSendInvites) {
     return (
-      <div className="flex flex-col gap-6">
-        <h1 className="text-2xl font-semibold text-gray-900">הזמנות</h1>
-        <p className="text-sm text-red-600">אין לך הרשאה לשלוח הזמנות.</p>
+      <div className="flex flex-col gap-6" dir="rtl">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">הזמנות</h1>
+          <p className="mt-1 text-sm text-gray-400">הזמנת נהגים למערכת</p>
+        </div>
+        <div className="rounded-xl bg-white border border-gray-100 p-10 text-center">
+          <p className="text-sm text-gray-500">אין לך הרשאה לשלוח הזמנות.</p>
+          <p className="mt-1 text-xs text-gray-400">פנה למנהל המערכת לקבלת גישה.</p>
+        </div>
       </div>
     );
   }
@@ -87,20 +93,20 @@ export default async function InvitationsPage() {
   const invitations = user ? await getInvitations(user.id) : [];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" dir="rtl">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">הזמנות</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {isAdmin ? "שלח הזמנות לנציגים ונהגים" : "שלח הזמנות לנהגים חדשים"}
+        <h1 className="text-xl font-semibold text-gray-900">הזמנות</h1>
+        <p className="mt-1 text-sm text-gray-400">
+          {isAdmin ? "שלח הזמנות לנציגים ולנהגים" : "שלח הזמנות לנהגים חדשים"}
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
         <InviteForm canInviteRepresentative={isAdmin} />
 
-        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+        <div className="rounded-xl bg-white border border-gray-100 overflow-hidden">
           <div className="border-b border-gray-100 px-6 py-4">
-            <h2 className="font-semibold text-gray-900">הזמנות שנשלחו</h2>
+            <h2 className="text-sm font-semibold text-gray-900">הזמנות שנשלחו</h2>
           </div>
 
           {invitations.length === 0 ? (
@@ -110,22 +116,22 @@ export default async function InvitationsPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  <th className="px-4 py-3">אימייל</th>
-                  <th className="px-4 py-3">תפקיד</th>
-                  <th className="px-4 py-3">סטטוס</th>
+                <tr className="border-b border-gray-100 bg-gray-50 text-right text-xs text-gray-400">
+                  <th className="px-4 py-3 font-medium">אימייל</th>
+                  <th className="px-4 py-3 font-medium">תפקיד</th>
+                  <th className="px-4 py-3 font-medium">סטטוס</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {invitations.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-700">{inv.email}</td>
-                    <td className="px-4 py-3 text-gray-500">
+                  <tr key={inv.id} className="hover:bg-gray-50/60 transition-colors">
+                    <td className="px-4 py-3.5 text-gray-700">{inv.email}</td>
+                    <td className="px-4 py-3.5 text-gray-500">
                       {ROLE_LABEL[inv.invited_role] ?? inv.invited_role}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[inv.status] ?? "bg-gray-100 text-gray-600"}`}
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[inv.status] ?? "bg-gray-100 text-gray-600"}`}
                       >
                         {STATUS_LABEL[inv.status] ?? inv.status}
                       </span>

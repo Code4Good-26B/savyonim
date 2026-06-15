@@ -10,12 +10,12 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  approved: "bg-blue-100 text-blue-800",
-  waiting_for_representative: "bg-purple-100 text-purple-800",
-  in_progress: "bg-cyan-100 text-cyan-800",
-  completed: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
+  pending: "bg-amber-50 text-amber-700 border border-amber-100",
+  approved: "bg-blue-50 text-blue-700 border border-blue-100",
+  waiting_for_representative: "bg-purple-50 text-purple-700 border border-purple-100",
+  in_progress: "bg-cyan-50 text-cyan-700 border border-cyan-100",
+  completed: "bg-green-50 text-green-700 border border-green-100",
+  rejected: "bg-red-50 text-red-700 border border-red-100",
 };
 
 const STATUS_FILTERS = ["", "pending", "approved", "in_progress", "completed", "rejected"] as const;
@@ -67,10 +67,10 @@ export default async function AdminRidesPage({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" dir="rtl">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">סטטוס נסיעות</h1>
-        <p className="mt-1 text-sm text-gray-500">סה״כ {total ?? 0} בקשות במערכת</p>
+        <h1 className="text-xl font-semibold text-gray-900">נסיעות</h1>
+        <p className="mt-1 text-sm text-gray-400">סה״כ {total ?? 0} בקשות במערכת</p>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -81,7 +81,7 @@ export default async function AdminRidesPage({
             className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
               activeStatus === s
                 ? "bg-slate-900 text-white"
-                : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
+                : "bg-white border border-gray-100 text-gray-500 hover:border-gray-200 hover:text-gray-800"
             }`}
           >
             {STATUS_FILTER_LABEL[s]}
@@ -89,15 +89,15 @@ export default async function AdminRidesPage({
         ))}
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-xl bg-white border border-gray-100 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">
-              <th className="px-6 py-3.5">שם מתקשר</th>
-              <th className="px-6 py-3.5">טלפון</th>
-              <th className="px-6 py-3.5">מוצא</th>
-              <th className="px-6 py-3.5">זמן איסוף</th>
-              <th className="px-6 py-3.5">סטטוס</th>
+            <tr className="border-b border-gray-100 bg-gray-50 text-right text-xs text-gray-400">
+              <th className="px-6 py-3 font-medium">שם מתקשר</th>
+              <th className="px-6 py-3 font-medium">טלפון</th>
+              <th className="px-6 py-3 font-medium">מוצא</th>
+              <th className="px-6 py-3 font-medium">זמן איסוף</th>
+              <th className="px-6 py-3 font-medium">סטטוס</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -105,7 +105,7 @@ export default async function AdminRidesPage({
               <tr><td colSpan={5} className="px-6 py-16 text-center text-sm text-gray-400">אין בקשות</td></tr>
             ) : (
               allRides.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={r.id} className="hover:bg-gray-50/60 transition-colors">
                   <td className="px-6 py-4 font-medium text-gray-900">{r.caller_full_name ?? "—"}</td>
                   <td className="px-6 py-4 text-gray-500 tabular-nums">{r.caller_phone ?? "—"}</td>
                   <td className="px-6 py-4 text-gray-500 max-w-[200px] truncate">{r.source_address}</td>
