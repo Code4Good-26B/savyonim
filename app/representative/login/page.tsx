@@ -28,7 +28,7 @@ export default function DispatcherLoginPage() {
     try {
       const session = await loginRepresentative(email, password);
       storeRepresentativeSession(session);
-      router.replace("/dispatcher/dashboard");
+      router.replace("/representative/dashboard");
     } catch (caught) {
       const apiError = caught as RepresentativeApiError;
       setError(apiError.detail ?? "שגיאה בהתחברות");

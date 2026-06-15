@@ -45,10 +45,10 @@ type RideRequestRow = {
 function buildUrl(params: Record<string, string>) {
   const filtered = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== ""));
   const qs = new URLSearchParams(filtered).toString();
-  return `/dispatcher/requests${qs ? `?${qs}` : ""}`;
+  return `/representative/requests${qs ? `?${qs}` : ""}`;
 }
 
-export default async function RequestsPage(props: PageProps<"/dispatcher/requests">) {
+export default async function RequestsPage(props: PageProps<"/representative/requests">) {
   const searchParams = (await props.searchParams) as Record<string, string>;
   const activeStatus = searchParams?.status ?? "";
   const page = Math.max(1, parseInt(searchParams?.page ?? "1", 10));
@@ -85,7 +85,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
           </p>
         </div>
         <Link
-          href="/dispatcher/requests/new"
+          href="/representative/requests/new"
           className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -141,7 +141,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
               <tr>
                 <td colSpan={8} className="px-6 py-16 text-center">
                   <p className="text-gray-400 text-sm">אין בקשות נסיעה התואמות את הסינון</p>
-                  <Link href="/dispatcher/requests/new" className="mt-2 inline-block text-xs text-blue-600 hover:underline">
+                  <Link href="/representative/requests/new" className="mt-2 inline-block text-xs text-blue-600 hover:underline">
                     צור בקשה חדשה →
                   </Link>
                 </td>
@@ -171,7 +171,7 @@ export default async function RequestsPage(props: PageProps<"/dispatcher/request
                   </td>
                   <td className="px-6 py-4 text-left">
                     <Link
-                      href={`/dispatcher/request/${ride.id}`}
+                      href={`/representative/request/${ride.id}`}
                       className="rounded-md border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 opacity-0 group-hover:opacity-100 hover:border-blue-300 hover:text-blue-600 transition-all"
                     >
                       פרטים

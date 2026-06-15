@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 type UserRow = {
   full_name: string;
   role: string;
-  status: string;
+  is_active: boolean;
 };
 
 export async function POST(request: Request) {
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
   // Verify role and approval status in public.users
   const result = await query<UserRow>(
-    `select full_name, role, status from public.users where id = $1`,
+    `select full_name, role, is_active from public.users where id = $1`,
     [userId],
   );
 
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (user.status !== "approved") {
+  if (!user.is_active) {
     return Response.json({ error: "Account pending approval" }, { status: 403 });
   }
 

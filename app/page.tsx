@@ -20,17 +20,17 @@ export default function LandingPage() {
           <p className="mt-2 text-sm text-gray-500">מערכת הסעות מותאמת אישית</p>
         </div>
 
-        {/* Dispatcher login */}
+        {/* Representative login */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col gap-4">
           <div>
-            <h2 className="font-semibold text-gray-900">כניסה למערכת</h2>
-            <p className="mt-1 text-sm text-gray-500">לדיספצ׳רים</p>
+            <h2 className="font-semibold text-gray-900">כניסה לנציגים</h2>
+            <p className="mt-1 text-sm text-gray-500">לנציגי בתי חולים וקופות חולים</p>
           </div>
           <Link
-            href="/dispatcher/dashboard"
+            href="/representative/login"
             className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white text-center hover:bg-blue-700 transition-colors"
           >
-            דשבורד דיספצ׳ר
+            כניסה לנציגים
           </Link>
         </div>
 

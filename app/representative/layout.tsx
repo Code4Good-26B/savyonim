@@ -16,7 +16,7 @@ export default function DispatcherLayout({ children }: { children: React.ReactNo
             </div>
             <div>
               <p className="text-sm font-semibold text-gray-900">סביונים</p>
-              <p className="text-xs text-gray-400">מערכת דיספצ׳ר</p>
+              <p className="text-xs text-gray-400">פורטל נציגים</p>
             </div>
           </div>
         </div>

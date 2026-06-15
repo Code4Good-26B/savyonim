@@ -104,7 +104,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
             </div>
             <div className="flex gap-3 pt-2">
               <button
-                onClick={() => router.push("/dispatcher/requests")}
+                onClick={() => router.push("/representative/requests")}
                 className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700"
               >
                 לרשימת הבקשות
@@ -125,7 +125,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
   return (
     <div className="max-w-2xl flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <Link href="/dispatcher/requests" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+        <Link href="/representative/requests" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>

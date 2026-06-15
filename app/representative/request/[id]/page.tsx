@@ -60,7 +60,7 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
   );
 }
 
-export default async function RequestDetailPage(props: PageProps<"/dispatcher/request/[id]">) {
+export default async function RequestDetailPage(props: PageProps<"/representative/request/[id]">) {
   const { id } = await props.params;
 
   const supabase = createSupabaseClient();
@@ -88,7 +88,7 @@ export default async function RequestDetailPage(props: PageProps<"/dispatcher/re
 
       {/* Breadcrumb + status */}
       <div className="flex items-center justify-between">
-        <Link href="/dispatcher/requests" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+        <Link href="/representative/requests" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>

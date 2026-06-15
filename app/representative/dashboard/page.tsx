@@ -66,7 +66,7 @@ export default async function DispatcherDashboard() {
           <p className="mt-1 text-sm text-gray-500">סקירה כללית של מצב הנסיעות</p>
         </div>
         <Link
-          href="/dispatcher/requests/new"
+          href="/representative/requests/new"
           className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -91,7 +91,7 @@ export default async function DispatcherDashboard() {
       <section className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <h2 className="font-semibold text-gray-900">בקשות אחרונות</h2>
-          <Link href="/dispatcher/requests" className="text-xs font-medium text-blue-600 hover:underline">
+          <Link href="/representative/requests" className="text-xs font-medium text-blue-600 hover:underline">
             כל הבקשות →
           </Link>
         </div>
@@ -110,7 +110,7 @@ export default async function DispatcherDashboard() {
               <tr>
                 <td colSpan={5} className="px-6 py-16 text-center">
                   <p className="text-gray-400 text-sm">אין בקשות נסיעה עדיין</p>
-                  <Link href="/dispatcher/requests/new" className="mt-2 inline-block text-xs text-blue-600 hover:underline">
+                  <Link href="/representative/requests/new" className="mt-2 inline-block text-xs text-blue-600 hover:underline">
                     צור בקשה ראשונה →
                   </Link>
                 </td>
@@ -137,7 +137,7 @@ export default async function DispatcherDashboard() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <Link
-                      href={`/dispatcher/request/${ride.id}`}
+                      href={`/representative/request/${ride.id}`}
                       className="rounded-md border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 hover:border-blue-300 hover:text-blue-600 transition-colors"
                     >
                       פרטים

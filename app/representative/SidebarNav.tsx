@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   {
-    href: "/dispatcher/dashboard",
+    href: "/representative/dashboard",
     label: "דשבורד",
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -14,7 +14,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    href: "/dispatcher/requests",
+    href: "/representative/requests",
     label: "בקשות נסיעה",
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -23,7 +23,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    href: "/dispatcher/drivers",
+    href: "/representative/drivers",
     label: "נהגים",
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -41,7 +41,7 @@ export function SidebarNav() {
       {NAV_ITEMS.map((item) => {
         const active =
           path === item.href ||
-          (item.href !== "/dispatcher/dashboard" && path.startsWith(item.href));
+          (item.href !== "/representative/dashboard" && path.startsWith(item.href));
         return (
           <Link
             key={item.href}

@@ -5,42 +5,48 @@ const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 function isWriteGuardEnabled(): boolean {
   const configured = process.env.BLOCK_API_WRITES?.toLowerCase();
-
   if (configured === "true") return true;
   if (configured === "false") return false;
-
-  // Safe-by-default in development to prevent accidental writes to shared databases.
   return process.env.NODE_ENV !== "production";
 }
 
 export function proxy(request: NextRequest) {
-  // Authentication and webhook handlers perform their own validation.
-  // They must remain reachable while other local API writes are guarded.
-  if (
-    request.nextUrl.pathname.startsWith("/api/auth/") ||
-    request.nextUrl.pathname.startsWith("/api/webhooks/")
-  ) {
-    return NextResponse.next();
+  const { pathname } = request.nextUrl;
+
+  // Auth guard for dispatcher routes
+  if (pathname.startsWith("/representative") && pathname !== "/representative/login") {
+    const token = request.cookies.get("savionim-rep-token")?.value;
+    if (!token) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/representative/login";
+      return NextResponse.redirect(url);
+    }
   }
 
-  if (!isWriteGuardEnabled()) {
-    return NextResponse.next();
-  }
+  // Write guard for API routes
+  if (pathname.startsWith("/api/")) {
+    if (
+      pathname.startsWith("/api/auth/") ||
+      pathname.startsWith("/api/webhooks/")
+    ) {
+      return NextResponse.next();
+    }
 
-  if (WRITE_METHODS.has(request.method.toUpperCase())) {
-    return NextResponse.json(
-      {
-        error: "Write operations are blocked in this environment.",
-        message:
-          "Set BLOCK_API_WRITES=false in your local env only when you intentionally need POST/PUT/PATCH/DELETE.",
-      },
-      { status: 403 },
-    );
+    if (isWriteGuardEnabled() && WRITE_METHODS.has(request.method.toUpperCase())) {
+      return NextResponse.json(
+        {
+          error: "Write operations are blocked in this environment.",
+          message:
+            "Set BLOCK_API_WRITES=false in your local env only when you intentionally need POST/PUT/PATCH/DELETE.",
+        },
+        { status: 403 },
+      );
+    }
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: ["/api/:path*", "/representative/:path*"],
 };
