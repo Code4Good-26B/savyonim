@@ -101,7 +101,7 @@ export default function DriverDashboardPage() {
   useEffect(() => {
     if (!hasCheckedSession) return;
     if (!session || session.role !== "driver") {
-      router.replace("/login_driver");
+      router.replace("/login");
       return;
     }
     const timer = window.setTimeout(() => {
