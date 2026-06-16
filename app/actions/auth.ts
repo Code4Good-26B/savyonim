@@ -28,6 +28,27 @@ function isValidIsraeliID(id: string): boolean {
 }
 
 const PHONE_REGEX = /^\+972\d{8,9}$/;
+const VALID_GENDERS = new Set(["male", "female", "other", "prefer_not_to_say"]);
+const AUTH_MESSAGES = {
+  invalidSession: "\u05d4\u05d7\u05d9\u05d1\u05d5\u05e8 \u05d0\u05d9\u05e0\u05d5 \u05ea\u05e7\u05d9\u05df \u05d0\u05d5 \u05e9\u05e4\u05d2 \u05ea\u05d5\u05e7\u05e4\u05d5",
+  emailMissing: "\u05dc\u05d0 \u05e0\u05de\u05e6\u05d0 \u05d0\u05d9\u05de\u05d9\u05d9\u05dc \u05dc\u05de\u05e9\u05ea\u05de\u05e9 \u05d4\u05de\u05d7\u05d5\u05d1\u05e8",
+  inviteMissing: "\u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d4 \u05d4\u05d6\u05de\u05e0\u05d4 \u05de\u05de\u05ea\u05d9\u05e0\u05d4",
+  fullNameRequired: "\u05e9\u05dd \u05de\u05dc\u05d0 \u05d4\u05d5\u05d0 \u05e9\u05d3\u05d4 \u05d7\u05d5\u05d1\u05d4",
+  nationalIdInvalid: "\u05e0\u05d3\u05e8\u05e9\u05ea \u05ea\u05e2\u05d5\u05d3\u05ea \u05d6\u05d4\u05d5\u05ea \u05d9\u05e9\u05e8\u05d0\u05dc\u05d9\u05ea \u05ea\u05e7\u05d9\u05e0\u05d4",
+  phoneInvalid: "\u05e0\u05d3\u05e8\u05e9 \u05de\u05e1\u05e4\u05e8 \u05d8\u05dc\u05e4\u05d5\u05df \u05d9\u05e9\u05e8\u05d0\u05dc\u05d9 \u05ea\u05e7\u05d9\u05df \u05d1\u05e4\u05d5\u05e8\u05de\u05d8 +972",
+  passwordInvalid: "\u05d4\u05e1\u05d9\u05e1\u05de\u05d4 \u05d7\u05d9\u05d9\u05d1\u05ea \u05dc\u05d4\u05db\u05d9\u05dc \u05dc\u05e4\u05d7\u05d5\u05ea 8 \u05ea\u05d5\u05d5\u05d9\u05dd",
+  licensePhotoRequired: "\u05e6\u05d9\u05dc\u05d5\u05dd \u05e8\u05d9\u05e9\u05d9\u05d5\u05df \u05e0\u05d3\u05e8\u05e9 \u05dc\u05e0\u05d4\u05d2\u05d9\u05dd",
+  locationRequired: "\u05de\u05d9\u05e7\u05d5\u05dd \u05e0\u05d3\u05e8\u05e9 \u05dc\u05e0\u05d4\u05d2\u05d9\u05dd",
+  birthYearInvalid: "\u05e9\u05e0\u05ea \u05dc\u05d9\u05d3\u05d4 \u05ea\u05e7\u05d9\u05e0\u05d4 \u05e0\u05d3\u05e8\u05e9\u05ea",
+  genderRequired: "\u05de\u05d2\u05d3\u05e8 \u05e0\u05d3\u05e8\u05e9 \u05dc\u05e0\u05d4\u05d2\u05d9\u05dd",
+  licenseTypeRequired: "\u05e1\u05d5\u05d2 \u05e8\u05d9\u05e9\u05d9\u05d5\u05df \u05e0\u05d3\u05e8\u05e9 \u05dc\u05e0\u05d4\u05d2\u05d9\u05dd",
+  licenseIssueYearInvalid: "\u05e9\u05e0\u05ea \u05d4\u05d5\u05e6\u05d0\u05ea \u05e8\u05d9\u05e9\u05d9\u05d5\u05df \u05ea\u05e7\u05d9\u05e0\u05d4 \u05e0\u05d3\u05e8\u05e9\u05ea",
+  criminalConsentRequired: "\u05e0\u05d3\u05e8\u05e9\u05ea \u05d4\u05e1\u05db\u05de\u05d4 \u05dc\u05d1\u05d3\u05d9\u05e7\u05ea \u05e8\u05d9\u05e9\u05d5\u05dd \u05e4\u05dc\u05d9\u05dc\u05d9",
+  vehicleConfirmationRequired: "\u05e0\u05d3\u05e8\u05e9 \u05d0\u05d9\u05e9\u05d5\u05e8 \u05d1\u05e2\u05dc\u05d5\u05ea \u05e2\u05dc \u05e8\u05db\u05d1 \u05d0\u05de\u05d1\u05d5\u05dc\u05d8\u05d5\u05e8\u05d9",
+  profileUpdateFailed: "\u05e2\u05d3\u05db\u05d5\u05df \u05e4\u05e8\u05d5\u05e4\u05d9\u05dc \u05d4\u05d0\u05d9\u05de\u05d5\u05ea \u05e0\u05db\u05e9\u05dc",
+  completeSuccess: "\u05d4\u05d4\u05e8\u05e9\u05de\u05d4 \u05d4\u05d5\u05e9\u05dc\u05de\u05d4. \u05d4\u05d7\u05e9\u05d1\u05d5\u05df \u05de\u05de\u05ea\u05d9\u05df \u05dc\u05d0\u05d9\u05e9\u05d5\u05e8.",
+  transactionFailed: "\u05e9\u05de\u05d9\u05e8\u05ea \u05d4\u05d4\u05e8\u05e9\u05de\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4",
+} as const;
 
 export async function completeOnboarding(
   token: string, 
@@ -54,7 +75,7 @@ export async function completeOnboarding(
   const claims = verifySupabaseJwt(token);
   
   if (!claims) {
-    return { success: false, message: "Invalid or expired session" };
+    return { success: false, message: AUTH_MESSAGES.invalidSession };
   }
 
   const { getPool } = await import("@/lib/db");
@@ -62,7 +83,7 @@ export async function completeOnboarding(
   const email = userResult.rows[0]?.email?.toLowerCase();
   
   if (!email) {
-    return { success: false, message: "User email not found in session" };
+    return { success: false, message: AUTH_MESSAGES.emailMissing };
   }
 
   // Find the pending invitation
@@ -74,27 +95,47 @@ export async function completeOnboarding(
     .single();
 
   if (inviteError || !invite) {
-    return { success: false, message: "No pending invitation found for this email" };
+    return { success: false, message: AUTH_MESSAGES.inviteMissing };
   }
 
   const role = invite.invited_role;
 
   // Validations
-  if (!formData.fullName) return { success: false, message: "Full name is required" };
+  if (!formData.fullName) return { success: false, message: AUTH_MESSAGES.fullNameRequired };
   if (!formData.nationalId || !isValidIsraeliID(formData.nationalId)) {
-    return { success: false, message: "Valid Israeli National ID (TZ) is required" };
+    return { success: false, message: AUTH_MESSAGES.nationalIdInvalid };
   }
   if (!formData.phone || !PHONE_REGEX.test(formData.phone)) {
-    return { success: false, message: "Valid Israeli phone number (+972...) is required" };
+    return { success: false, message: AUTH_MESSAGES.phoneInvalid };
   }
   if (!formData.password || formData.password.length < 8) {
-    return { success: false, message: "Password must be at least 8 characters" };
+    return { success: false, message: AUTH_MESSAGES.passwordInvalid };
   }
 
   if (role === 'driver') {
-    if (!formData.licensePhotoPath) return { success: false, message: "License photo is required for drivers" };
+    if (!formData.licensePhotoPath) return { success: false, message: AUTH_MESSAGES.licensePhotoRequired };
+    if (!formData.location?.trim()) return { success: false, message: AUTH_MESSAGES.locationRequired };
     if (!formData.birthYear || formData.birthYear < 1920 || formData.birthYear > new Date().getFullYear() - 17) {
-      return { success: false, message: "Valid birth year is required" };
+      return { success: false, message: AUTH_MESSAGES.birthYearInvalid };
+    }
+    if (!formData.gender || !VALID_GENDERS.has(formData.gender)) {
+      return { success: false, message: AUTH_MESSAGES.genderRequired };
+    }
+    if (!formData.licenseType?.trim()) {
+      return { success: false, message: AUTH_MESSAGES.licenseTypeRequired };
+    }
+    if (
+      !formData.licenseIssueYear ||
+      formData.licenseIssueYear < 1950 ||
+      formData.licenseIssueYear > new Date().getFullYear()
+    ) {
+      return { success: false, message: AUTH_MESSAGES.licenseIssueYearInvalid };
+    }
+    if (formData.consentCriminalRecord !== true) {
+      return { success: false, message: AUTH_MESSAGES.criminalConsentRequired };
+    }
+    if (formData.ownsVehicleAmbulatory !== true) {
+      return { success: false, message: AUTH_MESSAGES.vehicleConfirmationRequired };
     }
   }
 
@@ -107,7 +148,7 @@ export async function completeOnboarding(
     });
 
     if (updateError) {
-      return { success: false, message: "Failed to update auth profile", error: updateError.message };
+      return { success: false, message: AUTH_MESSAGES.profileUpdateFailed, error: updateError.message };
     }
 
     // 2. Transactional inserts into public tables
@@ -160,9 +201,9 @@ export async function completeOnboarding(
       );
     });
 
-    return { success: true, message: "Onboarding complete. Your account is pending approval." };
+    return { success: true, message: AUTH_MESSAGES.completeSuccess };
   } catch (err: unknown) {
-    return { success: false, message: "Transaction failed", error: err instanceof Error ? err.message : "Unknown error" };
+    return { success: false, message: AUTH_MESSAGES.transactionFailed, error: err instanceof Error ? err.message : "Unknown error" };
   }
 }
 

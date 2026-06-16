@@ -28,10 +28,10 @@ export type OnboardingSupabaseClient = {
 };
 
 const INVALID_INVITE_MESSAGE =
-  "This invitation link is invalid or expired. Ask an administrator for a new invitation.";
+  "\u05e7\u05d9\u05e9\u05d5\u05e8 \u05d4\u05d4\u05d6\u05de\u05e0\u05d4 \u05d0\u05d9\u05e0\u05d5 \u05ea\u05e7\u05d9\u05df \u05d0\u05d5 \u05e9\u05e4\u05d2 \u05ea\u05d5\u05e7\u05e4\u05d5. \u05d1\u05e7\u05e9\u05d5 \u05de\u05de\u05e0\u05d4\u05dc \u05dc\u05e9\u05dc\u05d5\u05d7 \u05d4\u05d6\u05de\u05e0\u05d4 \u05d7\u05d3\u05e9\u05d4.";
 
 const UNKNOWN_ROLE_MESSAGE =
-  "This invitation is missing a supported onboarding role. Ask an administrator for a new invitation.";
+  "\u05d7\u05e1\u05e8 \u05d1\u05d4\u05d6\u05de\u05e0\u05d4 \u05ea\u05e4\u05e7\u05d9\u05d3 \u05e0\u05ea\u05de\u05da \u05dc\u05d4\u05e9\u05dc\u05de\u05ea \u05d4\u05d4\u05e8\u05e9\u05de\u05d4. \u05d1\u05e7\u05e9\u05d5 \u05de\u05de\u05e0\u05d4\u05dc \u05dc\u05e9\u05dc\u05d5\u05d7 \u05d4\u05d6\u05de\u05e0\u05d4 \u05d7\u05d3\u05e9\u05d4.";
 
 function normalizeRole(value: unknown): OnboardingRole | null {
   return value === "driver" || value === "representative" ? value : null;
