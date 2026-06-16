@@ -72,7 +72,7 @@ export default function LoginDriverPage() {
         </Button>
       </form>
 
-      <p className="mt-5 text-center text-sm text-slate-600">{t("inviteOnlyAccount")}</p>
+      <p className="mt-5 text-center text-sm text-muted-foreground">{t("inviteOnlyAccount")}</p>
     </DriverAuthShell>
   );
 }

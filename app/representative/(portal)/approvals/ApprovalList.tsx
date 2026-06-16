@@ -40,15 +40,15 @@ function RejectModal({
   const [reason, setReason] = useState("");
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 flex flex-col gap-4 shadow-xl">
-        <h3 className="font-semibold text-gray-900">דחיית {name}</h3>
+      <div className="w-full max-w-sm rounded-2xl bg-card p-6 flex flex-col gap-4 shadow-xl">
+        <h3 className="font-semibold text-foreground">דחיית {name}</h3>
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">סיבה (אופציונלי)</label>
+          <label className="text-sm font-medium text-foreground">סיבה (אופציונלי)</label>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400 resize-none"
+            className="w-full rounded-lg border border-input bg-input-background px-3 py-2 text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 resize-none"
             placeholder="הסבר קצר לנהג..."
           />
         </div>
@@ -63,7 +63,7 @@ function RejectModal({
           <button
             onClick={onCancel}
             disabled={isPending}
-            className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
           >
             ביטול
           </button>
@@ -114,21 +114,21 @@ function DriverCard({ driver, onDone }: { driver: PendingDriver; onDone: () => v
         />
       )}
 
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="flex items-center gap-4 px-5 py-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
             {driver.full_name.charAt(0)}
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-gray-900">{driver.full_name}</p>
-            <p className="text-sm text-gray-500">{driver.email ?? "—"}</p>
+            <p className="font-medium text-foreground">{driver.full_name}</p>
+            <p className="text-sm text-muted-foreground">{driver.email ?? "—"}</p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setExpanded((e) => !e)}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+              className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted transition-colors"
             >
               {expanded ? "סגור" : "פרטים"}
             </button>
@@ -150,7 +150,7 @@ function DriverCard({ driver, onDone }: { driver: PendingDriver; onDone: () => v
         </div>
 
         {expanded && (
-          <div className="border-t border-gray-100 px-5 py-4 grid grid-cols-2 gap-x-8 gap-y-3 text-sm bg-gray-50">
+          <div className="border-t border-border px-5 py-4 grid grid-cols-2 gap-x-8 gap-y-3 text-sm bg-muted/40">
             <Field label="ת.ז." value={driver.national_id} />
             <Field label="שנת לידה" value={driver.birth_year?.toString()} />
             <Field label="מגדר" value={driver.gender ? GENDER_LABEL[driver.gender] : null} />
@@ -162,12 +162,12 @@ function DriverCard({ driver, onDone }: { driver: PendingDriver; onDone: () => v
 
             {driver.photo_url && (
               <div className="col-span-2 flex flex-col gap-1.5 mt-1">
-                <span className="text-xs font-medium text-gray-500">תמונת רישיון</span>
+                <span className="text-xs font-medium text-muted-foreground">תמונת רישיון</span>
                 <a href={driver.photo_url} target="_blank" rel="noopener noreferrer">
                   <img
                     src={driver.photo_url}
                     alt="תמונת רישיון"
-                    className="max-h-48 rounded-lg border border-gray-200 object-contain"
+                    className="max-h-48 rounded-lg border border-border object-contain"
                   />
                 </a>
               </div>
@@ -182,8 +182,8 @@ function DriverCard({ driver, onDone }: { driver: PendingDriver; onDone: () => v
 function Field({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-gray-400">{label}</span>
-      <span className="text-gray-900">{value ?? "—"}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-foreground">{value ?? "—"}</span>
     </div>
   );
 }
@@ -197,8 +197,8 @@ export function ApprovalList({ initialDrivers }: { initialDrivers: PendingDriver
 
   if (drivers.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white px-6 py-16 text-center">
-        <p className="text-sm text-gray-400">אין בקשות הרשמה ממתינות</p>
+      <div className="rounded-xl border border-border bg-card px-6 py-16 text-center">
+        <p className="text-sm text-muted-foreground">אין בקשות הרשמה ממתינות</p>
       </div>
     );
   }

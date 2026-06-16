@@ -68,10 +68,10 @@ export default async function ApprovalsPage() {
   );
 
   return (
-    <div className="flex flex-col gap-6" dir="rtl">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">אישור נהגים</h1>
-        <p className="mt-1 text-sm text-gray-400">
+        <h2>אישור נהגים</h2>
+        <p className="text-muted-foreground mt-1">
           {drivers.length > 0
             ? `${drivers.length} בקשות ממתינות לאישור`
             : "אין בקשות ממתינות"}

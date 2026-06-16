@@ -84,7 +84,7 @@ export default function OnboardingPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-xl items-center px-6 py-12" dir="rtl">
-      <section className="w-full rounded-lg border bg-white p-8 text-right shadow-sm">
+      <section className="w-full rounded-lg border bg-card p-8 text-right shadow-sm">
         <h1 className="text-right text-2xl font-semibold">{TEXT.pageTitle}</h1>
         {state.status === "verifying" && (
           <p className="mt-4 text-right" role="status" aria-live="polite">
@@ -100,7 +100,7 @@ export default function OnboardingPage() {
           </>
         )}
         {state.status === "error" && (
-          <p className="mt-4 text-right text-red-700" role="alert">
+          <p className="mt-4 text-right text-destructive" role="alert">
             {state.message}
           </p>
         )}

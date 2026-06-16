@@ -40,18 +40,18 @@ const CATEGORY_LABEL: Record<string, string> = {
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-400">{label}</p>
-      <p className="text-sm font-medium text-gray-900">{value ?? "—"}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-sm font-medium text-foreground">{value ?? "—"}</p>
     </div>
   );
 }
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-      <div className="flex items-center gap-2.5 border-b border-gray-100 bg-gray-50 px-6 py-3.5">
-        <span className="text-gray-400">{icon}</span>
-        <h2 className="text-sm font-semibold text-gray-700">{title}</h2>
+    <section className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex items-center gap-2.5 border-b border-border bg-muted/40 px-6 py-3.5">
+        <span className="text-muted-foreground">{icon}</span>
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       </div>
       <div className="px-6 py-5">
         {children}
@@ -88,18 +88,18 @@ export default async function RequestDetailPage(props: { params: Promise<{ id: s
 
       {/* Breadcrumb + status */}
       <div className="flex items-center justify-between">
-        <Link href="/representative/requests" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+        <Link href="/representative/requests" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           חזרה לרשימה
         </Link>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_COLOR[ride.status] ?? "bg-gray-100 text-gray-700 border border-gray-200"}`}>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_COLOR[ride.status] ?? "bg-gray-100 text-foreground border border-border"}`}>
           {STATUS_LABEL[ride.status] ?? ride.status}
         </span>
       </div>
 
-      <h1 className="text-2xl font-semibold text-gray-900">פרטי בקשה</h1>
+      <h2>פרטי בקשה</h2>
 
       {/* Caller / Passenger */}
       {passenger ? (
