@@ -18,7 +18,14 @@ export type AuthContext =
   | { ok: false; error: string };
 
 function jwtSecret() {
-  return process.env.JWT_SECRET ?? process.env.AUTH_TOKEN_SECRET ?? null;
+  const configured = process.env.JWT_SECRET ?? process.env.AUTH_TOKEN_SECRET;
+  if (configured) return configured;
+
+  if (process.env.LOCAL_DEV_ONLY === "true" || process.env.NODE_ENV !== "production") {
+    return "local-dev-driver-auth-secret";
+  }
+
+  return null;
 }
 
 export function verifySupabaseJwt(token: string): SupabaseClaims | null {

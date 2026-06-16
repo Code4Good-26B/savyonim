@@ -129,6 +129,6 @@ These constraints block conflicting concurrent assignments at the database level
 
 ## Enum Values
 
-- `user_role`: `admin`, `dispatcher`, `driver`, `representative`
+- `user_role`: `admin`, `driver`, `representative`
 - `request_status`: `pending`, `approved`, `waiting_for_representative`, `in_progress`, `completed`, `rejected`
 - `mobility_requirement`: `none`, `wheelchair`, `walker`, `cane`

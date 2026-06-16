@@ -24,6 +24,8 @@ export default defineConfig({
           setupFiles: ["__integration__/load-env.ts"],
           // Give integration tests more time (real DB calls)
           testTimeout: 15000,
+          // Integration files share seeded drivers and ambulances in one local database.
+          fileParallelism: false,
         },
         plugins: [tsconfigPaths()],
       },
