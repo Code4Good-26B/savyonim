@@ -1,48 +1,71 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import LandingPage from "@/app/page";
+import DriverRoutePage from "@/app/driver/page";
+import LoginRoutePage from "@/app/login/page";
+import DriverLoginPage from "@/app/login_driver/page";
+import RegisterDriverPage from "@/app/register-driver/page";
+import { OnboardingRoleContainer } from "@/app/onboarding/page";
+import { DriverI18nProvider } from "@/components/driver/DriverI18n";
+import { redirect } from "next/navigation";
 
-const root = process.cwd();
+vi.mock("next/navigation", () => ({
+  redirect: vi.fn((path: string) => {
+    throw new Error(`NEXT_REDIRECT:${path}`);
+  }),
+  useRouter: () => ({ replace: vi.fn() }),
+}));
 
-function source(path: string) {
-  return readFileSync(resolve(root, path), "utf8");
+function renderWithDriverI18n(element: React.ReactElement) {
+  return renderToStaticMarkup(React.createElement(DriverI18nProvider, null, element));
 }
 
-describe("driver login routing", () => {
-  it("routes the homepage driver entry directly to /login_driver", () => {
-    const page = source("app/page.tsx");
+function expectRedirectsToLoginDriver(Page: React.ComponentType) {
+  expect(() => renderToStaticMarkup(React.createElement(Page))).toThrow("NEXT_REDIRECT:/login_driver");
+  expect(redirect).toHaveBeenCalledWith("/login_driver");
+}
 
-    expect(page).toContain('href: "/login_driver"');
-    expect(page).not.toContain('href: "/driver"');
+describe("driver routing", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it("/login_driver owns the driver login UI", () => {
-    const loginDriverPage = source("app/login_driver/page.tsx");
+  it("links the homepage driver entry directly to /login_driver", () => {
+    const html = renderToStaticMarkup(React.createElement(LandingPage));
 
-    expect(loginDriverPage).toContain('data-testid="driver-login-form"');
-    expect(loginDriverPage).toContain("loginDriver");
-    expect(existsSync(resolve(root, "app/login/page.tsx"))).toBe(false);
+    expect(html).toContain('href="/login_driver"');
+    expect(html).not.toContain('href="/driver"');
+    expect(html).not.toContain('href="/login"');
   });
 
-  it("/driver does not expose public self-registration as the main flow", () => {
-    const driverPage = source("app/driver/page.tsx");
+  it("renders the driver login page at /login_driver without self-registration links", () => {
+    const html = renderWithDriverI18n(React.createElement(DriverLoginPage));
 
-    expect(driverPage).toContain('href="/login_driver"');
-    expect(driverPage).not.toContain("/register-driver");
+    expect(html).toContain("<form");
+    expect(html).toContain("Log in");
+    expect(html).toContain('type="email"');
+    expect(html).toContain('type="password"');
+    expect(html).not.toContain("/register-driver");
+    expect(html).not.toContain("Sign Up");
   });
 
-  it("public register-driver route is bypassed to driver login", () => {
-    const registerPage = source("app/register-driver/page.tsx");
-
-    expect(registerPage).toContain('redirect("/login_driver")');
+  it("does not keep /login as the driver login flow", () => {
+    expectRedirectsToLoginDriver(LoginRoutePage);
   });
 
-  it("invite onboarding remains routed through /onboarding links", () => {
-    const inviteTemplate = source("supabase/templates/invite.html");
-    const onboardingPage = source("app/onboarding/page.tsx");
+  it("does not expose public driver self-registration from /driver", () => {
+    expectRedirectsToLoginDriver(DriverRoutePage);
+  });
 
-    expect(inviteTemplate).toContain("/onboarding");
-    expect(onboardingPage).toContain("establishOnboardingSession");
-    expect(onboardingPage).toContain("window.location.search");
+  it("does not expose the standalone public driver registration page", () => {
+    expectRedirectsToLoginDriver(RegisterDriverPage);
+  });
+
+  it("still renders invite-based driver onboarding", () => {
+    const html = renderToStaticMarkup(React.createElement(OnboardingRoleContainer, { role: "driver" }));
+
+    expect(html).toContain('data-testid="driver-onboarding-container"');
+    expect(html).toContain('data-testid="driver-onboarding-form"');
   });
 });

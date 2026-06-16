@@ -40,7 +40,9 @@ export default function LoginDriverPage() {
     <DriverAuthShell title={t("loginTitle")} body={t("loginBody")}>
       {error ? (
         <div className="mb-5">
-          <DriverNotice title={t("loginFailed")} kind="error">{error}</DriverNotice>
+          <DriverNotice title={t("loginFailed")} kind="error">
+            {error}
+          </DriverNotice>
         </div>
       ) : null}
 
@@ -70,9 +72,7 @@ export default function LoginDriverPage() {
         </Button>
       </form>
 
-      <p className="mt-5 text-center text-sm text-slate-600">
-        {t("inviteOnlyAccount")}
-      </p>
+      <p className="mt-5 text-center text-sm text-slate-600">{t("inviteOnlyAccount")}</p>
     </DriverAuthShell>
   );
 }
