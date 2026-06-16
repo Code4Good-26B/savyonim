@@ -88,19 +88,6 @@ export async function loginDriver(email: string, password: string): Promise<Driv
   });
 }
 
-export async function registerDriver(input: {
-  fullName: string;
-  email: string;
-  password: string;
-  phone?: string;
-  serviceZoneId?: string;
-}): Promise<DriverSession> {
-  return requestJson<DriverSession>("/api/auth/register-driver", {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
-}
-
 export async function getDriverRides(session: DriverSession): Promise<DriverRidesResponse> {
   const rides = await requestJson<DriverRidesResponse>("/api/driver/rides", {
     headers: driverAuthHeaders(session),
