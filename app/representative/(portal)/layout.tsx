@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Toaster } from "sonner";
 import { createSupabaseClient } from "@/lib/supabase";
 import { query } from "@/lib/db";
-import { SidebarNav } from "./SidebarNav";
+import { RepNav } from "./RepNav";
 import { LogoutButton } from "./LogoutButton";
 
 export const dynamic = "force-dynamic";
@@ -28,33 +28,31 @@ export default async function RepresentativeLayout({ children }: { children: Rea
 
   return (
     <>
-      <div className="flex min-h-screen bg-gray-50" dir="rtl">
-        <aside className="w-56 shrink-0 border-l border-gray-100 bg-white flex flex-col">
-          <div className="px-4 py-5 border-b border-gray-100">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-bold shrink-0">
-                ס
+      <div className="min-h-screen bg-background" dir="rtl">
+        <header className="border-b border-border bg-card">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/savyonim-logo.webp" alt="עמותת סביונים" className="h-11 w-auto" />
+                <div>
+                  <h1 className="font-semibold">מרכז שיגור הסעות</h1>
+                  <p className="text-sm text-muted-foreground">פורטל נציגים</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900 leading-tight">סביונים</p>
-                <p className="text-xs text-gray-400 leading-tight">פורטל נציגים</p>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <RepNav />
+                <div className="flex items-center gap-3 border-r border-border pr-4">
+                  <span className="text-sm text-muted-foreground">{dbUser.full_name}</span>
+                  <LogoutButton />
+                </div>
               </div>
             </div>
           </div>
+        </header>
 
-          <div className="flex-1 py-3">
-            <SidebarNav />
-          </div>
-
-          <div className="px-4 py-4 border-t border-gray-100 flex items-center justify-between gap-2">
-            <p className="text-xs text-gray-400 truncate">{dbUser.full_name}</p>
-            <LogoutButton />
-          </div>
-        </aside>
-
-        <main className="flex-1 overflow-auto">
-          <div className="p-8 max-w-5xl">{children}</div>
-        </main>
+        <main className="container mx-auto p-6">{children}</main>
       </div>
       <Toaster position="top-center" richColors />
     </>
