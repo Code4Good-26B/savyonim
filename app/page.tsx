@@ -45,7 +45,7 @@ const ROLES = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
       <div className="w-full max-w-md flex flex-col gap-8">
 
         <div className="text-center flex flex-col items-center gap-3">
@@ -58,25 +58,25 @@ export default function LandingPage() {
             className="h-20 w-auto"
           />
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">סביונים</h1>
-            <p className="text-sm text-gray-500 mt-0.5">מערכת הסעות מותאמת אישית</p>
+            <h1 className="text-xl font-semibold text-foreground">סביונים</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">מערכת הסעות מותאמת אישית</p>
           </div>
         </div>
 
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 text-center">בחר תפקיד</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground text-center">בחר תפקיד</p>
           {ROLES.map((role) => (
             <Link
               key={role.href}
               href={role.href}
-              className={`flex items-center gap-4 rounded-2xl border ${role.border} bg-white p-5 shadow-sm transition-shadow hover:shadow-md group`}
+              className={`flex items-center gap-4 rounded-2xl border ${role.border} bg-card p-5 shadow-sm transition-shadow hover:shadow-md group`}
             >
               <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${role.iconBg}`}>
                 {role.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900">{role.title}</p>
-                <p className="text-sm text-gray-500 mt-0.5">{role.description}</p>
+                <p className="font-semibold text-foreground">{role.title}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{role.description}</p>
               </div>
               <div className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${role.accent}`}>
                 כניסה
@@ -85,11 +85,11 @@ export default function LandingPage() {
           ))}
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-gray-200 pt-4">
-          <p className="text-xs text-center uppercase tracking-wide text-gray-300">קיצורי דרך לפיתוח</p>
+        <div className="flex flex-col gap-2 border-t border-border pt-4">
+          <p className="text-xs text-center uppercase tracking-wide text-muted-foreground">קיצורי דרך לפיתוח</p>
           <Link
             href="/dev"
-            className="rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-500 text-center hover:bg-gray-50"
+            className="rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground text-center hover:bg-muted/30"
           >
             API Status
           </Link>

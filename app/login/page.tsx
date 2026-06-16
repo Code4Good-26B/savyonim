@@ -71,7 +71,7 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <p className="mt-5 text-center text-sm text-slate-600">
+      <p className="mt-5 text-center text-sm text-muted-foreground">
         {t("needAccount")}{" "}
         <Link href="/register-driver" className="font-semibold text-blue-700 transition hover:text-blue-800">
           {t("signup")}

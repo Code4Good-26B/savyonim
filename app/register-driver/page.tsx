@@ -96,7 +96,7 @@ export default function RegisterDriverPage() {
         </Button>
       </form>
 
-      <p className="mt-5 text-center text-sm text-slate-600">
+      <p className="mt-5 text-center text-sm text-muted-foreground">
         {t("alreadyRegistered")}{" "}
         <Link href="/login" className="font-semibold text-blue-700 transition hover:text-blue-800">
           {t("login")}
