@@ -61,8 +61,8 @@ export default async function AdminApprovalsPage() {
   return (
     <div className="flex flex-col gap-6" dir="rtl">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">אישור הרשמות</h1>
-        <p className="mt-1 text-sm text-gray-400">
+        <h2>אישור הרשמות</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           {total > 0 ? `${total} בקשות ממתינות לאישור` : "אין בקשות ממתינות"}
         </p>
       </div>

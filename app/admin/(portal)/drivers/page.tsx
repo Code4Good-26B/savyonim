@@ -13,7 +13,7 @@ const STATUS_CONFIG = {
   in_progress: { label: "בנסיעה", className: "bg-cyan-50 text-cyan-700 border border-cyan-100" },
   assigned: { label: "ממתין לאיסוף", className: "bg-amber-50 text-amber-700 border border-amber-100" },
   available: { label: "פנוי", className: "bg-green-50 text-green-700 border border-green-100" },
-  inactive: { label: "לא פעיל", className: "bg-gray-100 text-gray-500" },
+  inactive: { label: "לא פעיל", className: "bg-muted text-muted-foreground" },
 } as const;
 
 function getStatus(row: DriverRow) {
@@ -45,7 +45,7 @@ export default async function AdminDriversPage() {
   const statCards = [
     {
       label: "סה״כ נהגים", value: counts.total,
-      icon: <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+      icon: <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
     },
     {
       label: "פעילים", value: counts.active,
@@ -64,43 +64,43 @@ export default async function AdminDriversPage() {
   return (
     <div className="flex flex-col gap-6" dir="rtl">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">נהגים</h1>
-        <p className="mt-1 text-sm text-gray-400">מצב כלל הנהגים הרשומים במערכת</p>
+        <h2>נהגים</h2>
+        <p className="mt-1 text-sm text-muted-foreground">מצב כלל הנהגים הרשומים במערכת</p>
       </div>
 
       <div className="grid grid-cols-4 gap-4">
         {statCards.map((s) => (
-          <div key={s.label} className="rounded-xl bg-white border border-gray-100 p-5 flex flex-col gap-3">
+          <div key={s.label} className="rounded-xl bg-card border border-border p-5 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-400 font-medium">{s.label}</span>
+              <span className="text-xs text-muted-foreground font-medium">{s.label}</span>
               {s.icon}
             </div>
-            <p className="text-3xl font-semibold text-gray-900">{s.value}</p>
+            <p className="text-3xl font-semibold text-foreground">{s.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl bg-white border border-gray-100 overflow-hidden">
+      <div className="rounded-xl bg-card border border-border overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50 text-right text-xs text-gray-400">
+            <tr className="border-b border-border bg-muted/40 text-right text-xs text-muted-foreground">
               <th className="px-6 py-3 font-medium">שם נהג</th>
               <th className="px-6 py-3 font-medium">טלפון</th>
               <th className="px-6 py-3 font-medium">אימייל</th>
               <th className="px-6 py-3 font-medium">סטטוס</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-border">
             {drivers.length === 0 ? (
-              <tr><td colSpan={4} className="px-6 py-16 text-center text-sm text-gray-400">אין נהגים רשומים</td></tr>
+              <tr><td colSpan={4} className="px-6 py-16 text-center text-sm text-muted-foreground">אין נהגים רשומים</td></tr>
             ) : (
               drivers.map((d) => {
                 const status = getStatus(d);
                 return (
-                  <tr key={d.id} className="hover:bg-gray-50/60 transition-colors">
-                    <td className="px-6 py-3.5 font-medium text-gray-900">{d.full_name}</td>
-                    <td className="px-6 py-3.5 text-gray-500 tabular-nums">{d.contact_phone ?? "—"}</td>
-                    <td className="px-6 py-3.5 text-gray-500">{d.email ?? "—"}</td>
+                  <tr key={d.id} className="hover:bg-muted/60 transition-colors">
+                    <td className="px-6 py-3.5 font-medium text-foreground">{d.full_name}</td>
+                    <td className="px-6 py-3.5 text-muted-foreground tabular-nums">{d.contact_phone ?? "—"}</td>
+                    <td className="px-6 py-3.5 text-muted-foreground">{d.email ?? "—"}</td>
                     <td className="px-6 py-3.5">
                       <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}>
                         {status.label}
