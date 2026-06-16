@@ -3,6 +3,7 @@ import { validateRideRequestWebhookPayload } from "@/lib/webhook-contracts";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSupabaseClient } from "@/lib/supabase";
 import { getWebhookSecret, verifyWebhookSignature } from "@/lib/webhook-security";
+import { notifyDrivers } from "@/lib/commbox";
 
 const RIDE_REQUEST_FIELDS =
   "id, passenger_id, requested_by_user_id, service_zone_id, status, source_address, destination_address, requested_pickup_at, created_at";
@@ -201,20 +202,33 @@ export async function POST(request: Request) {
     return supabaseErrorResponse(driversError);
   }
 
+  const drivers = availableDrivers ?? [];
+
+  const { sent, failed } = await notifyDrivers(
+    drivers.map((d) => ({
+      driverId: d.id,
+      phone: d.contact_phone,
+      rideRequestId: rideRequest.id,
+      sourceAddress: rideRequest.source_address,
+      destinationAddress: rideRequest.destination_address,
+      pickupAt: rideRequest.requested_pickup_at,
+    })),
+  );
+
   return Response.json(
     {
-      message: "Ride request received and mock broadcast prepared",
+      message: "Ride request received and drivers notified",
       provider_request_id: validation.data.request_id,
       ride_request: rideRequest,
-      broadcast_preview: {
+      notifications: {
         channel: validation.data.metadata?.channel ?? "whatsapp",
-        driver_count: availableDrivers?.length ?? 0,
-        drivers:
-          availableDrivers?.map((driver) => ({
-            driver_id: driver.id,
-            phone: driver.contact_phone,
-            service_zone_id: driver.service_zone_id,
-          })) ?? [],
+        sent,
+        failed,
+        drivers: drivers.map((d) => ({
+          driver_id: d.id,
+          phone: d.contact_phone,
+          service_zone_id: d.service_zone_id,
+        })),
       },
     },
     { status: 202 },
