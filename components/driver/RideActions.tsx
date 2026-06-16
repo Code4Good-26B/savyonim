@@ -138,7 +138,7 @@ export function AssignedRideActions({
       {ride.status === "assigned" || ride.status === "in_progress" ? (
         <Card>
           <CardHeader>
-            <h2 className="text-base font-semibold text-slate-950">{t("completeRide")}</h2>
+            <h2 className="text-base font-semibold text-foreground">{t("completeRide")}</h2>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2">

@@ -25,7 +25,7 @@ function StatusBadge({ status }: { status: string }) {
           ? "border-emerald-200 bg-emerald-50 text-emerald-800"
           : status === "rejected"
             ? "border-red-200 bg-red-50 text-red-800"
-            : "border-slate-200 bg-slate-100 text-slate-700";
+            : "border-border bg-muted text-foreground";
 
   return (
     <Badge variant="outline" className={statusClass}>
@@ -37,8 +37,8 @@ function StatusBadge({ status }: { status: string }) {
 function RouteLine({ label, value }: { label: string; value: string }) {
   return (
     <p className="grid gap-1 text-sm leading-6 sm:grid-cols-[4rem_1fr]">
-      <span className="font-semibold text-slate-500">{label}</span>
-      <span className="min-w-0 text-slate-900">{value}</span>
+      <span className="font-semibold text-muted-foreground">{label}</span>
+      <span className="min-w-0 text-foreground">{value}</span>
     </p>
   );
 }
@@ -73,10 +73,10 @@ export function OpenRideCard({ ride }: { ride: RideRequestSummary }) {
     <RideCardFrame href={`/driver/rides/${ride.id}`} action={t("viewDetails")}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {formatPickup(ride.requested_pickup_at, language, t("pickupTimeNotSet"))}
           </p>
-          <h3 className="mt-1 text-lg font-semibold text-slate-950">{t("openRide")}</h3>
+          <h3 className="mt-1 text-lg font-semibold text-foreground">{t("openRide")}</h3>
         </div>
         <StatusBadge status={ride.status} />
       </div>
@@ -96,10 +96,10 @@ export function AssignedRideCard({ ride }: { ride: RideSummary }) {
     <RideCardFrame href={`/driver/rides/${ride.id}`} action={t("continueRide")} actionTone="default">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {formatPickup(request?.requested_pickup_at, language, t("pickupTimeNotSet"))}
           </p>
-          <h3 className="mt-1 text-lg font-semibold text-slate-950">{t("yourRide")}</h3>
+          <h3 className="mt-1 text-lg font-semibold text-foreground">{t("yourRide")}</h3>
         </div>
         <StatusBadge status={ride.status} />
       </div>
@@ -120,10 +120,10 @@ export function RideHistoryCard({ ride }: { ride: RideSummary }) {
     <RideCardFrame href={`/driver/rides/${ride.id}`} action={t("viewDetails")}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {formatPickup(historyDate, language, t("pickupTimeNotSet"))}
           </p>
-          <h3 className="mt-1 text-lg font-semibold text-slate-950">{t("pastRide")}</h3>
+          <h3 className="mt-1 text-lg font-semibold text-foreground">{t("pastRide")}</h3>
         </div>
         <StatusBadge status={ride.status} />
       </div>
