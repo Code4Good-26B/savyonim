@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { translateStatus, useDriverI18n } from "@/components/driver/DriverI18n";
 import { Badge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { RideRequestSummary, RideSummary } from "@/lib/driver/types";
 
@@ -15,18 +16,22 @@ function formatPickup(value: string | null | undefined, language: "en" | "he", f
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useDriverI18n();
-  const tone =
+  const statusClass =
     status === "in_progress"
-      ? "blue"
+      ? "border-blue-200 bg-blue-50 text-blue-800"
       : status === "assigned"
-        ? "amber"
+        ? "border-amber-200 bg-amber-50 text-amber-800"
         : status === "completed"
-          ? "emerald"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
           : status === "rejected"
-            ? "red"
-            : "slate";
+            ? "border-red-200 bg-red-50 text-red-800"
+            : "border-slate-200 bg-slate-100 text-slate-700";
 
-  return <Badge tone={tone}>{translateStatus(status, t)}</Badge>;
+  return (
+    <Badge variant="outline" className={statusClass}>
+      {translateStatus(status, t)}
+    </Badge>
+  );
 }
 
 function RouteLine({ label, value }: { label: string; value: string }) {
@@ -47,15 +52,15 @@ function RideCardFrame({
   children: React.ReactNode;
   href: string;
   action: string;
-  actionTone?: "primary" | "secondary";
+  actionTone?: "default" | "secondary";
 }) {
   return (
     <Card className="h-full transition hover:border-blue-200 hover:shadow-md hover:shadow-slate-200/80">
       <CardContent className="flex h-full flex-col">
         <div className="flex-1">{children}</div>
-        <ButtonLink href={href} variant={actionTone} className="mt-5 w-full">
-          {action}
-        </ButtonLink>
+        <Button asChild variant={actionTone} className="mt-5 w-full">
+          <Link href={href}>{action}</Link>
+        </Button>
       </CardContent>
     </Card>
   );
@@ -88,7 +93,7 @@ export function AssignedRideCard({ ride }: { ride: RideSummary }) {
   const request = ride.ride_request;
 
   return (
-    <RideCardFrame href={`/driver/rides/${ride.id}`} action={t("continueRide")} actionTone="primary">
+    <RideCardFrame href={`/driver/rides/${ride.id}`} action={t("continueRide")} actionTone="default">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">

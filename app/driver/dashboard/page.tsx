@@ -134,7 +134,7 @@ export default function DriverDashboardPage() {
                 <Button
                   type="button"
                   onClick={() => void load(session)}
-                  variant="danger"
+                  variant="destructive"
                   className="mt-3"
                 >
                   {t("retry")}

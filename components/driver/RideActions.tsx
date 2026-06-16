@@ -17,12 +17,12 @@ function ActionButton({
   children,
   disabled,
   onClick,
-  tone = "primary",
+  tone = "default",
 }: {
   children: React.ReactNode;
   disabled: boolean;
   onClick: () => void;
-  tone?: "primary" | "danger" | "secondary";
+  tone?: "default" | "destructive" | "secondary";
 }) {
   return (
     <Button
@@ -191,7 +191,7 @@ export function AssignedRideActions({
                     }),
                   )
                 }
-                tone="danger"
+                tone="destructive"
               >
                 {isPending ? t("rejectRidePending") : t("rejectRide")}
               </ActionButton>

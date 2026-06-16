@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { LanguageSwitch, useDriverI18n } from "@/components/driver/DriverI18n";
-import { ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export function DriverAuthShell({
@@ -40,9 +41,9 @@ export function DriverAuthShell({
             className="h-16 w-auto rounded-lg bg-white/95 p-2 shadow-lg sm:h-20"
           />
           <div className="flex items-center gap-2">
-            <ButtonLink href="/" variant="outline" size="md" className="border-white/25 bg-white/95 text-slate-900 hover:bg-white">
-              {t("backToHomepage")}
-            </ButtonLink>
+            <Button asChild variant="outline" className="border-white/25 bg-white/95 text-slate-900 hover:bg-white">
+              <Link href="/">{t("backToHomepage")}</Link>
+            </Button>
             <LanguageSwitch className="border-white/25 bg-white/95" />
           </div>
         </header>
