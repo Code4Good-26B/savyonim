@@ -111,7 +111,7 @@ export default function DriverRideDetailPage() {
 
   useEffect(() => {
     if (!session || session.role !== "driver") {
-      router.replace("/login");
+      router.replace("/login_driver");
       return;
     }
     const timer = window.setTimeout(() => {

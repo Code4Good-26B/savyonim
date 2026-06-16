@@ -38,12 +38,10 @@ export default function DriverLandingPage() {
             <p className="mt-5 max-w-xl text-base leading-7 text-slate-200">{t("landingBody")}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg">
-                <Link href="/login">{t("login")}</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="border-white/25 bg-white/95 text-slate-900 hover:bg-white">
-                <Link href="/register-driver">{t("signup")}</Link>
+                <Link href="/login_driver">{t("login")}</Link>
               </Button>
             </div>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-slate-300">{t("inviteOnlyAccount")}</p>
           </section>
         </main>
       </div>

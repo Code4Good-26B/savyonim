@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { useDriverI18n } from "@/components/driver/DriverI18n";
@@ -12,7 +11,7 @@ import { DriverNotice } from "@/components/driver/DriverNotice";
 import { Button } from "@/components/ui/button";
 import { FieldLabel, Input } from "@/components/ui/input";
 
-export default function LoginPage() {
+export default function LoginDriverPage() {
   const router = useRouter();
   const { t } = useDriverI18n();
   const [email, setEmail] = useState("");
@@ -45,7 +44,7 @@ export default function LoginPage() {
         </div>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" data-testid="driver-login-form">
         <FieldLabel>
           {t("email")}
           <Input
@@ -72,10 +71,7 @@ export default function LoginPage() {
       </form>
 
       <p className="mt-5 text-center text-sm text-slate-600">
-        {t("needAccount")}{" "}
-        <Link href="/register-driver" className="font-semibold text-blue-700 transition hover:text-blue-800">
-          {t("signup")}
-        </Link>
+        {t("inviteOnlyAccount")}
       </p>
     </DriverAuthShell>
   );
