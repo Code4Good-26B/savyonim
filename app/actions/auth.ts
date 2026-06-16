@@ -266,7 +266,7 @@ export async function sendInvite(
       email,
       {
         redirectTo: `${appUrl}/onboarding`,
-        data: { invited_role: invitedRole },
+        data: { app_role: invitedRole, invited_role: invitedRole },
       },
     );
 

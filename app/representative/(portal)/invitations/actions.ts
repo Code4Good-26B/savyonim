@@ -37,7 +37,7 @@ export async function sendInvite(
   if (!isAdmin && role !== "driver") return { error: "נציגים יכולים להזמין נהגים בלבד" };
 
   const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: { role },
+    data: { app_role: role, invited_role: role, role },
     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/onboarding`,
   });
 
