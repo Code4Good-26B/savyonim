@@ -1,4 +1,5 @@
-import { createSupabaseAnonClient, createSupabaseClient } from "@/lib/supabase";
+import { accountLifecycleMessage, accountLifecycleRedirect } from "@/lib/auth/account-lifecycle";
+import { createSupabaseAnonClient } from "@/lib/supabase";
 import { query } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -6,6 +7,7 @@ export const runtime = "nodejs";
 type UserRow = {
   full_name: string;
   role: string;
+  status: string;
   is_active: boolean;
 };
 
@@ -31,7 +33,7 @@ export async function POST(request: Request) {
   }
 
   const result = await query<UserRow>(
-    `SELECT full_name, role, is_active FROM public.users WHERE id = $1`,
+    `SELECT full_name, role, status, is_active FROM public.users WHERE id = $1`,
     [authData.user.id],
   );
 
@@ -39,6 +41,16 @@ export async function POST(request: Request) {
   if (!user) return Response.json({ error: "User not found" }, { status: 401 });
   if (user.role !== "admin") {
     return Response.json({ error: "This portal is for administrators only" }, { status: 403 });
+  }
+  if (user.status !== "approved") {
+    return Response.json(
+      {
+        error: accountLifecycleMessage(user.status),
+        accountStatus: user.status,
+        redirectTo: accountLifecycleRedirect(user.status),
+      },
+      { status: 403 },
+    );
   }
   if (!user.is_active) {
     return Response.json({ error: "Account is inactive" }, { status: 403 });

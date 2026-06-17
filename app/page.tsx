@@ -3,10 +3,13 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn, Loader2, AlertCircle } from "lucide-react";
+import { dashboardPathForRole } from "@/lib/auth/account-lifecycle";
 import { loginRepresentative } from "@/lib/representative/api";
 import { storeRepresentativeSession } from "@/lib/representative/session";
+import type { RepresentativeApiError } from "@/lib/representative/types";
 import { loginDriver } from "@/lib/driver/api";
 import { storeDriverSession } from "@/lib/driver/session";
+import type { DriverApiError } from "@/lib/driver/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,18 +49,22 @@ export default function LandingLoginPage() {
           setError(data.error ?? "שגיאה בהתחברות");
           return;
         }
-        router.replace("/admin/statistics");
+        router.replace(dashboardPathForRole("admin") ?? "/admin/statistics");
       } else if (role === "representative") {
         const session = await loginRepresentative(email, password);
         storeRepresentativeSession(session);
-        router.replace("/representative/dashboard");
+        router.replace(dashboardPathForRole(session.role) ?? "/representative/dashboard");
       } else {
         const session = await loginDriver(email, password);
         storeDriverSession(session);
-        router.replace("/driver/dashboard");
+        router.replace(dashboardPathForRole(session.role) ?? "/driver");
       }
     } catch (caught) {
-      const apiError = caught as { detail?: string };
+      const apiError = caught as DriverApiError | RepresentativeApiError;
+      if (apiError.redirectTo) {
+        router.replace(apiError.redirectTo);
+        return;
+      }
       setError(apiError?.detail ?? "שגיאה בהתחברות");
     } finally {
       setIsPending(false);

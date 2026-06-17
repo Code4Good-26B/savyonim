@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useDriverI18n } from "@/components/driver/DriverI18n";
-import { DriverHeader } from "@/components/driver/DriverHeader";
 import { DriverNotice } from "@/components/driver/DriverNotice";
 import { AssignedRideActions, OpenRideActions } from "@/components/driver/RideActions";
 import { User, Phone, MapPin, Clock, Repeat } from "lucide-react";
@@ -137,11 +136,15 @@ export default function DriverRideDetailPage() {
       setDetail(await getDriverRideDetail(params.id, nextSession));
     } catch (caught) {
       const apiError = caught as DriverApiError;
+      if (apiError.redirectTo) {
+        router.replace(apiError.redirectTo);
+        return;
+      }
       setError(apiError.detail ?? "Could not load this ride.");
     } finally {
       setIsLoading(false);
     }
-  }, [params.id]);
+  }, [params.id, router]);
 
   useEffect(() => {
     if (!session || session.role !== "driver") {
@@ -155,19 +158,18 @@ export default function DriverRideDetailPage() {
   }, [load, router, session]);
 
   if (!session) {
-    return <main className="min-h-screen bg-muted/30 px-4 py-8 text-foreground">{t("checkingSession")}</main>;
+    return <main className="min-h-screen bg-background px-4 py-8 text-foreground">{t("checkingSession")}</main>;
   }
 
   const rideRequest =
     detail?.kind === "open" ? detail.rideRequest : detail?.kind === "assigned" ? detail.ride.ride_request : null;
 
   return (
-    <div className="min-h-screen bg-muted/30" dir={direction}>
-      <DriverHeader session={session} />
-      <main className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-6">
+    <div className="min-h-screen bg-background" dir={direction}>
+      <main className="mx-auto max-w-md space-y-5 px-4 py-6">
         <Link
-          href="/driver/dashboard"
-          className="inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 transition hover:text-blue-800"
+          href="/driver"
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-muted-foreground transition hover:text-foreground"
         >
           {t("backToDashboard")}
         </Link>
@@ -207,7 +209,7 @@ export default function DriverRideDetailPage() {
             session={session}
             onChanged={(ride: RideSummary) => {
               if (ride.status === "rejected") {
-                router.replace("/driver/dashboard");
+                router.replace("/driver");
                 return;
               }
               setDetail({ kind: "assigned", ride });

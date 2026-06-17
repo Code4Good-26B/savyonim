@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createSupabaseClient } from "@/lib/supabase";
 import { query } from "@/lib/db";
+import { sendEmail, approvalEmailHtml, rejectionEmailHtml } from "@/lib/email";
 
 async function getCallerWithPermission() {
   const cookieStore = await cookies();
@@ -33,24 +34,35 @@ export async function approveDriver(
   const auth = await getCallerWithPermission();
   if ("error" in auth) return auth;
 
-  await query(
-    "UPDATE public.users SET status = 'approved', is_active = true WHERE id = $1 AND role = 'driver'",
+  const userResult = await query<{ full_name: string; email: string | null }>(
+    "UPDATE public.users SET status = 'approved', is_active = true WHERE id = $1 AND role = 'driver' RETURNING full_name, email",
     [driverUserId],
   );
   revalidatePath("/representative/approvals");
+
+  const u = userResult.rows[0];
+  if (u?.email) {
+    await sendEmail({ to: u.email, subject: "בקשתך אושרה — סביונים", html: approvalEmailHtml(u.full_name) });
+  }
   return { ok: true };
 }
 
 export async function rejectDriver(
   driverUserId: string,
+  reason?: string,
 ): Promise<{ ok: true } | { error: string }> {
   const auth = await getCallerWithPermission();
   if ("error" in auth) return auth;
 
-  await query(
-    "UPDATE public.users SET status = 'rejected', is_active = false WHERE id = $1 AND role = 'driver'",
+  const userResult = await query<{ full_name: string; email: string | null }>(
+    "UPDATE public.users SET status = 'rejected', is_active = false WHERE id = $1 AND role = 'driver' RETURNING full_name, email",
     [driverUserId],
   );
   revalidatePath("/representative/approvals");
+
+  const u = userResult.rows[0];
+  if (u?.email) {
+    await sendEmail({ to: u.email, subject: "עדכון על בקשתך — סביונים", html: rejectionEmailHtml(u.full_name, reason) });
+  }
   return { ok: true };
 }

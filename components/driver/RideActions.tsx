@@ -32,7 +32,7 @@ function ActionButton({
       onClick={onClick}
       variant={tone}
       size="lg"
-      className="w-full"
+      className="h-14 w-full text-base font-semibold"
     >
       {children}
     </Button>

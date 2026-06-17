@@ -12,6 +12,8 @@ export type DriverSession = {
 export type ApiErrorPayload = {
   error?: string;
   message?: string;
+  redirectTo?: string | null;
+  accountStatus?: string;
 };
 
 export type RideRequestSummary = {
@@ -86,4 +88,6 @@ export type DriverApiError = {
   status: number;
   title: string;
   detail: string;
+  redirectTo?: string | null;
+  accountStatus?: string;
 };

@@ -284,7 +284,7 @@ export function LanguageSwitch({ className = "" }: { className?: string }) {
       aria-label={t("languageLabel")}
       title={t("languageLabel")}
       onClick={toggleLanguage}
-      className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:border-blue-300 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${className}`}
+      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${className}`}
     >
       {nextLanguage}
     </button>

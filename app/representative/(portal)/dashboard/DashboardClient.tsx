@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Clock, MapPin, User, Phone, Plus, Circle } from "lucide-react";
+import { Clock, MapPin, User, Phone, Plus } from "lucide-react";
 
 export type DashboardDriver = {
   id: string;
@@ -58,21 +58,69 @@ const RIDE_STATUS_LABEL: Record<string, string> = {
   rejected: "נדחה",
 };
 
+type DashboardStats = {
+  pendingRides: number;
+  activeRides: number;
+  availableDrivers: number;
+};
+
+const STAT_CARDS = [
+  {
+    key: "pendingRides" as const,
+    label: "בקשות ממתינות",
+    color: "text-orange-500",
+    icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  },
+  {
+    key: "activeRides" as const,
+    label: "הסעות פעילות",
+    color: "text-blue-500",
+    icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
+  },
+  {
+    key: "availableDrivers" as const,
+    label: "נהגים פנויים",
+    color: "text-green-500",
+    icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  },
+];
+
 export function DashboardClient({
   drivers,
   rides,
+  stats,
 }: {
   drivers: DashboardDriver[];
   rides: DashboardRide[];
+  stats: DashboardStats;
 }) {
   const router = useRouter();
   const [isCreateRideOpen, setIsCreateRideOpen] = useState(false);
   const [wantsReturnRide, setWantsReturnRide] = useState(false);
 
+  useEffect(() => {
+    const id = setInterval(() => router.refresh(), 30_000);
+    return () => clearInterval(id);
+  }, [router]);
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Available Drivers - Takes up 1 column; appears on the RIGHT under RTL */}
-      <div className="space-y-6">
+    <div className="flex flex-col gap-6">
+      {/* Summary stat cards */}
+      <div className="grid grid-cols-3 gap-4">
+        {STAT_CARDS.map((s) => (
+          <div key={s.key} className="rounded-xl bg-card border border-border p-5 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground font-medium">{s.label}</span>
+              <span className={s.color}>{s.icon}</span>
+            </div>
+            <p className="text-3xl font-semibold text-foreground">{stats[s.key]}</p>
+          </div>
+        ))}
+      </div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      {/* Available Drivers - sticky column; appears on the RIGHT under RTL */}
+      <div className="sticky top-0 self-start space-y-6">
         <div>
           <h3>נהגים זמינים</h3>
           <p className="text-sm text-muted-foreground mt-1">מתנדבים מחוברים כעת</p>
@@ -88,7 +136,7 @@ export function DashboardClient({
                 אין נהגים רשומים במערכת
               </p>
             ) : (
-              <ScrollArea className="h-[600px] pl-4">
+              <ScrollArea className="max-h-[calc(100vh-14rem)] pl-4">
                 <div className="space-y-4">
                   {drivers.map((driver, index) => (
                     <div key={driver.id} className="space-y-2">
@@ -100,15 +148,14 @@ export function DashboardClient({
                               {driver.phone ?? "—"}
                             </p>
                           </div>
-                          <Circle
-                            className={`h-2 w-2 ${
-                              driver.status === "available"
-                                ? "fill-green-500 text-green-500"
-                                : driver.status === "busy"
-                                  ? "fill-yellow-500 text-yellow-500"
-                                  : "fill-gray-400 text-gray-400"
-                            }`}
-                          />
+                          {driver.status === "available" ? (
+                            <span className="relative flex h-2 w-2 shrink-0">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                            </span>
+                          ) : (
+                            <span className={`h-2 w-2 shrink-0 rounded-full ${driver.status === "busy" ? "bg-yellow-500" : "bg-gray-400"}`} />
+                          )}
                         </div>
                         <Badge
                           variant={driver.status === "available" ? "default" : "secondary"}
@@ -138,7 +185,7 @@ export function DashboardClient({
 
       {/* Live Ride Monitoring - Takes up 2 columns; appears on the LEFT under RTL */}
       <div className="lg:col-span-2 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-background pb-4 flex items-center justify-between">
           <div>
             <h2>ניטור הסעות בזמן אמת</h2>
             <p className="text-muted-foreground mt-1">עקוב אחר כל ההסעות הפעילות והממתינות</p>
@@ -207,6 +254,7 @@ export function DashboardClient({
         </div>
 
         <div className="space-y-4">
+
           {rides.length === 0 ? (
             <Card>
               <CardContent className="py-16 text-center text-sm text-muted-foreground">
@@ -283,6 +331,7 @@ export function DashboardClient({
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }
