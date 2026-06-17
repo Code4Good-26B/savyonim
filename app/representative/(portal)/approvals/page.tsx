@@ -22,11 +22,11 @@ type DriverRow = {
 export default async function ApprovalsPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("savionim-rep-token")?.value;
-  if (!token) redirect("/representative/login");
+  if (!token) redirect("/");
 
   const adminClient = createSupabaseClient();
   const { data: { user }, error } = await adminClient.auth.getUser(token);
-  if (error || !user) redirect("/representative/login");
+  if (error || !user) redirect("/");
 
   const callerResult = await query<{ can_approve_drivers: boolean }>(
     "SELECT can_approve_drivers FROM public.users WHERE id = $1",

@@ -13,7 +13,7 @@ export function LogoutButton() {
       localStorage.removeItem("savionim.representativeSession");
     } catch { /* ignore */ }
     await fetch("/api/auth/logout?portal=representative", { method: "POST" });
-    router.replace("/representative/login");
+    router.replace("/");
   }
 
   return (
