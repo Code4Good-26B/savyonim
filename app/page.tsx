@@ -54,7 +54,7 @@ export default function LandingLoginPage() {
       } else {
         const session = await loginDriver(email, password);
         storeDriverSession(session);
-        router.replace("/driver/dashboard");
+        router.replace("/driver");
       }
     } catch (caught) {
       const apiError = caught as { detail?: string };
