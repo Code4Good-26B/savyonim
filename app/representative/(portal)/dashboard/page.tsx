@@ -31,8 +31,13 @@ function formatTime(value: string | null) {
   });
 }
 
+type StatsRow = {
+  pending_rides: string;
+  active_rides: string;
+};
+
 export default async function DispatcherDashboard() {
-  const [driversResult, ridesResult] = await Promise.all([
+  const [driversResult, ridesResult, statsResult] = await Promise.all([
     query<DriverRow>(`
       SELECT
         d.id,
@@ -70,6 +75,11 @@ export default async function DispatcherDashboard() {
       ORDER BY rr.requested_pickup_at DESC NULLS LAST
       LIMIT 10
     `),
+    query<StatsRow>(`
+      SELECT
+        (SELECT count(*)::text FROM public.ride_requests WHERE status = 'pending') AS pending_rides,
+        (SELECT count(*)::text FROM public.rides WHERE status IN ('assigned', 'in_progress')) AS active_rides
+    `),
   ]);
 
   const drivers: DashboardDriver[] = driversResult.rows.map((d) => ({
@@ -91,5 +101,11 @@ export default async function DispatcherDashboard() {
     requestedTime: formatTime(r.requested_pickup_at),
   }));
 
-  return <DashboardClient drivers={drivers} rides={rides} />;
+  const stats = {
+    pendingRides: parseInt(statsResult.rows[0]?.pending_rides ?? "0", 10),
+    activeRides: parseInt(statsResult.rows[0]?.active_rides ?? "0", 10),
+    availableDrivers: drivers.filter((d) => d.status === "available").length,
+  };
+
+  return <DashboardClient drivers={drivers} rides={rides} stats={stats} />;
 }

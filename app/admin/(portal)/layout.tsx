@@ -12,18 +12,18 @@ export const dynamic = "force-dynamic";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const token = cookieStore.get("savionim-admin-token")?.value;
-  if (!token) redirect("/admin/login");
+  if (!token) redirect("/");
 
   const adminClient = createSupabaseClient();
   const { data: { user }, error } = await adminClient.auth.getUser(token);
-  if (error || !user) redirect("/admin/login");
+  if (error || !user) redirect("/");
 
   const result = await query<{ role: string; is_active: boolean; full_name: string }>(
     "SELECT role, is_active, full_name FROM public.users WHERE id = $1",
     [user.id],
   );
   const dbUser = result.rows[0];
-  if (!dbUser?.is_active || dbUser.role !== "admin") redirect("/admin/login");
+  if (!dbUser?.is_active || dbUser.role !== "admin") redirect("/");
 
   return (
     <>

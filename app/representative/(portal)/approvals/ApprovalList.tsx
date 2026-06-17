@@ -21,10 +21,54 @@ export type PendingDriver = {
   location: string | null;
   license_type: string | null;
   license_issue_year: number | null;
-  consent_criminal_record: boolean;
-  owns_vehicle_ambulatory: boolean;
+  consent_criminal_record: boolean | null;
+  owns_vehicle_ambulatory: boolean | null;
   photo_url: string | null;
 };
+
+const PROFILE_FIELDS: { key: keyof PendingDriver; label: string }[] = [
+  { key: "national_id", label: "ת.ז." },
+  { key: "birth_year", label: "שנת לידה" },
+  { key: "gender", label: "מגדר" },
+  { key: "license_type", label: "סוג רישיון" },
+  { key: "license_issue_year", label: "שנת רישיון" },
+  { key: "consent_criminal_record", label: "הסכמת עבר" },
+  { key: "owns_vehicle_ambulatory", label: "רכב אמבולטורי" },
+  { key: "photo_url", label: "תמונת רישיון" },
+];
+
+const PROGRESS_WIDTH = [
+  "w-0", "w-[12.5%]", "w-[25%]", "w-[37.5%]", "w-[50%]",
+  "w-[62.5%]", "w-[75%]", "w-[87.5%]", "w-full",
+] as const;
+
+function ProfileCompleteness({ driver }: { driver: PendingDriver }) {
+  const missing = PROFILE_FIELDS.filter(
+    (f) => driver[f.key] === null || driver[f.key] === undefined,
+  );
+  const filled = PROFILE_FIELDS.length - missing.length;
+  const pct = Math.round((filled / PROFILE_FIELDS.length) * 100);
+
+  return (
+    <div className="flex items-center gap-3 mt-1">
+      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${PROGRESS_WIDTH[filled]} ${pct === 100 ? "bg-green-500" : pct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
+        />
+      </div>
+      <span className="text-xs text-muted-foreground tabular-nums shrink-0">{pct}%</span>
+      {missing.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {missing.map((f) => (
+            <span key={f.key} className="rounded px-1.5 py-0.5 text-[10px] bg-red-50 text-red-600 border border-red-100">
+              {f.label}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function RejectModal({
   name,
@@ -90,9 +134,9 @@ function DriverCard({ driver, onDone }: { driver: PendingDriver; onDone: () => v
     });
   }
 
-  function handleReject(_reason: string) {
+  function handleReject(reason: string) {
     startTransition(async () => {
-      const result = await rejectDriver(driver.user_id);
+      const result = await rejectDriver(driver.user_id, reason || undefined);
       if ("error" in result) {
         toast.error(result.error);
       } else {
@@ -115,7 +159,7 @@ function DriverCard({ driver, onDone }: { driver: PendingDriver; onDone: () => v
       )}
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="flex items-center gap-4 px-5 py-4">
+        <div className="flex items-start gap-4 px-5 py-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
             {driver.full_name.charAt(0)}
           </div>
@@ -123,6 +167,7 @@ function DriverCard({ driver, onDone }: { driver: PendingDriver; onDone: () => v
           <div className="flex-1 min-w-0">
             <p className="font-medium text-foreground">{driver.full_name}</p>
             <p className="text-sm text-muted-foreground">{driver.email ?? "—"}</p>
+            <ProfileCompleteness driver={driver} />
           </div>
 
           <div className="flex items-center gap-2 shrink-0">

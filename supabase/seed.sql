@@ -14,7 +14,7 @@ INSERT INTO public.service_zones (id, name, region_code, region, city, is_active
   ('11111111-1000-0000-0000-000000000001', 'Test North Zone',   'TEST-N', 'Test District',     'Test City', true)
 ON CONFLICT (id) DO NOTHING;
 
--- ─── Auth Users (5 drivers + 1 admin) ─────────────────────────────────────────
+-- ─── Auth Users (5 drivers + 2 representatives + 1 admin + 1 pending driver) ──
 -- Synthetic entries for local / staging only. Password: Seed1234!
 
 INSERT INTO auth.users (
@@ -52,10 +52,25 @@ INSERT INTO auth.users (
     ('22222222-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000000',
     'authenticated', 'authenticated',
     'admin.dispatch@savionim.test', crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
-    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW())
+    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW()),
+
+  ('22222222-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated',
+   'rep.standard@savionim.test',  crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
+   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW()),
+
+  ('22222222-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated',
+   'rep.approver@savionim.test',  crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
+   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW()),
+
+  ('22222222-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated',
+   'driver.pending@savionim.test', crypt('Seed1234!', gen_salt('bf', 10)), NOW(),
+   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
-  -- ─── Public Users (5 drivers + 1 admin) ───────────────────────────────────────
+  -- ─── Public Users (5 drivers + 2 representatives + 1 admin) ─────────────────
 
 INSERT INTO public.users (id, full_name, phone, role, is_active) VALUES
   ('22222222-0000-0000-0000-000000000001', 'Avi Cohen',       '050-1234567', 'driver', true),
@@ -64,6 +79,12 @@ INSERT INTO public.users (id, full_name, phone, role, is_active) VALUES
   ('22222222-0000-0000-0000-000000000004', 'Dana Shapiro',    '053-4567890', 'driver', false),
   ('22222222-0000-0000-0000-000000000005', 'Eran Peretz',     '058-5678901', 'driver', true),
   ('22222222-0000-0000-0000-000000000010', 'System Admin',    '050-0000010', 'admin',  true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Representatives: seeded with can_approve_drivers so the column is set explicitly
+INSERT INTO public.users (id, full_name, phone, role, is_active, can_approve_drivers) VALUES
+  ('22222222-0000-0000-0000-000000000020', 'Ronit Cohen',    '050-2000020', 'representative', true, false),
+  ('22222222-0000-0000-0000-000000000021', 'Yael Ben-Moshe', '050-2100021', 'representative', true, true)
 ON CONFLICT (id) DO NOTHING;
 
 -- ─── Drivers (5) ─────────────────────────────────────────────────────────────
@@ -350,5 +371,15 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Make sure all seeded users are approved so tests can run
 UPDATE public.users SET status = 'approved';
+
+-- ─── Pending Driver (for approvals page testing) ──────────────────────────────
+-- Inserted AFTER the bulk-approve so status stays 'pending'
+INSERT INTO public.users (id, full_name, phone, role, is_active, status) VALUES
+  ('22222222-0000-0000-0000-000000000006', 'Moshe Pending', '050-6000006', 'driver', true, 'pending')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.drivers (id, user_id, contact_phone, service_zone_id, is_active) VALUES
+  ('33333333-0000-0000-0000-000000000006', '22222222-0000-0000-0000-000000000006', '050-6000006', '11111111-0000-0000-0000-000000000001', true)
+ON CONFLICT (id) DO NOTHING;
 
 COMMIT;

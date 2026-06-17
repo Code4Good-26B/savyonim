@@ -33,6 +33,50 @@ export type PendingUser = {
   photo_url: string | null;
 };
 
+const PROGRESS_WIDTH = [
+  "w-0", "w-[12.5%]", "w-[25%]", "w-[37.5%]", "w-[50%]",
+  "w-[62.5%]", "w-[75%]", "w-[87.5%]", "w-full",
+] as const;
+
+const DRIVER_PROFILE_FIELDS: { key: keyof PendingUser; label: string }[] = [
+  { key: "national_id", label: "ת.ז." },
+  { key: "birth_year", label: "שנת לידה" },
+  { key: "gender", label: "מגדר" },
+  { key: "license_type", label: "סוג רישיון" },
+  { key: "license_issue_year", label: "שנת רישיון" },
+  { key: "consent_criminal_record", label: "הסכמת עבר" },
+  { key: "owns_vehicle_ambulatory", label: "רכב אמבולטורי" },
+  { key: "photo_url", label: "תמונת רישיון" },
+];
+
+function ProfileCompleteness({ user }: { user: PendingUser }) {
+  const missing = DRIVER_PROFILE_FIELDS.filter(
+    (f) => user[f.key] === null || user[f.key] === undefined,
+  );
+  const filled = DRIVER_PROFILE_FIELDS.length - missing.length;
+  const pct = Math.round((filled / DRIVER_PROFILE_FIELDS.length) * 100);
+
+  return (
+    <div className="flex items-center gap-3 mt-1">
+      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${PROGRESS_WIDTH[filled]} ${pct === 100 ? "bg-green-500" : pct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
+        />
+      </div>
+      <span className="text-xs text-muted-foreground tabular-nums shrink-0">{pct}%</span>
+      {missing.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {missing.map((f) => (
+            <span key={f.key} className="rounded px-1.5 py-0.5 text-[10px] bg-red-50 text-red-600 border border-red-100">
+              {f.label}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RejectModal({
   name,
   onConfirm,
@@ -94,9 +138,9 @@ function UserCard({ user, onDone }: { user: PendingUser; onDone: () => void }) {
     });
   }
 
-  function handleReject(_reason: string) {
+  function handleReject(reason: string) {
     startTransition(async () => {
-      const result = await rejectUser(user.user_id);
+      const result = await rejectUser(user.user_id, reason || undefined);
       if ("error" in result) toast.error(result.error);
       else { toast.success(`${user.full_name} נדחה`); setShowReject(false); onDone(); }
     });
@@ -114,7 +158,7 @@ function UserCard({ user, onDone }: { user: PendingUser; onDone: () => void }) {
       )}
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="flex items-center gap-4 px-5 py-4">
+        <div className="flex items-start gap-4 px-5 py-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 font-semibold text-sm">
             {user.full_name.charAt(0)}
           </div>
@@ -127,6 +171,7 @@ function UserCard({ user, onDone }: { user: PendingUser; onDone: () => void }) {
               </span>
             </div>
             <p className="text-sm text-muted-foreground">{user.email ?? "—"}</p>
+            {isDriver && <ProfileCompleteness user={user} />}
           </div>
 
           <div className="flex items-center gap-2 shrink-0">

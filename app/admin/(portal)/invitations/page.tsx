@@ -20,14 +20,14 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 export default async function AdminInvitationsPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("savionim-admin-token")?.value;
-  if (!token) redirect("/admin/login");
+  if (!token) redirect("/");
 
   const adminClient = createSupabaseClient();
   const {
     data: { user },
     error,
   } = await adminClient.auth.getUser(token);
-  if (error || !user) redirect("/admin/login");
+  if (error || !user) redirect("/");
 
   const invitationsResult = await query<
     InvitationRow & { invited_by_name: string | null }
