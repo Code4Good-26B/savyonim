@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { translateStatus, useDriverI18n } from "@/components/driver/DriverI18n";
+import { MapPin } from "lucide-react";
+import {
+  translateStatus,
+  useDriverI18n,
+  type DriverTranslationKey,
+} from "@/components/driver/DriverI18n";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,12 +39,37 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function RouteLine({ label, value }: { label: string; value: string }) {
+function RoutePins({
+  source,
+  destination,
+  t,
+}: {
+  source: string;
+  destination: string;
+  t: (key: DriverTranslationKey) => string;
+}) {
   return (
-    <p className="grid gap-1 text-sm leading-6 sm:grid-cols-[4rem_1fr]">
-      <span className="font-semibold text-muted-foreground">{label}</span>
-      <span className="min-w-0 text-foreground">{value}</span>
-    </p>
+    <div className="space-y-1">
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100">
+          <MapPin className="h-4 w-4 text-green-600" />
+        </div>
+        <div className="flex-1 pt-1 text-right">
+          <p className="text-xs font-medium text-muted-foreground">{t("from")}</p>
+          <p className="text-sm font-medium">{source}</p>
+        </div>
+      </div>
+      <div className="mr-4 h-4 w-px bg-border" />
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100">
+          <MapPin className="h-4 w-4 text-red-600" />
+        </div>
+        <div className="flex-1 pt-1 text-right">
+          <p className="text-xs font-medium text-muted-foreground">{t("to")}</p>
+          <p className="text-sm font-medium">{destination}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -55,9 +85,9 @@ function RideCardFrame({
   actionTone?: "default" | "secondary";
 }) {
   return (
-    <Card className="h-full transition hover:border-blue-200 hover:shadow-md hover:shadow-slate-200/80">
+    <Card className="h-full transition hover:shadow-md">
       <CardContent className="flex h-full flex-col">
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 space-y-4">{children}</div>
         <Button asChild variant={actionTone} className="mt-5 w-full">
           <Link href={href}>{action}</Link>
         </Button>
@@ -66,24 +96,29 @@ function RideCardFrame({
   );
 }
 
+function RideCardHeader({ time, title, status }: { time: string; title: string; status: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{time}</p>
+        <h3 className="mt-1 text-lg font-semibold text-foreground">{title}</h3>
+      </div>
+      <StatusBadge status={status} />
+    </div>
+  );
+}
+
 export function OpenRideCard({ ride }: { ride: RideRequestSummary }) {
   const { language, t } = useDriverI18n();
 
   return (
     <RideCardFrame href={`/driver/rides/${ride.id}`} action={t("viewDetails")}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {formatPickup(ride.requested_pickup_at, language, t("pickupTimeNotSet"))}
-          </p>
-          <h3 className="mt-1 text-lg font-semibold text-foreground">{t("openRide")}</h3>
-        </div>
-        <StatusBadge status={ride.status} />
-      </div>
-      <div className="mt-5 space-y-3">
-        <RouteLine label={t("from")} value={ride.source_address} />
-        <RouteLine label={t("to")} value={ride.destination_address} />
-      </div>
+      <RideCardHeader
+        time={formatPickup(ride.requested_pickup_at, language, t("pickupTimeNotSet"))}
+        title={t("openRide")}
+        status={ride.status}
+      />
+      <RoutePins source={ride.source_address} destination={ride.destination_address} t={t} />
     </RideCardFrame>
   );
 }
@@ -94,19 +129,16 @@ export function AssignedRideCard({ ride }: { ride: RideSummary }) {
 
   return (
     <RideCardFrame href={`/driver/rides/${ride.id}`} action={t("continueRide")} actionTone="default">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {formatPickup(request?.requested_pickup_at, language, t("pickupTimeNotSet"))}
-          </p>
-          <h3 className="mt-1 text-lg font-semibold text-foreground">{t("yourRide")}</h3>
-        </div>
-        <StatusBadge status={ride.status} />
-      </div>
-      <div className="mt-5 space-y-3">
-        <RouteLine label={t("from")} value={request?.source_address ?? t("sourceUnavailable")} />
-        <RouteLine label={t("to")} value={request?.destination_address ?? t("destinationUnavailable")} />
-      </div>
+      <RideCardHeader
+        time={formatPickup(request?.requested_pickup_at, language, t("pickupTimeNotSet"))}
+        title={t("yourRide")}
+        status={ride.status}
+      />
+      <RoutePins
+        source={request?.source_address ?? t("sourceUnavailable")}
+        destination={request?.destination_address ?? t("destinationUnavailable")}
+        t={t}
+      />
     </RideCardFrame>
   );
 }
@@ -118,19 +150,16 @@ export function RideHistoryCard({ ride }: { ride: RideSummary }) {
 
   return (
     <RideCardFrame href={`/driver/rides/${ride.id}`} action={t("viewDetails")}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {formatPickup(historyDate, language, t("pickupTimeNotSet"))}
-          </p>
-          <h3 className="mt-1 text-lg font-semibold text-foreground">{t("pastRide")}</h3>
-        </div>
-        <StatusBadge status={ride.status} />
-      </div>
-      <div className="mt-5 space-y-3">
-        <RouteLine label={t("from")} value={request?.source_address ?? t("sourceUnavailable")} />
-        <RouteLine label={t("to")} value={request?.destination_address ?? t("destinationUnavailable")} />
-      </div>
+      <RideCardHeader
+        time={formatPickup(historyDate, language, t("pickupTimeNotSet"))}
+        title={t("pastRide")}
+        status={ride.status}
+      />
+      <RoutePins
+        source={request?.source_address ?? t("sourceUnavailable")}
+        destination={request?.destination_address ?? t("destinationUnavailable")}
+        t={t}
+      />
     </RideCardFrame>
   );
 }
