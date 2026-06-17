@@ -36,7 +36,7 @@ export function DriverHeader({ session }: { session: DriverSession }) {
             type="button"
             onClick={() => {
               clearDriverSession();
-              router.replace("/login_driver");
+              router.replace("/login");
             }}
             aria-label={t("logout")}
             title={t("logout")}

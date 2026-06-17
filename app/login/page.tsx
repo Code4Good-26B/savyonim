@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import LandingLoginPage from "../page";
 
 export default function LoginPage() {
-  redirect("/login_driver");
+  return <LandingLoginPage />;
 }
