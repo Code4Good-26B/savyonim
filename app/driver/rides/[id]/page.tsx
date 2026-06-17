@@ -103,11 +103,15 @@ export default function DriverRideDetailPage() {
       setDetail(await getDriverRideDetail(params.id, nextSession));
     } catch (caught) {
       const apiError = caught as DriverApiError;
+      if (apiError.redirectTo) {
+        router.replace(apiError.redirectTo);
+        return;
+      }
       setError(apiError.detail ?? "Could not load this ride.");
     } finally {
       setIsLoading(false);
     }
-  }, [params.id]);
+  }, [params.id, router]);
 
   useEffect(() => {
     if (!session || session.role !== "driver") {

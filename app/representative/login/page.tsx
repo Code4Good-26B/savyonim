@@ -29,6 +29,10 @@ export default function RepresentativeLoginPage() {
       router.replace("/representative/dashboard");
     } catch (caught) {
       const apiError = caught as RepresentativeApiError;
+      if (apiError.redirectTo) {
+        router.replace(apiError.redirectTo);
+        return;
+      }
       setError(apiError.detail ?? "שגיאה בהתחברות");
     } finally {
       setIsPending(false);

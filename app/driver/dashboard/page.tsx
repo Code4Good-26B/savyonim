@@ -83,11 +83,15 @@ export default function DriverDashboardPage() {
       setRides(await getDriverRides(nextSession));
     } catch (caught) {
       const apiError = caught as DriverApiError;
+      if (apiError.redirectTo) {
+        router.replace(apiError.redirectTo);
+        return;
+      }
       setError(apiError.detail ?? "Could not load driver rides.");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

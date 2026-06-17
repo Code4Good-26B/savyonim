@@ -48,6 +48,8 @@ async function readError(path: string, response: Response): Promise<DriverApiErr
     status: response.status,
     title: response.statusText || "Request failed",
     detail,
+    redirectTo: payload.redirectTo,
+    accountStatus: payload.accountStatus,
   };
 }
 

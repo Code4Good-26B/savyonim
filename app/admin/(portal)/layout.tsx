@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Toaster } from "sonner";
 import { createSupabaseClient } from "@/lib/supabase";
 import { query } from "@/lib/db";
+import { accountLifecycleRedirect } from "@/lib/auth/account-lifecycle";
 import { AdminNav } from "./AdminNav";
 import { AdminMobileNav } from "./AdminMobileNav";
 import { LogoutButton } from "./LogoutButton";
@@ -18,12 +19,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { data: { user }, error } = await adminClient.auth.getUser(token);
   if (error || !user) redirect("/admin/login");
 
-  const result = await query<{ role: string; is_active: boolean; full_name: string }>(
-    "SELECT role, is_active, full_name FROM public.users WHERE id = $1",
+  const result = await query<{ role: string; status: string; is_active: boolean; full_name: string }>(
+    "SELECT role, status, is_active, full_name FROM public.users WHERE id = $1",
     [user.id],
   );
   const dbUser = result.rows[0];
-  if (!dbUser?.is_active || dbUser.role !== "admin") redirect("/admin/login");
+  if (!dbUser || dbUser.role !== "admin") redirect("/admin/login");
+  if (dbUser.status !== "approved") redirect(accountLifecycleRedirect(dbUser.status) ?? "/admin/login");
+  if (!dbUser.is_active) redirect("/admin/login");
 
   return (
     <>

@@ -1,5 +1,5 @@
 import { query } from "@/lib/db";
-import { requireDriverAuth } from "@/lib/api-auth";
+import { guardError, requireApproved } from "@/lib/auth/guards";
 
 export const runtime = "nodejs";
 
@@ -69,14 +69,17 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = requireDriverAuth(request);
+  const auth = await requireApproved(request);
   if (!auth.ok) {
-    return Response.json({ error: auth.error }, { status: auth.status || 401 });
+    return guardError(auth);
+  }
+  if (auth.ctx.role !== "driver") {
+    return Response.json({ error: "This endpoint is for approved drivers only" }, { status: 403 });
   }
 
   let driverId: string | null = null;
   const { getPool } = await import("@/lib/db");
-  const res = await getPool().query('select id from public.drivers where user_id = $1', [auth.claims.sub]);
+  const res = await getPool().query('select id from public.drivers where user_id = $1', [auth.ctx.userId]);
   if (res.rows.length > 0) driverId = res.rows[0].id;
   
   if (!driverId) {

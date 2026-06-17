@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Toaster } from "sonner";
 import { createSupabaseClient } from "@/lib/supabase";
 import { query } from "@/lib/db";
+import { accountLifecycleRedirect } from "@/lib/auth/account-lifecycle";
 import { RepNav } from "./RepNav";
 import { LogoutButton } from "./LogoutButton";
 
@@ -17,12 +18,18 @@ export default async function RepresentativeLayout({ children }: { children: Rea
   const { data: { user }, error } = await adminClient.auth.getUser(token);
   if (error || !user) redirect("/representative/login");
 
-  const result = await query<{ role: string; is_active: boolean; full_name: string }>(
-    "SELECT role, is_active, full_name FROM public.users WHERE id = $1",
+  const result = await query<{ role: string; status: string; is_active: boolean; full_name: string }>(
+    "SELECT role, status, is_active, full_name FROM public.users WHERE id = $1",
     [user.id],
   );
   const dbUser = result.rows[0];
-  if (!dbUser?.is_active || !["admin", "representative"].includes(dbUser.role)) {
+  if (!dbUser || !["admin", "representative"].includes(dbUser.role)) {
+    redirect("/representative/login");
+  }
+  if (dbUser.status !== "approved") {
+    redirect(accountLifecycleRedirect(dbUser.status) ?? "/representative/login");
+  }
+  if (!dbUser.is_active) {
     redirect("/representative/login");
   }
 
