@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as supabaseModule from "@/lib/supabase";
 
 vi.mock("@/lib/supabase");
+vi.mock("@/lib/api-auth", () => ({
+  requireBearerAuth: () => ({ ok: true, token: "test-token", kind: "user", claims: { sub: "test-user", exp: 9999999999 } }),
+}));
 
 function chain(result: object) {
   const handler: ProxyHandler<object> = {
@@ -34,7 +37,7 @@ describe("GET /api/users", () => {
     mockDB({ data: users, error: null });
 
     const { GET } = await import("@/app/api/users/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/users"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -45,7 +48,7 @@ describe("GET /api/users", () => {
     mockDB({ data: null, error: { message: "query failed" } });
 
     const { GET } = await import("@/app/api/users/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/users"));
 
     expect(res.status).toBe(500);
     expect((await res.json()).error).toBe("query failed");
@@ -102,7 +105,7 @@ describe("PUT /api/users/[id]", () => {
     expect((await res.json()).error).toMatch(/Invalid role/);
   });
 
-  it.each(["admin", "dispatcher", "driver"])(
+  it.each(["admin", "representative", "driver"])(
     "accepts valid role: %s",
     async (role) => {
       mockDB({ data: { id: "u1", role }, error: null });

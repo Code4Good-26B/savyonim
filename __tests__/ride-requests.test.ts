@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as supabaseModule from "@/lib/supabase";
 
 vi.mock("@/lib/supabase");
+vi.mock("@/lib/api-auth", () => ({
+  requireBearerAuth: () => ({ ok: true, token: "test-token", kind: "user", claims: { sub: "test-user", exp: 9999999999 } }),
+}));
 
 function chain(result: object) {
   const handler: ProxyHandler<object> = {
@@ -429,8 +432,8 @@ describe("PATCH /api/ride-requests/[id]/status", () => {
     expect((await res.json()).status).toBe("approved");
   });
 
-  it("transitions approved → waiting_for_representitive", async () => {
-    const updated = { ...BASE_REQUEST, status: "waiting_for_representitive" };
+  it("transitions approved → waiting_for_representative", async () => {
+    const updated = { ...BASE_REQUEST, status: "waiting_for_representative" };
     mockStatusPatch({
       current: { data: { status: "approved" }, error: null },
       updated: { data: updated, error: null },
@@ -440,7 +443,7 @@ describe("PATCH /api/ride-requests/[id]/status", () => {
     const res = await PATCH(
       new Request("http://localhost/api/ride-requests/rr1/status", {
         method: "PATCH",
-        body: JSON.stringify({ status: "waiting_for_representitive" }),
+        body: JSON.stringify({ status: "waiting_for_representative" }),
       }),
       { params: Promise.resolve({ id: "rr1" }) }
     );
@@ -448,10 +451,10 @@ describe("PATCH /api/ride-requests/[id]/status", () => {
     expect(res.status).toBe(200);
   });
 
-  it("transitions waiting_for_representitive → in_progress", async () => {
+  it("transitions waiting_for_representative → in_progress", async () => {
     const updated = { ...BASE_REQUEST, status: "in_progress", started_at: "2026-05-07T11:00:00.000Z" };
     mockStatusPatch({
-      current: { data: { status: "waiting_for_representitive" }, error: null },
+      current: { data: { status: "waiting_for_representative" }, error: null },
       updated: { data: updated, error: null },
     });
 

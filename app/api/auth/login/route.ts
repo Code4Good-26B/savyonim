@@ -12,19 +12,14 @@ type DriverAuthRow = {
   service_zone_id: string | null;
   user_active: boolean;
   driver_active: boolean;
+  account_status: string;
 };
 
-async function readJson(request: Request) {
-  try {
-    return (await request.json()) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
 export async function POST(request: Request) {
-  const body = await readJson(request);
-  if (!body) {
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
     return Response.json({ error: "Request body must be valid JSON" }, { status: 400 });
   }
 
@@ -44,7 +39,8 @@ export async function POST(request: Request) {
         coalesce(u.password_hash, au.encrypted_password) as password_hash,
         d.service_zone_id,
         u.is_active as user_active,
-        d.is_active as driver_active
+        d.is_active as driver_active,
+        coalesce(to_jsonb(u)->>'status', 'approved') as account_status
       from public.users u
       join auth.users au on au.id = u.id
       join public.drivers d on d.user_id = u.id
@@ -56,17 +52,12 @@ export async function POST(request: Request) {
   );
 
   const driver = result.rows[0];
-  if (!driver) {
+  if (!driver || !(await verifyPassword(password, driver.password_hash))) {
     return Response.json({ error: "Invalid email or password" }, { status: 401 });
   }
 
-  if (!driver.user_active || !driver.driver_active) {
-    return Response.json({ error: "This account is not an active driver" }, { status: 403 });
-  }
-
-  const isValidPassword = await verifyPassword(password, driver.password_hash);
-  if (!isValidPassword) {
-    return Response.json({ error: "Invalid email or password" }, { status: 401 });
+  if (!driver.user_active || !driver.driver_active || driver.account_status !== "approved") {
+    return Response.json({ error: "This account is not an approved active driver" }, { status: 403 });
   }
 
   const { token, expiresAt } = signDriverToken({

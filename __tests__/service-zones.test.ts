@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as supabaseModule from "@/lib/supabase";
 
 vi.mock("@/lib/supabase");
+vi.mock("@/lib/api-auth", () => ({
+  requireBearerAuth: () => ({ ok: true, token: "test-token", kind: "user", claims: { sub: "test-user", exp: 9999999999 } }),
+}));
 
 // Builds a chainable mock where any method call returns itself,
 // and awaiting the chain resolves to `result`.
@@ -34,7 +37,7 @@ describe("GET /api/service-zones", () => {
     mockDB({ data: zones, error: null });
 
     const { GET } = await import("@/app/api/service-zones/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/service-zones"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -45,7 +48,7 @@ describe("GET /api/service-zones", () => {
     mockDB({ data: null, error: { message: "connection failed" } });
 
     const { GET } = await import("@/app/api/service-zones/route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/service-zones"));
     const body = await res.json();
 
     expect(res.status).toBe(500);

@@ -2,17 +2,18 @@ import { transaction } from "@/lib/db";
 import { requireBearerAuth } from "@/lib/api-auth";
 
 const RIDE_FIELDS =
-  "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representitive_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
+  "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representative_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
 
 type RideState = {
   status: string;
+  ride_request_id: string;
   driver_id: string;
   odometer_start_km: string | null;
   odometer_end_km: string | null;
 };
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  assigned: ["in_progress", "rejected"],
+  assigned: ["in_progress", "completed", "rejected"],
   in_progress: ["completed", "rejected"],
   completed: [],
   rejected: [],
@@ -57,9 +58,9 @@ export async function PATCH(
   }
 
   const updated = await transaction(async (client) => {
-    const currentResult = await client.query<RideState>(
+      const currentResult = await client.query<RideState>(
       `
-        select status, driver_id, odometer_start_km, odometer_end_km
+        select status, ride_request_id, driver_id, odometer_start_km, odometer_end_km
         from public.rides
         where id = $1::uuid
         for update
@@ -69,9 +70,13 @@ export async function PATCH(
 
     const current = currentResult.rows[0];
     if (!current) return null;
-    if (auth.kind === "driver" && current.driver_id !== auth.driver.driverId) {
-      return { forbidden: true };
-    }
+    if ((auth.claims.role === "driver" || auth.claims.app_metadata?.app_role === "driver") && current.driver_id !== await (async () => {
+      const { getPool } = await import("@/lib/db");
+      const res = await getPool().query('select id from public.drivers where user_id = $1', [auth.claims.sub]);
+      return res.rows[0]?.id;
+    })()) {
+      throw new Error("403");
+    };
 
     const allowed = VALID_TRANSITIONS[current.status] ?? [];
     if (!allowed.includes(newStatus)) {
@@ -118,6 +123,40 @@ export async function PATCH(
       `,
       [id, ...Object.values(patch)],
     );
+
+    if (newStatus === "completed") {
+      await client.query(
+        `
+          update public.ride_requests
+          set
+            status = 'completed',
+            completed_at = coalesce(completed_at, timezone('utc', now()))
+          where id = $1::uuid
+            and status in ('waiting_for_representative', 'in_progress', 'completed')
+        `,
+        [current.ride_request_id],
+      );
+    }
+
+    if (newStatus === "rejected") {
+      await client.query(
+        `
+          update public.ride_requests
+          set
+            status = 'approved',
+            rejected_at = null,
+            rejection_reason = null
+          where id = $1::uuid
+            and not exists (
+              select 1
+              from public.rides active
+              where active.ride_request_id = $1::uuid
+                and active.status in ('assigned', 'in_progress')
+            )
+        `,
+        [current.ride_request_id],
+      );
+    }
 
     return { ride: result.rows[0] };
   });

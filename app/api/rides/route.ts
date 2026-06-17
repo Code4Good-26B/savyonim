@@ -2,7 +2,7 @@ import { transaction } from "@/lib/db";
 import { requireBearerAuth } from "@/lib/api-auth";
 
 const RIDE_FIELDS =
-  "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representitive_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
+  "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representative_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
 
 export async function POST(request: Request) {
   const auth = requireBearerAuth(request);
@@ -14,10 +14,20 @@ export async function POST(request: Request) {
   const {
     ride_request_id,
     ambulance_id,
-    representitive_user_id,
+    representative_user_id,
   } = body;
-  const driver_id = auth.kind === "driver" ? auth.driver.driverId : body.driver_id;
-  const assigned_by_user_id = auth.kind === "driver" ? auth.driver.sub : body.assigned_by_user_id;
+  
+  let driver_id = body.driver_id;
+  let assigned_by_user_id = body.assigned_by_user_id;
+
+  if (!driver_id) {
+    const { getPool } = await import("@/lib/db");
+    const res = await getPool().query('select id from public.drivers where user_id = $1', [auth.claims.sub]);
+    if (res.rows.length > 0) driver_id = res.rows[0].id;
+  }
+  if (!assigned_by_user_id) {
+    assigned_by_user_id = auth.claims.sub;
+  }
 
   const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const isValidUuid = (uuid: string) => UUID_REGEX.test(uuid);
@@ -60,12 +70,12 @@ export async function POST(request: Request) {
             driver_id,
             ambulance_id,
             assigned_by_user_id,
-            representitive_user_id
+            representative_user_id
           )
           values ($1, $2, $3, $4, $5)
           returning ${RIDE_FIELDS}
         `,
-        [ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representitive_user_id],
+        [ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representative_user_id],
       );
 
       return { ride: result.rows[0] } as const;
@@ -79,9 +89,6 @@ export async function POST(request: Request) {
   } catch (error) {
     const pgError = error as { code?: string; constraint?: string; message?: string };
     if (pgError.code === "23505") {
-      if (pgError.constraint === "ux_rides_active_driver") {
-        return Response.json({ error: "Driver already has an active ride" }, { status: 409 });
-      }
       if (pgError.constraint === "ux_rides_active_ambulance") {
         return Response.json({ error: "Ambulance already has an active ride" }, { status: 409 });
       }

@@ -21,15 +21,16 @@ import type {
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="grid gap-1 border-b border-slate-100 py-3 last:border-b-0 sm:grid-cols-[10rem_1fr]">
-      <dt className="text-sm font-semibold text-slate-500">{label}</dt>
-      <dd className="text-sm leading-6 text-slate-900">{value}</dd>
+    <div className="grid gap-1 border-b border-border py-3 last:border-b-0 sm:grid-cols-[10rem_1fr]">
+      <dt className="text-sm font-semibold text-muted-foreground">{label}</dt>
+      <dd className="text-sm leading-6 text-foreground">{value}</dd>
     </div>
   );
 }
 
-function RideRequestDetails({ ride }: { ride: RideRequestSummary }) {
+export function RideRequestDetails({ ride }: { ride: RideRequestSummary }) {
   const { t } = useDriverI18n();
+  const passenger = ride.passenger;
 
   return (
     <Card>
@@ -44,6 +45,41 @@ function RideRequestDetails({ ride }: { ride: RideRequestSummary }) {
           {ride.destination_notes ? <DetailRow label={t("dropoffNotes")} value={ride.destination_notes} /> : null}
           <DetailRow label={t("returnTrip")} value={ride.return_trip_required ? t("yes") : t("no")} />
           <DetailRow label={t("pickupTime")} value={ride.requested_pickup_at ?? t("notSet")} />
+          <DetailRow
+            label={t("passengerInfo")}
+            value={
+              passenger ? (
+                <div className="space-y-1">
+                  <p>
+                    <span className="font-semibold">{t("passengerName")}</span> {passenger.full_name}
+                  </p>
+                  {passenger.phone ? (
+                    <p>
+                      <span className="font-semibold">{t("passengerPhone")}</span> {passenger.phone}
+                    </p>
+                  ) : null}
+                  {passenger.emergency_contact ? (
+                    <p>
+                      <span className="font-semibold">{t("passengerEmergencyContact")}</span>{" "}
+                      {passenger.emergency_contact}
+                    </p>
+                  ) : null}
+                  <p>
+                    <span className="font-semibold">{t("passengerMobility")}</span>{" "}
+                    {passenger.mobility_need.replaceAll("_", " ")}
+                  </p>
+                  {passenger.category ? (
+                    <p>
+                      <span className="font-semibold">{t("passengerCategory")}</span>{" "}
+                      {passenger.category.replaceAll("_", " ")}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                t("passengerUnavailable")
+              )
+            }
+          />
         </dl>
       </CardContent>
     </Card>
@@ -75,7 +111,7 @@ export default function DriverRideDetailPage() {
 
   useEffect(() => {
     if (!session || session.role !== "driver") {
-      router.replace("/login");
+      router.replace("/login_driver");
       return;
     }
     const timer = window.setTimeout(() => {
@@ -85,14 +121,14 @@ export default function DriverRideDetailPage() {
   }, [load, router, session]);
 
   if (!session) {
-    return <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-700">{t("checkingSession")}</main>;
+    return <main className="min-h-screen bg-muted/30 px-4 py-8 text-foreground">{t("checkingSession")}</main>;
   }
 
   const rideRequest =
     detail?.kind === "open" ? detail.rideRequest : detail?.kind === "assigned" ? detail.ride.ride_request : null;
 
   return (
-    <div className="min-h-screen bg-slate-50" dir={direction}>
+    <div className="min-h-screen bg-muted/30" dir={direction}>
       <DriverHeader session={session} />
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-6">
         <Link
@@ -110,7 +146,7 @@ export default function DriverRideDetailPage() {
             <Button
               type="button"
               onClick={() => void load(session)}
-              variant="danger"
+              variant="destructive"
               className="mt-3"
             >
               {t("retry")}
@@ -136,6 +172,10 @@ export default function DriverRideDetailPage() {
             ride={detail.ride}
             session={session}
             onChanged={(ride: RideSummary) => {
+              if (ride.status === "rejected") {
+                router.replace("/driver/dashboard");
+                return;
+              }
               setDetail({ kind: "assigned", ride });
               void load(session);
             }}

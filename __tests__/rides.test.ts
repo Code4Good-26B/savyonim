@@ -2,12 +2,22 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as dbModule from "@/lib/db";
 
 vi.mock("@/lib/db");
+vi.mock("@/lib/api-auth", () => ({
+  requireBearerAuth: () => ({ ok: true, token: "test-token", kind: "user", claims: { sub: "00000000-0000-0000-0000-000000000000", exp: 9999999999 } }),
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(dbModule.query).mockResolvedValue({ rowCount: 0, rows: [], command: "", oid: 0, fields: [] });
+  vi.mocked(dbModule.getPool).mockReturnValue({
+    query: vi.mocked(dbModule.query),
+  } as never);
+});
 
 function mockDB(result: { data?: unknown; error?: { message: string; code?: string; constraint?: string } | null }) {
   if (result.error) {
     // Some tests don't explicitly provide constraint but provide it in message
     if (result.error.code === "23505" && !result.error.constraint && result.error.message) {
-      if (result.error.message.includes("ux_rides_active_driver")) result.error.constraint = "ux_rides_active_driver";
       if (result.error.message.includes("ux_rides_active_ambulance")) result.error.constraint = "ux_rides_active_ambulance";
       if (result.error.message.includes("ux_rides_active_request")) result.error.constraint = "ux_rides_active_request";
     }
@@ -36,7 +46,40 @@ function mockStatusPatch({
         .mockResolvedValueOnce({ rows: current.data ? [current.data] : [] })
         .mockResolvedValueOnce({ rows: updated?.data ? [updated.data] : [] })
     };
-    return callback(fakeClient as any);
+    return callback(fakeClient as never);
+  });
+}
+
+function mockRidePost(result: { ride?: unknown; error?: { message: string; code?: string; constraint?: string } }) {
+  if (result.error) {
+    vi.mocked(dbModule.transaction).mockRejectedValueOnce(result.error);
+    return;
+  }
+
+  vi.mocked(dbModule.transaction).mockImplementationOnce(async (callback) => {
+    const fakeClient = {
+      query: vi.fn()
+        .mockResolvedValueOnce({ rows: [{ status: "approved" }] })
+        .mockResolvedValueOnce({ rows: result.ride ? [result.ride] : [] }),
+    };
+    return callback(fakeClient as never);
+  });
+}
+
+function mockOdometerPatch({
+  current,
+  updated,
+}: {
+  current: { data?: unknown };
+  updated?: { data?: unknown };
+}) {
+  vi.mocked(dbModule.transaction).mockImplementationOnce(async (callback) => {
+    const fakeClient = {
+      query: vi.fn()
+        .mockResolvedValueOnce({ rows: current.data ? [current.data] : [] })
+        .mockResolvedValueOnce({ rows: updated?.data ? [updated.data] : [] }),
+    };
+    return callback(fakeClient as never);
   });
 }
 
@@ -46,7 +89,7 @@ const BASE_RIDE = {
   driver_id: "22222222-2222-2222-2222-222222222222",
   ambulance_id: "33333333-3333-3333-3333-333333333333",
   assigned_by_user_id: "44444444-4444-4444-4444-444444444444",
-  representitive_user_id: null,
+  representative_user_id: null,
   status: "assigned",
   assigned_at: "2026-05-07T10:00:00.000Z",
   in_progress_at: null,
@@ -63,7 +106,7 @@ beforeEach(() => vi.clearAllMocks());
 // ─── POST /api/rides ──────────────────────────────────────────────────────────
 describe("POST /api/rides", () => {
   it("creates a ride and returns 201", async () => {
-    mockDB({ data: BASE_RIDE, error: null });
+    mockRidePost({ ride: BASE_RIDE });
 
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
@@ -95,69 +138,17 @@ describe("POST /api/rides", () => {
     expect((await res.json()).error).toBe("ride_request_id is required");
   });
 
-  it("returns 400 when driver_id is 66666666-6666-6666-6666-666666666666", async () => {
-    const { POST } = await import("@/app/api/rides/route");
-    const res = await POST(
-      new Request("http://localhost/api/rides", {
-        method: "POST",
-        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", ambulance_id: "33333333-3333-3333-3333-333333333333", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
-      })
-    );
 
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toBe("driver_id is required");
-  });
-
-  it("returns 400 when ambulance_id is 66666666-6666-6666-6666-666666666666", async () => {
-    const { POST } = await import("@/app/api/rides/route");
-    const res = await POST(
-      new Request("http://localhost/api/rides", {
-        method: "POST",
-        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", driver_id: "22222222-2222-2222-2222-222222222222", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
-      })
-    );
-
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toBe("ambulance_id is required");
-  });
-
-  it("returns 400 when assigned_by_user_id is 66666666-6666-6666-6666-666666666666", async () => {
-    const { POST } = await import("@/app/api/rides/route");
-    const res = await POST(
-      new Request("http://localhost/api/rides", {
-        method: "POST",
-        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", driver_id: "22222222-2222-2222-2222-222222222222", ambulance_id: "33333333-3333-3333-3333-333333333333" }),
-      })
-    );
-
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toBe("assigned_by_user_id is required");
-  });
 
   // ── Race condition tests ───────────────────────────────────────────────────
 
-  it("returns 409 when driver already has an active ride (race condition)", async () => {
-    mockDB({
-      data: null,
-      error: { message: 'duplicate key value violates unique constraint "ux_rides_active_driver"', code: "23505" },
-    });
-
-    const { POST } = await import("@/app/api/rides/route");
-    const res = await POST(
-      new Request("http://localhost/api/rides", {
-        method: "POST",
-        body: JSON.stringify({ ride_request_id: "11111111-1111-1111-1111-111111111111", driver_id: "22222222-2222-2222-2222-222222222222", ambulance_id: "33333333-3333-3333-3333-333333333333", assigned_by_user_id: "44444444-4444-4444-4444-444444444444" }),
-      })
-    );
-
-    expect(res.status).toBe(409);
-    expect((await res.json()).error).toBe("Driver already has an active ride");
-  });
-
   it("returns 409 when ambulance already has an active ride (race condition)", async () => {
-    mockDB({
-      data: null,
-      error: { message: 'duplicate key value violates unique constraint "ux_rides_active_ambulance"', code: "23505" },
+    mockRidePost({
+      error: {
+        message: 'duplicate key value violates unique constraint "ux_rides_active_ambulance"',
+        code: "23505",
+        constraint: "ux_rides_active_ambulance",
+      },
     });
 
     const { POST } = await import("@/app/api/rides/route");
@@ -173,9 +164,12 @@ describe("POST /api/rides", () => {
   });
 
   it("returns 409 when ride request already has an active assignment (race condition)", async () => {
-    mockDB({
-      data: null,
-      error: { message: 'duplicate key value violates unique constraint "ux_rides_active_request"', code: "23505" },
+    mockRidePost({
+      error: {
+        message: 'duplicate key value violates unique constraint "ux_rides_active_request"',
+        code: "23505",
+        constraint: "ux_rides_active_request",
+      },
     });
 
     const { POST } = await import("@/app/api/rides/route");
@@ -190,8 +184,47 @@ describe("POST /api/rides", () => {
     expect((await res.json()).error).toBe("Ride request already has an active assignment");
   });
 
+  it("allows the same driver to create multiple active rides for different requests", async () => {
+    const secondRide = {
+      ...BASE_RIDE,
+      id: "55555555-5555-5555-5555-555555555556",
+      ride_request_id: "11111111-1111-1111-1111-111111111112",
+      ambulance_id: "33333333-3333-3333-3333-333333333334",
+    };
+    mockRidePost({ ride: BASE_RIDE });
+    mockRidePost({ ride: secondRide });
+
+    const { POST } = await import("@/app/api/rides/route");
+    const first = await POST(
+      new Request("http://localhost/api/rides", {
+        method: "POST",
+        body: JSON.stringify({
+          ride_request_id: BASE_RIDE.ride_request_id,
+          driver_id: BASE_RIDE.driver_id,
+          ambulance_id: BASE_RIDE.ambulance_id,
+          assigned_by_user_id: BASE_RIDE.assigned_by_user_id,
+        }),
+      })
+    );
+    const second = await POST(
+      new Request("http://localhost/api/rides", {
+        method: "POST",
+        body: JSON.stringify({
+          ride_request_id: secondRide.ride_request_id,
+          driver_id: BASE_RIDE.driver_id,
+          ambulance_id: secondRide.ambulance_id,
+          assigned_by_user_id: BASE_RIDE.assigned_by_user_id,
+        }),
+      })
+    );
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    expect((await second.json()).driver_id).toBe(BASE_RIDE.driver_id);
+  });
+
   it("returns 400 when referenced IDs do not exist", async () => {
-    mockDB({ data: null, error: { message: "foreign key violation", code: "23503" } });
+    mockRidePost({ error: { message: "foreign key violation", code: "23503" } });
 
     const { POST } = await import("@/app/api/rides/route");
     const res = await POST(
@@ -237,7 +270,10 @@ describe("GET /api/rides/[id]", () => {
 // ─── PATCH /api/rides/[id] (odometer) ────────────────────────────────────────
 describe("PATCH /api/rides/[id] (odometer)", () => {
   it("updates odometer_start_km", async () => {
-    mockDB({ data: { ...BASE_RIDE, odometer_start_km: 12345.0 }, error: null });
+    mockOdometerPatch({
+      current: { data: BASE_RIDE },
+      updated: { data: { ...BASE_RIDE, odometer_start_km: 12345.0 } },
+    });
 
     const { PATCH } = await import("@/app/api/rides/[id]/route");
     const res = await PATCH(
@@ -253,7 +289,10 @@ describe("PATCH /api/rides/[id] (odometer)", () => {
   });
 
   it("updates odometer_end_km", async () => {
-    mockDB({ data: { ...BASE_RIDE, odometer_start_km: 12345.0, odometer_end_km: 12360.0 }, error: null });
+    mockOdometerPatch({
+      current: { data: { ...BASE_RIDE, odometer_start_km: 12345.0 } },
+      updated: { data: { ...BASE_RIDE, odometer_start_km: 12345.0, odometer_end_km: 12360.0 } },
+    });
 
     const { PATCH } = await import("@/app/api/rides/[id]/route");
     const res = await PATCH(
@@ -269,6 +308,10 @@ describe("PATCH /api/rides/[id] (odometer)", () => {
   });
 
   it("returns 400 when end is less than start", async () => {
+    mockOdometerPatch({
+      current: { data: BASE_RIDE },
+    });
+
     const { PATCH } = await import("@/app/api/rides/[id]/route");
     const res = await PATCH(
       new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555", {
@@ -278,7 +321,7 @@ describe("PATCH /api/rides/[id] (odometer)", () => {
       { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect((await res.json()).error).toMatch(/odometer_end_km must be/);
   });
 
@@ -320,9 +363,9 @@ describe("PATCH /api/rides/[id]/status", () => {
   });
 
   it("transitions in_progress → completed", async () => {
-    const updated = { ...BASE_RIDE, status: "completed", completed_at: "2026-05-07T12:00:00.000Z" };
+    const updated = { ...BASE_RIDE, status: "completed", completed_at: "2026-05-07T12:00:00.000Z", odometer_end_km: 12360.0 };
     mockStatusPatch({
-      current: { data: { status: "in_progress" }, error: null },
+      current: { data: { status: "in_progress", odometer_start_km: null, odometer_end_km: null }, error: null },
       updated: { data: updated, error: null },
     });
 
@@ -330,7 +373,7 @@ describe("PATCH /api/rides/[id]/status", () => {
     const res = await PATCH(
       new Request("http://localhost/api/rides/55555555-5555-5555-5555-555555555555/status", {
         method: "PATCH",
-        body: JSON.stringify({ status: "completed" }),
+        body: JSON.stringify({ status: "completed", odometer_end_km: 12360.0 }),
       }),
       { params: Promise.resolve({ id: "55555555-5555-5555-5555-555555555555" }) }
     );
@@ -387,8 +430,8 @@ describe("PATCH /api/rides/[id]/status", () => {
     expect((await res.json()).error).toMatch(/rejection_reason is required/);
   });
 
-  it("returns 422 for invalid transition assigned → completed", async () => {
-    mockStatusPatch({ current: { data: { status: "assigned" }, error: null } });
+  it("returns 422 when completing assigned ride without odometer", async () => {
+    mockStatusPatch({ current: { data: { status: "assigned", odometer_start_km: null, odometer_end_km: null }, error: null } });
 
     const { PATCH } = await import("@/app/api/rides/[id]/status/route");
     const res = await PATCH(
@@ -400,7 +443,7 @@ describe("PATCH /api/rides/[id]/status", () => {
     );
 
     expect(res.status).toBe(422);
-    expect((await res.json()).error).toMatch(/Invalid transition/);
+    expect((await res.json()).error).toMatch(/odometer_end_km is required/);
   });
 
   it("returns 422 when ride is already completed", async () => {

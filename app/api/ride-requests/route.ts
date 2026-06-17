@@ -8,7 +8,7 @@ const RIDE_REQUEST_FIELDS =
 const VALID_STATUSES = [
   "pending",
   "approved",
-  "waiting_for_representitive",
+  "waiting_for_representative",
   "in_progress",
   "completed",
   "rejected",

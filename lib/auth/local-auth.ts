@@ -5,24 +5,14 @@ import { promisify } from "util";
 const pbkdf2Async = promisify(pbkdf2);
 const PASSWORD_KEY_LENGTH = 32;
 const PASSWORD_DIGEST = "sha256";
-const BCRYPT_ROUNDS = 12;
 const TOKEN_TTL_SECONDS = 60 * 60 * 24;
 
-type TokenPayload = {
+type DriverTokenPayload = {
   sub: string;
   driverId: string;
   email: string;
   role: "driver";
 };
-
-export type VerifiedDriverToken = TokenPayload & {
-  iat: number;
-  exp: number;
-};
-
-function base64Url(input: Buffer | string) {
-  return Buffer.from(input).toString("base64url");
-}
 
 function tokenSecret() {
   const configured = process.env.AUTH_TOKEN_SECRET ?? process.env.JWT_SECRET;
@@ -35,14 +25,10 @@ function tokenSecret() {
   throw new Error("Missing AUTH_TOKEN_SECRET or JWT_SECRET.");
 }
 
-export async function hashPassword(password: string) {
-  return bcrypt.hash(password, BCRYPT_ROUNDS);
-}
-
 export async function verifyPassword(password: string, storedHash: string | null | undefined) {
   if (!storedHash) return false;
 
-  if (storedHash.startsWith("$2a$") || storedHash.startsWith("$2b$") || storedHash.startsWith("$2y$")) {
+  if (/^\$2[aby]\$/.test(storedHash)) {
     return bcrypt.compare(password, storedHash);
   }
 
@@ -54,69 +40,29 @@ export async function verifyPassword(password: string, storedHash: string | null
   const iterations = Number(iterationText);
   if (!Number.isInteger(iterations) || iterations < 1) return false;
 
-  const actualHash = await pbkdf2Async(password, salt, iterations, PASSWORD_KEY_LENGTH, PASSWORD_DIGEST);
+  const actualHash = await pbkdf2Async(
+    password,
+    salt,
+    iterations,
+    PASSWORD_KEY_LENGTH,
+    PASSWORD_DIGEST,
+  );
   const expectedHash = Buffer.from(expected, "base64url");
 
-  if (actualHash.length !== expectedHash.length) return false;
-  return timingSafeEqual(actualHash, expectedHash);
+  return actualHash.length === expectedHash.length && timingSafeEqual(actualHash, expectedHash);
 }
 
-export function signDriverToken(payload: TokenPayload) {
+export function signDriverToken(payload: DriverTokenPayload) {
   const now = Math.floor(Date.now() / 1000);
-  const body = {
-    ...payload,
-    iat: now,
-    exp: now + TOKEN_TTL_SECONDS,
-  };
-
-  const encodedHeader = base64Url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const encodedPayload = base64Url(JSON.stringify(body));
+  const body = { ...payload, iat: now, exp: now + TOKEN_TTL_SECONDS };
+  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+  const encodedBody = Buffer.from(JSON.stringify(body)).toString("base64url");
   const signature = createHmac("sha256", tokenSecret())
-    .update(`${encodedHeader}.${encodedPayload}`)
+    .update(`${header}.${encodedBody}`)
     .digest("base64url");
 
   return {
-    token: `${encodedHeader}.${encodedPayload}.${signature}`,
+    token: `${header}.${encodedBody}.${signature}`,
     expiresAt: new Date((now + TOKEN_TTL_SECONDS) * 1000).toISOString(),
   };
-}
-
-export function verifyDriverToken(token: string): VerifiedDriverToken | null {
-  const [encodedHeader, encodedPayload, signature] = token.split(".");
-  if (!encodedHeader || !encodedPayload || !signature) return null;
-
-  const expectedSignature = createHmac("sha256", tokenSecret())
-    .update(`${encodedHeader}.${encodedPayload}`)
-    .digest("base64url");
-
-  const actualSignature = Buffer.from(signature);
-  const expectedSignatureBuffer = Buffer.from(expectedSignature);
-  if (
-    actualSignature.length !== expectedSignatureBuffer.length ||
-    !timingSafeEqual(actualSignature, expectedSignatureBuffer)
-  ) {
-    return null;
-  }
-
-  let payload: Partial<VerifiedDriverToken>;
-  try {
-    payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
-  } catch {
-    return null;
-  }
-
-  if (
-    typeof payload.sub !== "string" ||
-    typeof payload.driverId !== "string" ||
-    typeof payload.email !== "string" ||
-    payload.role !== "driver" ||
-    typeof payload.iat !== "number" ||
-    typeof payload.exp !== "number"
-  ) {
-    return null;
-  }
-
-  if (payload.exp <= Math.floor(Date.now() / 1000)) return null;
-
-  return payload as VerifiedDriverToken;
 }

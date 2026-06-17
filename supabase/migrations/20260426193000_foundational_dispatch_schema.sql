@@ -4,12 +4,12 @@
 create extension if not exists pgcrypto;
 
 -- Enums
-create type public.user_role as enum ('admin', 'dispatcher', 'driver', 'representitive');
+create type public.user_role as enum ('admin', 'dispatcher', 'driver', 'representative');
 
 create type public.request_status as enum (
 	'pending',
 	'approved',
-	'waiting_for_representitive',
+	'waiting_for_representative',
 	'in_progress',
 	'completed',
 	'rejected'
@@ -51,9 +51,9 @@ begin
 
 	if old.status = 'pending' and new.status in ('approved', 'rejected') then
 		return new;
-	elsif old.status = 'approved' and new.status in ('waiting_for_representitive', 'rejected') then
+	elsif old.status = 'approved' and new.status in ('waiting_for_representative', 'rejected') then
 		return new;
-	elsif old.status = 'waiting_for_representitive' and new.status in ('in_progress', 'rejected') then
+	elsif old.status = 'waiting_for_representative' and new.status in ('in_progress', 'rejected') then
 		return new;
 	elsif old.status = 'in_progress' and new.status in ('completed', 'rejected') then
 		return new;
@@ -210,7 +210,7 @@ create table if not exists public.rides (
 	driver_id uuid not null references public.drivers(id) on delete restrict,
 	ambulance_id uuid not null references public.ambulances(id) on delete restrict,
 	assigned_by_user_id uuid references public.users(id) on delete set null,
-	representitive_user_id uuid references public.users(id) on delete set null,
+	representative_user_id uuid references public.users(id) on delete set null,
 	status public.ride_status not null default 'assigned',
 	assigned_at timestamptz not null default timezone('utc', now()),
 	in_progress_at timestamptz,
@@ -239,7 +239,7 @@ create table if not exists public.rides (
 create index if not exists idx_rides_ride_request_id on public.rides (ride_request_id);
 create index if not exists idx_rides_driver_id on public.rides (driver_id);
 create index if not exists idx_rides_ambulance_id on public.rides (ambulance_id);
-create index if not exists idx_rides_representitive_user_id on public.rides (representitive_user_id);
+create index if not exists idx_rides_representative_user_id on public.rides (representative_user_id);
 create index if not exists idx_rides_status on public.rides (status);
 
 -- Prevent race conditions for assignment by allowing only one active row.
@@ -268,12 +268,12 @@ as $$
 begin
 	if new.status = 'assigned' then
 		update public.ride_requests
-		set status = 'waiting_for_representitive', assigned_at = coalesce(assigned_at, timezone('utc', now()))
-		where id = new.ride_request_id and status in ('approved', 'waiting_for_representitive');
+		set status = 'waiting_for_representative', assigned_at = coalesce(assigned_at, timezone('utc', now()))
+		where id = new.ride_request_id and status in ('approved', 'waiting_for_representative');
 	elsif new.status = 'in_progress' then
 		update public.ride_requests
 		set status = 'in_progress', started_at = coalesce(started_at, timezone('utc', now()))
-		where id = new.ride_request_id and status in ('waiting_for_representitive', 'in_progress');
+		where id = new.ride_request_id and status in ('waiting_for_representative', 'in_progress');
 	elsif new.status = 'completed' then
 		update public.ride_requests
 		set status = 'completed', completed_at = coalesce(completed_at, timezone('utc', now()))
@@ -284,7 +284,7 @@ begin
 			status = 'rejected',
 			rejected_at = coalesce(rejected_at, timezone('utc', now())),
 			rejection_reason = coalesce(new.rejection_reason, rejection_reason)
-		where id = new.ride_request_id and status in ('pending', 'approved', 'waiting_for_representitive', 'in_progress', 'rejected');
+		where id = new.ride_request_id and status in ('pending', 'approved', 'waiting_for_representative', 'in_progress', 'rejected');
 	end if;
 
 	return new;

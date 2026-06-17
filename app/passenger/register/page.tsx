@@ -81,21 +81,21 @@ export default function PassengerRegisterPage() {
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col gap-6">
+    <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex flex-col gap-6">
       <div>
-        <h2 className="font-semibold text-gray-900">הזמנת נסיעה</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="font-semibold text-foreground">הזמנת נסיעה</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           מספר הטלפון ישמש לזיהוי אוטומטי בפנייה דרך וואטסאפ
         </p>
       </div>
 
       {/* Personal details */}
       <section className="flex flex-col gap-4">
-        <p className="text-xs uppercase tracking-wide text-gray-400">פרטים אישיים</p>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">פרטים אישיים</p>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="full_name" className="text-sm font-medium text-gray-700">
-            שם מלא <span className="text-red-500">*</span>
+          <label htmlFor="full_name" className="text-sm font-medium text-foreground">
+            שם מלא <span className="text-destructive">*</span>
           </label>
           <input
             id="full_name"
@@ -103,14 +103,14 @@ export default function PassengerRegisterPage() {
             placeholder="ישראל ישראלי"
             value={form.full_name}
             onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="rounded-lg border border-input px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus:ring-1 focus-visible:ring-ring/40"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="phone" className="text-sm font-medium text-gray-700">
-              טלפון <span className="text-red-500">*</span>
+            <label htmlFor="phone" className="text-sm font-medium text-foreground">
+              טלפון <span className="text-destructive">*</span>
             </label>
             <input
               id="phone"
@@ -118,11 +118,11 @@ export default function PassengerRegisterPage() {
               placeholder="050-0000000"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="rounded-lg border border-input px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus:ring-1 focus-visible:ring-ring/40"
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="national_id" className="text-sm font-medium text-gray-700">תעודת זהות</label>
+            <label htmlFor="national_id" className="text-sm font-medium text-foreground">תעודת זהות</label>
             <input
               id="national_id"
               type="text"
@@ -130,14 +130,14 @@ export default function PassengerRegisterPage() {
               maxLength={9}
               value={form.national_id}
               onChange={(e) => setForm({ ...form, national_id: e.target.value })}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="rounded-lg border border-input px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus:ring-1 focus-visible:ring-ring/40"
             />
           </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="email" className="text-sm font-medium text-gray-700">
-            אימייל <span className="text-red-500">*</span>
+          <label htmlFor="email" className="text-sm font-medium text-foreground">
+            אימייל <span className="text-destructive">*</span>
           </label>
           <input
             id="email"
@@ -145,13 +145,13 @@ export default function PassengerRegisterPage() {
             placeholder="name@example.com"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="rounded-lg border border-input px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus:ring-1 focus-visible:ring-ring/40"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="password" className="text-sm font-medium text-gray-700">
-            סיסמה <span className="text-red-500">*</span>
+          <label htmlFor="password" className="text-sm font-medium text-foreground">
+            סיסמה <span className="text-destructive">*</span>
           </label>
           <input
             id="password"
@@ -159,12 +159,12 @@ export default function PassengerRegisterPage() {
             placeholder="לפחות 6 תווים"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="rounded-lg border border-input px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus:ring-1 focus-visible:ring-ring/40"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="emergency_contact" className="text-sm font-medium text-gray-700">
+          <label htmlFor="emergency_contact" className="text-sm font-medium text-foreground">
             איש קשר לחירום
           </label>
           <input
@@ -173,15 +173,15 @@ export default function PassengerRegisterPage() {
             placeholder="050-0000000"
             value={form.emergency_contact}
             onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="rounded-lg border border-input px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus:ring-1 focus-visible:ring-ring/40"
           />
         </div>
       </section>
 
       {/* Category */}
       <section className="flex flex-col gap-3">
-        <p className="text-xs uppercase tracking-wide text-gray-400">
-          קטגוריה <span className="text-red-500">*</span>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          קטגוריה <span className="text-destructive">*</span>
         </p>
         <div className="flex gap-2">
           {CATEGORY_OPTIONS.map((opt) => (
@@ -191,8 +191,8 @@ export default function PassengerRegisterPage() {
               onClick={() => setForm({ ...form, category: opt.value })}
               className={`flex-1 rounded-lg border py-2 text-sm font-medium transition-colors ${
                 form.category === opt.value
-                  ? "border-blue-600 bg-blue-50 text-blue-700"
-                  : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-border text-muted-foreground hover:bg-muted"
               }`}
             >
               {opt.label}
@@ -203,7 +203,7 @@ export default function PassengerRegisterPage() {
 
       {/* Mobility */}
       <section className="flex flex-col gap-3">
-        <p className="text-xs uppercase tracking-wide text-gray-400">צרכי ניידות</p>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">צרכי ניידות</p>
         <div className="grid grid-cols-2 gap-2">
           {MOBILITY_OPTIONS.map((opt) => (
             <button
@@ -212,8 +212,8 @@ export default function PassengerRegisterPage() {
               onClick={() => setForm({ ...form, mobility_need: opt.value })}
               className={`rounded-lg border py-2 text-sm font-medium transition-colors ${
                 form.mobility_need === opt.value
-                  ? "border-blue-600 bg-blue-50 text-blue-700"
-                  : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-border text-muted-foreground hover:bg-muted"
               }`}
             >
               {opt.label}
@@ -222,21 +222,21 @@ export default function PassengerRegisterPage() {
         </div>
         {form.mobility_need !== "none" && (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="mobility_notes" className="text-xs text-gray-500">הערות ניידות</label>
+            <label htmlFor="mobility_notes" className="text-xs text-muted-foreground">הערות ניידות</label>
             <input
               id="mobility_notes"
               type="text"
               placeholder="פרט אם נדרשת עזרה מיוחדת..."
               value={form.mobility_notes}
               onChange={(e) => setForm({ ...form, mobility_notes: e.target.value })}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="rounded-lg border border-input px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus:ring-1 focus-visible:ring-ring/40"
             />
           </div>
         )}
       </section>
 
       {error && (
-        <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p className="rounded-lg bg-destructive/5 border border-destructive/30 px-3 py-2 text-sm text-destructive">{error}</p>
       )}
 
       <button
@@ -244,15 +244,15 @@ export default function PassengerRegisterPage() {
         disabled={!isValid || loading}
         onClick={handleSubmit}
         className={`rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors ${
-          isValid && !loading ? "bg-blue-600 hover:bg-blue-700 cursor-pointer" : "bg-blue-600 opacity-50 cursor-not-allowed"
+          isValid && !loading ? "bg-primary hover:bg-primary/90 cursor-pointer" : "bg-primary opacity-50 cursor-not-allowed"
         }`}
       >
         {loading ? "שולח..." : "הרשמה"}
       </button>
 
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-muted-foreground">
         כבר רשום?{" "}
-        <Link href="/passenger/login" className="text-blue-600 hover:underline">
+        <Link href="/passenger/login" className="text-primary hover:underline">
           כניסה
         </Link>
       </p>

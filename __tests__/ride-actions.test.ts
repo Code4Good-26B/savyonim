@@ -36,7 +36,7 @@ function mockDBMultiple(results: Array<{ data?: unknown; error?: { message: stri
 }
 
 function mockAuthAndDB(
-  authResult: { data: { user: any } | null; error: any },
+  authResult: { data: { user: unknown } | null; error: unknown },
   dbResult: { data?: unknown; error?: { message: string } | null }
 ) {
   vi.mocked(supabaseModule.createSupabaseClient).mockReturnValue({
@@ -77,20 +77,6 @@ describe("Server Actions: acceptRide", () => {
     const res = await acceptRide(RIDE_REQUEST_ID, DRIVER_ID, AMBULANCE_ID);
     expect(res.success).toBe(true);
     expect(res.data).toEqual(mockRide);
-  });
-
-  it("handles race condition where driver already has active ride", async () => {
-    mockDB({
-      data: null,
-      error: {
-        message: 'duplicate key value violates unique constraint "ux_rides_active_driver"',
-        code: "23505",
-      },
-    });
-
-    const res = await acceptRide(RIDE_REQUEST_ID, DRIVER_ID, AMBULANCE_ID);
-    expect(res.success).toBe(false);
-    expect(res.message).toBe("Driver already has an active ride");
   });
 
   it("handles race condition where ambulance already has active ride", async () => {

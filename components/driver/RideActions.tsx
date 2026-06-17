@@ -17,12 +17,12 @@ function ActionButton({
   children,
   disabled,
   onClick,
-  tone = "primary",
+  tone = "default",
 }: {
   children: React.ReactNode;
   disabled: boolean;
   onClick: () => void;
-  tone?: "primary" | "danger" | "secondary";
+  tone?: "default" | "destructive" | "secondary";
 }) {
   return (
     <Button
@@ -135,19 +135,10 @@ export function AssignedRideActions({
     <div className="space-y-4">
       {error ? <DriverNotice title={t("actionFailed")} kind="error">{error}</DriverNotice> : null}
 
-      {ride.status === "assigned" ? (
-        <ActionButton
-          disabled={isPending}
-          onClick={() => void run(() => updateRideStatus({ rideId: ride.id, status: "in_progress", session }))}
-        >
-          {isPending ? t("startRidePending") : t("startRide")}
-        </ActionButton>
-      ) : null}
-
-      {ride.status === "in_progress" ? (
+      {ride.status === "assigned" || ride.status === "in_progress" ? (
         <Card>
           <CardHeader>
-            <h2 className="text-base font-semibold text-slate-950">{t("completeRide")}</h2>
+            <h2 className="text-base font-semibold text-foreground">{t("completeRide")}</h2>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -200,7 +191,7 @@ export function AssignedRideActions({
                     }),
                   )
                 }
-                tone="danger"
+                tone="destructive"
               >
                 {isPending ? t("rejectRidePending") : t("rejectRide")}
               </ActionButton>

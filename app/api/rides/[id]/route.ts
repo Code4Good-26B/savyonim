@@ -2,7 +2,7 @@ import { query, transaction } from "@/lib/db";
 import { requireBearerAuth } from "@/lib/api-auth";
 
 const RIDE_FIELDS =
-  "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representitive_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
+  "id, ride_request_id, driver_id, ambulance_id, assigned_by_user_id, representative_user_id, status, assigned_at, in_progress_at, completed_at, rejected_at, rejection_reason, odometer_start_km, odometer_end_km";
 
 type RideState = {
   driver_id: string;
@@ -31,8 +31,12 @@ export async function GET(
   );
 
   if (!ride.rows[0]) return Response.json({ error: "Ride not found" }, { status: 404 });
-  if (auth.kind === "driver" && ride.rows[0].driver_id !== auth.driver.driverId) {
-    return Response.json({ error: "Driver cannot read another driver's ride" }, { status: 403 });
+  if ((auth.claims.role === "driver" || auth.claims.app_metadata?.app_role === "driver") && ride.rows[0].driver_id !== await (async () => {
+    const { getPool } = await import("@/lib/db");
+    const res = await getPool().query('select id from public.drivers where user_id = $1', [auth.claims.sub]);
+    return res.rows[0]?.id;
+  })()) {
+    return Response.json({ error: "Cannot access rides of another driver" }, { status: 403 });
   }
   return Response.json(ride.rows[0]);
 }
@@ -85,8 +89,12 @@ export async function PATCH(
 
     const current = currentResult.rows[0];
     if (!current) return null;
-    if (auth.kind === "driver" && current.driver_id !== auth.driver.driverId) {
-      return { forbidden: true } as const;
+    if ((auth.claims.role === "driver" || auth.claims.app_metadata?.app_role === "driver") && current.driver_id !== await (async () => {
+      const { getPool } = await import("@/lib/db");
+      const res = await getPool().query('select id from public.drivers where user_id = $1', [auth.claims.sub]);
+      return res.rows[0]?.id;
+    })()) {
+      throw new Error("403");
     }
 
     const finalStart = startProvided ? odometer_start_km : current.odometer_start_km === null ? null : Number(current.odometer_start_km);

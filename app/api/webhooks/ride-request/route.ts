@@ -193,16 +193,10 @@ export async function POST(request: Request) {
     return supabaseErrorResponse(insertRideRequestError);
   }
 
-  let driversQuery = supabase
+  const { data: availableDrivers, error: driversError } = await supabase
     .from("drivers")
     .select("id, contact_phone, service_zone_id")
     .eq("is_active", true);
-
-  if (zoneResult.data) {
-    driversQuery = driversQuery.eq("service_zone_id", zoneResult.data);
-  }
-
-  const { data: availableDrivers, error: driversError } = await driversQuery;
   if (driversError) {
     return supabaseErrorResponse(driversError);
   }

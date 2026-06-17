@@ -8,16 +8,20 @@ function isValidUuid(uuid: string): boolean {
   return UUID_REGEX.test(uuid);
 }
 
-export type ActionResponse<T = any> = {
+export type ActionResponse<T = unknown> = {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
 };
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "An unexpected error occurred";
+}
+
 /**
  * Accepts a ride request by creating a ride entry.
- * Handles race conditions gracefully if driver, ambulance, or request is already active.
+ * Handles race conditions gracefully if ambulance or request is already active.
  */
 export async function acceptRide(
   rideRequestId: string,
@@ -51,9 +55,6 @@ export async function acceptRide(
 
     if (error) {
       if (error.code === "23505") {
-        if (error.message?.includes("ux_rides_active_driver")) {
-          return { success: false, message: "Driver already has an active ride", error: "Driver already has an active ride" };
-        }
         if (error.message?.includes("ux_rides_active_ambulance")) {
           return { success: false, message: "Ambulance already has an active ride", error: "Ambulance already has an active ride" };
         }
@@ -66,23 +67,22 @@ export async function acceptRide(
     }
 
     return { success: true, data };
-  } catch (err: any) {
-    if (err?.code === "23505") {
-      if (err?.message?.includes("ux_rides_active_driver")) {
-        return { success: false, message: "Driver already has an active ride", error: "Driver already has an active ride" };
-      }
-      if (err?.message?.includes("ux_rides_active_ambulance")) {
+  } catch (err: unknown) {
+    const pgError = err as { code?: string; message?: string };
+    if (pgError.code === "23505") {
+      if (pgError.message?.includes("ux_rides_active_ambulance")) {
         return { success: false, message: "Ambulance already has an active ride", error: "Ambulance already has an active ride" };
       }
-      if (err?.message?.includes("ux_rides_active_request")) {
+      if (pgError.message?.includes("ux_rides_active_request")) {
         return { success: false, message: "Ride already taken by another driver", error: "Ride already taken by another driver" };
       }
       return { success: false, message: "Ride already taken by another driver", error: "Ride already taken by another driver" };
     }
+    const message = errorMessage(err);
     return {
       success: false,
-      message: err?.message || "An unexpected error occurred",
-      error: err?.message || "An unexpected error occurred",
+      message,
+      error: message,
     };
   }
 }
@@ -231,7 +231,7 @@ export async function updateRideOdometer(
  * Securely fetches the user session and queries the database.
  * Relies on the database RLS policies to restrict rows to only matching driver's rides.
  */
-export async function listMyRides(): Promise<ActionResponse<any[]>> {
+export async function listMyRides(): Promise<ActionResponse<unknown[]>> {
   const supabase = createSupabaseClient();
 
   try {
@@ -252,11 +252,12 @@ export async function listMyRides(): Promise<ActionResponse<any[]>> {
     }
 
     return { success: true, data: rides || [] };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = errorMessage(err);
     return {
       success: false,
-      message: err?.message || "An unexpected error occurred",
-      error: err?.message || "An unexpected error occurred",
+      message,
+      error: message,
     };
   }
 }

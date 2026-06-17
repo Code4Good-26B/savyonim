@@ -26,7 +26,7 @@ describe("GET /api/ambulances (integration)", () => {
     adminToken = await signInSeedUser("admin.dispatch@savionim.test");
   });
 
-  it("returns the 2 ambulances seeded in seed.sql", async () => {
+  it("returns the 6 ambulances seeded in seed.sql", async () => {
     const req = createAuthenticatedRequest("http://localhost/api/ambulances", adminToken);
     const res = await GET(req);
 
@@ -34,7 +34,7 @@ describe("GET /api/ambulances (integration)", () => {
 
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
-    expect(body).toHaveLength(2);
+    expect(body).toHaveLength(6);
 
     const ids = body.map((a: { id: string }) => a.id);
     expect(ids).toContain(SEED_AMBULANCE_1);
