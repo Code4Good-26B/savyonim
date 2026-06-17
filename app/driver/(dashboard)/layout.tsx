@@ -31,13 +31,13 @@ export default function DriverDashboardLayout({ children }: { children: React.Re
 
   useEffect(() => {
     if (hasCheckedSession && (!session || session.role !== "driver")) {
-      router.replace("/");
+      router.replace("/login");
     }
   }, [hasCheckedSession, session, router]);
 
   function handleLogout() {
     clearDriverSession();
-    router.replace("/");
+    router.replace("/login");
   }
 
   return (

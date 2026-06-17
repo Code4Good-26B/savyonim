@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Toaster } from "sonner";
 import { createSupabaseClient } from "@/lib/supabase";
 import { query } from "@/lib/db";
+import { accountLifecycleRedirect } from "@/lib/auth/account-lifecycle";
 import { RepNav } from "./RepNav";
 import { RepMobileNav } from "./RepMobileNav";
 import { LogoutButton } from "./LogoutButton";
@@ -19,18 +20,28 @@ export default async function RepresentativeLayout({ children }: { children: Rea
   if (error || !user) redirect("/");
 
   const [result, pendingResult] = await Promise.all([
-    query<{ role: string; is_active: boolean; full_name: string; can_approve_drivers: boolean }>(
-      "SELECT role, is_active, full_name, can_approve_drivers FROM public.users WHERE id = $1",
+    query<{ role: string; status: string; is_active: boolean; full_name: string }>(
+      "SELECT role, status, is_active, full_name FROM public.users WHERE id = $1",
       [user.id],
     ),
     query<{ count: string }>("SELECT count(*)::text FROM public.ride_requests WHERE status = 'pending'"),
   ]);
   const dbUser = result.rows[0];
-  if (!dbUser?.is_active || !["admin", "representative"].includes(dbUser.role)) {
-    redirect("/");
+  if (!dbUser || !["admin", "representative"].includes(dbUser.role)) {
+    redirect("/representative/login");
+  }
+  if (dbUser.status !== "approved") {
+    redirect(accountLifecycleRedirect(dbUser.status) ?? "/representative/login");
+  }
+  if (!dbUser.is_active) {
+    redirect("/representative/login");
   }
 
-  const canApproveDrivers = dbUser.role === "admin" || dbUser.can_approve_drivers;
+  const permissionsResult = await query<{ can_approve_drivers: boolean }>(
+    "SELECT can_approve_drivers FROM public.users WHERE id = $1",
+    [user.id],
+  );
+  const canApproveDrivers = dbUser.role === "admin" || permissionsResult.rows[0]?.can_approve_drivers === true;
   const pendingRides = parseInt(pendingResult.rows[0]?.count ?? "0", 10);
 
   return (

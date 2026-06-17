@@ -21,11 +21,15 @@ export function useDriverRides() {
       setRides(await getDriverRides(nextSession));
     } catch (caught) {
       const apiError = caught as DriverApiError;
+      if (apiError.redirectTo) {
+        router.replace(apiError.redirectTo);
+        return;
+      }
       setError(apiError.detail ?? "Could not load driver rides.");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -38,7 +42,7 @@ export function useDriverRides() {
   useEffect(() => {
     if (!hasCheckedSession) return;
     if (!session || session.role !== "driver") {
-      router.replace("/");
+      router.replace("/login");
       return;
     }
     const timer = window.setTimeout(() => {

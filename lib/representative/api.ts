@@ -17,20 +17,24 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     let errorMessage = response.statusText;
+    let redirectTo: string | null | undefined;
+    let accountStatus: string | undefined;
     try {
-      const payload = (await response.json()) as { error?: string };
+      const payload = (await response.json()) as { error?: string; redirectTo?: string | null; accountStatus?: string };
       if (payload.error) errorMessage = payload.error;
+      redirectTo = payload.redirectTo;
+      accountStatus = payload.accountStatus;
     } catch { /* ignore */ }
 
     throw {
       status: response.status,
       title: response.statusText || "Request failed",
       detail:
-        response.status === 403
-          ? "Account pending approval"
-          : response.status === 401
-            ? "Invalid email or password"
-            : errorMessage,
+        response.status === 401
+          ? "Invalid email or password"
+          : errorMessage,
+      redirectTo,
+      accountStatus,
     } satisfies RepresentativeApiError;
   }
 
