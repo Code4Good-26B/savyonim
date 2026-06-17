@@ -238,9 +238,13 @@ otp_expiry = 86400
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-[auth.email.template.invite]
-subject = "Complete your Savionim registration"
-content_path = "./supabase/templates/invite.html"
+# Custom invite email template is disabled: free-tier projects on the default
+# email provider can't modify email templates (Supabase deploy returns 400).
+# Invites (auth.admin.inviteUserByEmail) fall back to Supabase's default invite
+# email. To re-enable a branded template, configure [auth.email.smtp] first.
+# [auth.email.template.invite]
+# subject = "Complete your Savionim registration"
+# content_path = "./supabase/templates/invite.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
