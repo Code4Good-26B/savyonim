@@ -2,6 +2,7 @@ import { ListChecks, CheckCircle2, Clock, Star, Users, Building2, Zap, XCircle }
 import { query } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MonthlyChart } from "./MonthlyChart";
+import { DailyChart, type DailyDataPoint } from "./DailyChart";
 
 type StatsRow = {
   total_requests: string;
@@ -16,9 +17,10 @@ type StatsRow = {
 };
 
 type MonthRow = { month: string; count: string };
+type DayRow = { day: string; total: string; completed: string };
 
 export default async function StatisticsPage() {
-  const [statsResult, monthlyResult] = await Promise.all([
+  const [statsResult, monthlyResult, dailyResult] = await Promise.all([
     query<StatsRow>(`
       SELECT
         (SELECT count(*) FROM public.ride_requests
@@ -48,12 +50,27 @@ export default async function StatisticsPage() {
       GROUP BY date_trunc('month', created_at)
       ORDER BY date_trunc('month', created_at) DESC
     `),
+    query<DayRow>(`
+      SELECT
+        to_char(date_trunc('day', created_at), 'DD/MM') AS day,
+        count(*)::text AS total,
+        count(*) FILTER (WHERE status = 'completed')::text AS completed
+      FROM public.ride_requests
+      WHERE created_at >= now() - interval '30 days'
+      GROUP BY date_trunc('day', created_at)
+      ORDER BY date_trunc('day', created_at)
+    `),
   ]);
 
   const s = statsResult.rows[0];
   const monthly = monthlyResult.rows
     .map((r) => ({ month: r.month, count: Number(r.count) }))
     .reverse();
+  const daily: DailyDataPoint[] = dailyResult.rows.map((r) => ({
+    day: r.day,
+    total: Number(r.total),
+    completed: Number(r.completed),
+  }));
 
   const completionRate =
     Number(s.total_requests) > 0
@@ -104,6 +121,19 @@ export default async function StatisticsPage() {
             <p className="py-10 text-center text-sm text-muted-foreground">אין נתונים</p>
           ) : (
             <MonthlyChart data={monthly} />
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>מגמה יומית — 30 ימים אחרונים</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {daily.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">אין נתונים</p>
+          ) : (
+            <DailyChart data={daily} />
           )}
         </CardContent>
       </Card>

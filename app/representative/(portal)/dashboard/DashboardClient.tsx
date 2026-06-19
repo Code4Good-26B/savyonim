@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback, useTransition } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Clock, MapPin, User, Phone, Plus } from "lucide-react";
+import { Clock, MapPin, User, Phone, Plus, Search } from "lucide-react";
+import { DriverSheet } from "./DriverSheet";
+import { QuickAssign } from "./QuickAssign";
 
 export type DashboardDriver = {
   id: string;
@@ -85,23 +88,77 @@ const STAT_CARDS = [
   },
 ];
 
+const STATUS_FILTERS = [
+  { value: "all", label: "הכל" },
+  { value: "pending", label: "ממתין" },
+  { value: "in_progress", label: "בביצוע" },
+  { value: "completed", label: "הושלם" },
+] as const;
+
+type StatusFilter = (typeof STATUS_FILTERS)[number]["value"];
+
 export function DashboardClient({
   drivers,
   rides,
   stats,
+  page,
+  totalPages,
+  totalRides,
+  searchQuery,
 }: {
   drivers: DashboardDriver[];
   rides: DashboardRide[];
   stats: DashboardStats;
+  page: number;
+  totalPages: number;
+  totalRides: number;
+  searchQuery: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [, startTransition] = useTransition();
   const [isCreateRideOpen, setIsCreateRideOpen] = useState(false);
   const [wantsReturnRide, setWantsReturnRide] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [selectedDriver, setSelectedDriver] = useState<DashboardDriver | null>(null);
+  const prevPendingRef = useRef<number | null>(null);
+
+  const handleSearch = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (e.target.value) params.set("q", e.target.value);
+      else params.delete("q");
+      params.delete("page");
+      startTransition(() => {
+        router.replace(`${pathname}?${params.toString()}`);
+      });
+    },
+    [router, pathname, searchParams],
+  );
+
+  function buildPageUrl(p: number) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(p));
+    return `${pathname}?${params.toString()}`;
+  }
 
   useEffect(() => {
     const id = setInterval(() => router.refresh(), 30_000);
     return () => clearInterval(id);
   }, [router]);
+
+  useEffect(() => {
+    if (prevPendingRef.current !== null && stats.pendingRides > prevPendingRef.current) {
+      toast.info(`בקשת הסעה חדשה! (${stats.pendingRides} ממתינות)`);
+    }
+    prevPendingRef.current = stats.pendingRides;
+  }, [stats.pendingRides]);
+
+  const filteredRides =
+    statusFilter === "all" ? rides : rides.filter((r) => r.status === statusFilter);
+
+  const availableDrivers = drivers.filter((d) => d.status === "available");
 
   return (
     <div className="flex flex-col gap-6">
@@ -119,7 +176,7 @@ export function DashboardClient({
       </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-      {/* Available Drivers - sticky column; appears on the RIGHT under RTL */}
+      {/* Available Drivers — sticky column */}
       <div className="sticky top-0 self-start space-y-6">
         <div>
           <h3>נהגים זמינים</h3>
@@ -140,34 +197,40 @@ export function DashboardClient({
                 <div className="space-y-4">
                   {drivers.map((driver, index) => (
                     <div key={driver.id} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <p className="text-sm font-medium text-right">{driver.name}</p>
-                            <p className="text-xs text-muted-foreground text-right" dir="ltr">
-                              {driver.phone ?? "—"}
-                            </p>
+                      <button
+                        type="button"
+                        className="w-full text-right"
+                        onClick={() => setSelectedDriver(driver)}
+                      >
+                        <div className="flex items-center justify-between hover:bg-muted/50 rounded-md p-1 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <p className="text-sm font-medium text-right">{driver.name}</p>
+                              <p className="text-xs text-muted-foreground text-right" dir="ltr">
+                                {driver.phone ?? "—"}
+                              </p>
+                            </div>
+                            {driver.status === "available" ? (
+                              <span className="relative flex h-2 w-2 shrink-0">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                              </span>
+                            ) : (
+                              <span className={`h-2 w-2 shrink-0 rounded-full ${driver.status === "busy" ? "bg-yellow-500" : "bg-gray-400"}`} />
+                            )}
                           </div>
-                          {driver.status === "available" ? (
-                            <span className="relative flex h-2 w-2 shrink-0">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-                            </span>
-                          ) : (
-                            <span className={`h-2 w-2 shrink-0 rounded-full ${driver.status === "busy" ? "bg-yellow-500" : "bg-gray-400"}`} />
-                          )}
+                          <Badge
+                            variant={driver.status === "available" ? "default" : "secondary"}
+                            className="text-xs"
+                          >
+                            {driver.status === "available"
+                              ? "זמין"
+                              : driver.status === "busy"
+                                ? "בהסעה"
+                                : "לא פעיל"}
+                          </Badge>
                         </div>
-                        <Badge
-                          variant={driver.status === "available" ? "default" : "secondary"}
-                          className="text-xs"
-                        >
-                          {driver.status === "available"
-                            ? "זמין"
-                            : driver.status === "busy"
-                              ? "בהסעה"
-                              : "לא פעיל"}
-                        </Badge>
-                      </div>
+                      </button>
                       <div className="text-xs text-muted-foreground pr-4 text-right">
                         {driver.totalRides} הסעות שהושלמו
                       </div>
@@ -183,7 +246,7 @@ export function DashboardClient({
         </Card>
       </div>
 
-      {/* Live Ride Monitoring - Takes up 2 columns; appears on the LEFT under RTL */}
+      {/* Live Ride Monitoring */}
       <div className="lg:col-span-2 space-y-6">
         <div className="sticky top-0 z-10 bg-background pb-4 flex items-center justify-between">
           <div>
@@ -253,16 +316,49 @@ export function DashboardClient({
           </Dialog>
         </div>
 
-        <div className="space-y-4">
+        {/* Search + status filters row */}
+        <div className="flex items-center justify-between gap-3 flex-wrap" dir="rtl">
+          <div className="flex items-center gap-2 flex-wrap">
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => setStatusFilter(f.value)}
+                className={`rounded-full px-3.5 py-1 text-sm font-medium transition-colors ${
+                  statusFilter === f.value
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              defaultValue={searchQuery}
+              onChange={handleSearch}
+              placeholder="חיפוש לפי שם נוסע..."
+              className="pr-9 w-52"
+              dir="rtl"
+            />
+          </div>
+        </div>
 
-          {rides.length === 0 ? (
+        <div className="space-y-4">
+          {filteredRides.length === 0 ? (
             <Card>
               <CardContent className="py-16 text-center text-sm text-muted-foreground">
-                אין בקשות נסיעה עדיין
+                {searchQuery
+                  ? `לא נמצאו תוצאות עבור "${searchQuery}"`
+                  : statusFilter === "all"
+                    ? "אין בקשות נסיעה עדיין"
+                    : "אין בקשות בסטטוס זה"}
               </CardContent>
             </Card>
           ) : (
-            rides.map((ride) => (
+            filteredRides.map((ride) => (
               <Card key={ride.id}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -321,17 +417,43 @@ export function DashboardClient({
                     </div>
                   </div>
                   {ride.status === "pending" && (
-                    <Button asChild className="w-full" size="sm">
-                      <a href={`/representative/request/${ride.id}`}>שבץ נהג</a>
-                    </Button>
+                    <div className="pt-1 space-y-2">
+                      <QuickAssign rideId={ride.id} availableDrivers={availableDrivers} />
+                      <Button asChild variant="outline" className="w-full" size="sm">
+                        <a href={`/representative/request/${ride.id}`}>פרטים מלאים</a>
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
             ))
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-border pt-4 mt-2" dir="rtl">
+            <p className="text-xs text-muted-foreground">
+              עמוד {page} מתוך {totalPages} ({totalRides} תוצאות)
+            </p>
+            <div className="flex gap-2">
+              {page > 1 && (
+                <Button asChild variant="outline" size="sm">
+                  <a href={buildPageUrl(page - 1)}>→ הקודם</a>
+                </Button>
+              )}
+              {page < totalPages && (
+                <Button asChild variant="outline" size="sm">
+                  <a href={buildPageUrl(page + 1)}>הבא ←</a>
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
+
+    <DriverSheet driver={selectedDriver} onClose={() => setSelectedDriver(null)} />
     </div>
   );
 }

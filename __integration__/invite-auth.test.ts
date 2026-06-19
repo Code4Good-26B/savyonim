@@ -185,6 +185,75 @@ describe("Invite-Auth Flow", () => {
     }
   });
 
+  it("completeOnboarding registers a representative and marks the invitation accepted", async () => {
+    const email = `rep-onboarding-${Date.now()}@example.test`;
+    const supabaseAdmin = (await import("@/lib/supabase")).createSupabaseClient();
+    const { getPool } = await import("@/lib/db");
+
+    const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      email_confirm: true,
+      app_metadata: { app_role: "representative" },
+      user_metadata: { app_role: "representative", invited_role: "representative" },
+    });
+    expect(createError).toBeNull();
+    expect(created.user?.id).toBeTruthy();
+    const userId = created.user!.id;
+
+    try {
+      await getPool().query(
+        `insert into public.invitations (email, invited_role, status, invited_by, auth_user_id)
+         values ($1, 'representative', 'pending', '22222222-0000-0000-0000-000000000010', $2)`,
+        [email, userId],
+      );
+
+      const accessToken = createLocalAccessToken(userId);
+
+      const res = await completeOnboarding(accessToken, {
+        fullName: "Tamar Cohen",
+        phone: "+972521234567",
+        nationalId: "039337423",
+        password: "RepPass1234!",
+      });
+
+      expect(res.success).toBe(true);
+
+      // User row created with correct role and status
+      const dbUser = await getPool().query(
+        `select full_name, phone, role, status, national_id from public.users where id = $1`,
+        [userId],
+      );
+      expect(dbUser.rows[0]).toMatchObject({
+        full_name: "Tamar Cohen",
+        phone: "+972521234567",
+        role: "representative",
+        status: "pending",
+        national_id: "039337423",
+      });
+
+      // No driver row should be created for a representative
+      const driverRow = await getPool().query(
+        `select id from public.drivers where user_id = $1`,
+        [userId],
+      );
+      expect(driverRow.rows).toHaveLength(0);
+
+      // Invitation marked as accepted
+      const invite = await getPool().query(
+        `select status from public.invitations where auth_user_id = $1`,
+        [userId],
+      );
+      expect(invite.rows[0]).toMatchObject({ status: "accepted" });
+    } finally {
+      await getPool().query(
+        `delete from public.invitations where auth_user_id = $1 or email = $2`,
+        [userId, email],
+      );
+      await getPool().query(`delete from public.users where id = $1`, [userId]);
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+    }
+  });
+
   it("approveUser blocks unauthenticated calls", async () => {
     const res = await approveUser("fake-admin-token", "target-id");
     expect(res.success).toBe(false);

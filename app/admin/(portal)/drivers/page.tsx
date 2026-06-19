@@ -41,22 +41,22 @@ export default async function AdminDriversPage({
 
   const [allResult, pageResult] = await Promise.all([
     query<DriverRow>(`
-      SELECT d.id, u.id AS user_id, u.full_name, u.email, d.contact_phone, d.is_active,
+      SELECT d.id, u.id AS user_id, u.full_name, u.email, d.contact_phone, u.is_active,
         r.status AS ride_status
       FROM public.drivers d
       JOIN public.users u ON u.id = d.user_id
       LEFT JOIN public.rides r ON r.driver_id = d.id AND r.status IN ('assigned', 'in_progress')
       ${q ? `WHERE u.full_name ILIKE $1 OR u.email ILIKE $1 OR d.contact_phone ILIKE $1` : ""}
-      ORDER BY CASE WHEN d.is_active THEN 0 ELSE 1 END, u.full_name
+      ORDER BY CASE WHEN u.is_active THEN 0 ELSE 1 END, u.full_name
     `, q ? [`%${q}%`] : []),
     query<DriverRow & { total: string }>(`
-      SELECT d.id, u.id AS user_id, u.full_name, u.email, d.contact_phone, d.is_active,
+      SELECT d.id, u.id AS user_id, u.full_name, u.email, d.contact_phone, u.is_active,
         r.status AS ride_status, count(*) OVER() AS total
       FROM public.drivers d
       JOIN public.users u ON u.id = d.user_id
       LEFT JOIN public.rides r ON r.driver_id = d.id AND r.status IN ('assigned', 'in_progress')
       ${q ? `WHERE u.full_name ILIKE $1 OR u.email ILIKE $1 OR d.contact_phone ILIKE $1` : ""}
-      ORDER BY CASE WHEN d.is_active THEN 0 ELSE 1 END, u.full_name
+      ORDER BY CASE WHEN u.is_active THEN 0 ELSE 1 END, u.full_name
       LIMIT ${PAGE_SIZE} OFFSET ${offset}
     `, q ? [`%${q}%`] : []),
   ]);
@@ -101,9 +101,20 @@ export default async function AdminDriversPage({
 
       <div className="rounded-xl bg-card border border-border overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <span className="text-sm font-medium text-muted-foreground">
-            {q ? `תוצאות עבור "${q}" (${total})` : `סה״כ ${total} נהגים`}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-muted-foreground">
+              {q ? `תוצאות עבור "${q}" (${total})` : `סה״כ ${total} נהגים`}
+            </span>
+            <a
+              href="/api/admin/export/drivers"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              ייצוא CSV
+            </a>
+          </div>
           <AdminSearch placeholder="חפש לפי שם, אימייל או טלפון..." />
         </div>
 

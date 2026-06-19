@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, ClipboardList, Users, Building2, CheckCircle, Mail } from "lucide-react";
+import { BarChart3, ClipboardList, Users, Building2, CheckCircle, Mail, ScrollText } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ const navItems = [
   { href: "/admin/representatives", label: "נציגים", icon: Building2 },
   { href: "/admin/approvals", label: "אישורים", icon: CheckCircle },
   { href: "/admin/invitations", label: "הזמנות", icon: Mail },
+  { href: "/admin/audit", label: "לוג ביקורת", icon: ScrollText },
 ];
 
 export function AdminNav({ onNavigate }: { onNavigate?: () => void }) {

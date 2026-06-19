@@ -209,6 +209,6 @@ describe("onboarding role routing", () => {
     const html = renderToStaticMarkup(React.createElement(OnboardingRoleContainer, { role: "representative" }));
 
     expect(html).toContain("data-testid=\"representative-onboarding-container\"");
-    expect(html).toContain("\u05d4\u05d6\u05de\u05e0\u05ea");
+    expect(html).toContain("data-testid=\"rep-onboarding-form\"");
   });
 });

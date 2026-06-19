@@ -7,10 +7,9 @@ import {
   type OnboardingRole,
 } from "./session";
 import { DriverOnboardingForm } from "./DriverOnboardingForm";
+import { RepresentativeOnboardingForm } from "./RepresentativeOnboardingForm";
 
 const TEXT = {
-  representativeTitle: "\u05d4\u05d6\u05de\u05e0\u05ea \u05e0\u05e6\u05d9\u05d2 \u05d0\u05d5\u05de\u05ea\u05d4",
-  representativeBody: "\u05d4\u05d4\u05d6\u05de\u05e0\u05d4 \u05d0\u05d5\u05de\u05ea\u05d4. \u05d8\u05d5\u05e4\u05e1 \u05d4\u05e8\u05e9\u05de\u05ea \u05e0\u05e6\u05d9\u05d2 \u05d9\u05d5\u05e4\u05d9\u05e2 \u05db\u05d0\u05df.",
   fallbackError: "\u05e7\u05d9\u05e9\u05d5\u05e8 \u05d4\u05d4\u05d6\u05de\u05e0\u05d4 \u05d0\u05d9\u05e0\u05d5 \u05ea\u05e7\u05d9\u05df \u05d0\u05d5 \u05e9\u05e4\u05d2 \u05ea\u05d5\u05e7\u05e4\u05d5. \u05d1\u05e7\u05e9\u05d5 \u05de\u05de\u05e0\u05d4\u05dc \u05dc\u05e9\u05dc\u05d5\u05d7 \u05d4\u05d6\u05de\u05e0\u05d4 \u05d7\u05d3\u05e9\u05d4.",
   pageTitle: "\u05d4\u05e9\u05dc\u05de\u05ea \u05d4\u05e8\u05e9\u05de\u05d4",
   verifying: "\u05de\u05e9\u05dc\u05d9\u05de\u05d9\u05dd \u05d0\u05ea \u05d0\u05d9\u05de\u05d5\u05ea \u05d4\u05d4\u05d6\u05de\u05e0\u05d4...",
@@ -32,14 +31,8 @@ export function DriverOnboardingContainer() {
 
 export function RepresentativeOnboardingContainer() {
   return (
-    <div
-      className="mt-6 rounded-md border border-emerald-200 bg-emerald-50 p-4"
-      data-testid="representative-onboarding-container"
-    >
-      <h2 className="text-right text-lg font-semibold text-emerald-950">{TEXT.representativeTitle}</h2>
-      <p className="mt-2 text-sm text-emerald-900">
-        {TEXT.representativeBody}
-      </p>
+    <div data-testid="representative-onboarding-container">
+      <RepresentativeOnboardingForm />
     </div>
   );
 }

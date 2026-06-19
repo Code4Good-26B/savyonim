@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseClient } from "@/lib/supabase";
 import { query } from "@/lib/db";
 import { AdminInviteForm } from "./InviteForm";
+import { InviteActions } from "./InviteActions";
 import type { InvitationRow } from "./actions";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -15,6 +16,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   pending: { label: "ממתין", className: "bg-yellow-100 text-yellow-800" },
   accepted: { label: "הצטרף", className: "bg-green-100 text-green-700" },
   expired: { label: "פג תוקף", className: "bg-muted text-muted-foreground" },
+  revoked: { label: "בוטל", className: "bg-red-50 text-red-600" },
 };
 
 export default async function AdminInvitationsPage() {
@@ -95,12 +97,13 @@ export default async function AdminInvitationsPage() {
                 <th className="px-6 py-3 font-medium">הוזמן ע״י</th>
                 <th className="px-6 py-3 font-medium">תאריך</th>
                 <th className="px-6 py-3 font-medium">סטטוס</th>
+                <th className="px-6 py-3 font-medium"><span className="sr-only">פעולות</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {invitations.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-16 text-center text-sm text-muted-foreground">
+                  <td colSpan={6} className="px-6 py-16 text-center text-sm text-muted-foreground">
                     אין הזמנות עדיין
                   </td>
                 </tr>
@@ -119,6 +122,11 @@ export default async function AdminInvitationsPage() {
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}>
                           {status.label}
                         </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {inv.status === "pending" && (
+                          <InviteActions invitationId={inv.id} />
+                        )}
                       </td>
                     </tr>
                   );

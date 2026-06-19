@@ -3,6 +3,8 @@ import { DashboardClient, type DashboardDriver, type DashboardRide } from "./Das
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 10;
+
 type DriverRow = {
   id: string;
   full_name: string;
@@ -21,6 +23,7 @@ type RideRow = {
   status: string;
   requested_pickup_at: string | null;
   driver_name: string | null;
+  total: string;
 };
 
 function formatTime(value: string | null) {
@@ -36,14 +39,22 @@ type StatsRow = {
   active_rides: string;
 };
 
-export default async function DispatcherDashboard() {
+export default async function DispatcherDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
+  const { q = "", page: pageStr = "1" } = await searchParams;
+  const page = Math.max(1, parseInt(pageStr, 10) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
+
   const [driversResult, ridesResult, statsResult] = await Promise.all([
     query<DriverRow>(`
       SELECT
         d.id,
         u.full_name,
         d.contact_phone,
-        d.is_active,
+        u.is_active,
         r.status AS ride_status,
         (SELECT count(*) FROM public.rides cr
            WHERE cr.driver_id = d.id AND cr.status = 'completed') AS total_rides
@@ -56,7 +67,8 @@ export default async function DispatcherDashboard() {
         CASE WHEN d.is_active THEN 0 ELSE 1 END,
         u.full_name
     `),
-    query<RideRow>(`
+    query<RideRow>(
+      `
       SELECT
         rr.id,
         rr.caller_full_name,
@@ -65,16 +77,20 @@ export default async function DispatcherDashboard() {
         rr.destination_address,
         rr.status,
         rr.requested_pickup_at,
-        du.full_name AS driver_name
+        du.full_name AS driver_name,
+        count(*) OVER() AS total
       FROM public.ride_requests rr
       LEFT JOIN public.rides r
         ON r.ride_request_id = rr.id
         AND r.status IN ('assigned', 'in_progress', 'completed')
       LEFT JOIN public.drivers d ON d.id = r.driver_id
       LEFT JOIN public.users du ON du.id = d.user_id
+      WHERE ($1 = '' OR rr.caller_full_name ILIKE '%' || $1 || '%' OR rr.caller_phone ILIKE '%' || $1 || '%')
       ORDER BY rr.requested_pickup_at DESC NULLS LAST
-      LIMIT 10
-    `),
+      LIMIT $2 OFFSET $3
+    `,
+      [q, PAGE_SIZE, offset],
+    ),
     query<StatsRow>(`
       SELECT
         (SELECT count(*)::text FROM public.ride_requests WHERE status = 'pending') AS pending_rides,
@@ -89,6 +105,9 @@ export default async function DispatcherDashboard() {
     status: !d.is_active ? "inactive" : d.ride_status ? "busy" : "available",
     totalRides: Number(d.total_rides) || 0,
   }));
+
+  const totalRides = Number(ridesResult.rows[0]?.total ?? 0);
+  const totalPages = Math.max(1, Math.ceil(totalRides / PAGE_SIZE));
 
   const rides: DashboardRide[] = ridesResult.rows.map((r) => ({
     id: r.id,
@@ -107,5 +126,15 @@ export default async function DispatcherDashboard() {
     availableDrivers: drivers.filter((d) => d.status === "available").length,
   };
 
-  return <DashboardClient drivers={drivers} rides={rides} stats={stats} />;
+  return (
+    <DashboardClient
+      drivers={drivers}
+      rides={rides}
+      stats={stats}
+      page={page}
+      totalPages={totalPages}
+      totalRides={totalRides}
+      searchQuery={q}
+    />
+  );
 }

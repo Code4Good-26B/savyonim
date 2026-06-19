@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, ClipboardList, Users, Mail, CheckCircle } from "lucide-react";
+import { Activity, ClipboardList, Users, Mail, CheckCircle, BarChart3 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ const baseNavItems = [
   { href: "/representative/dashboard", label: "ניטור חי", icon: Activity },
   { href: "/representative/requests", label: "בקשות נסיעה", icon: ClipboardList },
   { href: "/representative/drivers", label: "נהגים", icon: Users },
+  { href: "/representative/statistics", label: "סטטיסטיקות", icon: BarChart3 },
 ];
 
 const approverOnlyItems = [
