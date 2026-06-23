@@ -21,39 +21,72 @@ function buildMockMessage(n: DriverNotification): string {
 }
 
 async function sendRealNotification(n: DriverNotification): Promise<void> {
-  // Placeholder — wire up once Commbox API credentials and message template are confirmed.
-  // Expected env vars: COMMBOX_API_KEY, COMMBOX_API_URL, COMMBOX_TEMPLATE_ID
-  //
-  // Example (adjust to actual Commbox API shape):
-  //
-  // await fetch(`${process.env.COMMBOX_API_URL}/v1/messages`, {
-  //   method: "POST",
-  //   headers: {
-  //     Authorization: `Bearer ${process.env.COMMBOX_API_KEY}`,
-  //     "Content-Type": "application/json",
-  //   },
-  //   body: JSON.stringify({
-  //     to: n.phone,
-  //     channel: "whatsapp",
-  //     template_id: process.env.COMMBOX_TEMPLATE_ID,
-  //     params: {
-  //       source: n.sourceAddress,
-  //       destination: n.destinationAddress,
-  //       accept_url: `${process.env.APP_URL}/driver`,
-  //     },
-  //   }),
-  // });
-  throw new Error(
-    "COMMBOX_API_KEY is set but real outbound integration is not yet implemented. " +
-      "Set MOCK_COMMBOX=true to use the mock logger instead.",
+  const apiKey = process.env.COMMBOX_API_KEY!;
+  const apiUrl = (process.env.COMMBOX_API_URL ?? "https://api.commbox.io").replace(/\/$/, "");
+  const templateId = process.env.COMMBOX_TEMPLATE_ID;
+  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+
+  if (!templateId) {
+    throw new Error("COMMBOX_TEMPLATE_ID is required for outbound notifications");
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${apiUrl}/v1/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: n.phone,
+        channel: "whatsapp",
+        template_id: templateId,
+        params: {
+          source: n.sourceAddress,
+          destination: n.destinationAddress,
+          accept_url: `${appUrl}/driver`,
+        },
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch (err) {
+    throw new Error(
+      `Commbox API unreachable for driver ${n.driverId}: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "(no body)");
+    throw new Error(`Commbox API ${response.status} for driver ${n.driverId} (${n.phone}): ${text}`);
+  }
+
+  console.log(
+    JSON.stringify({
+      level: "info",
+      source: "commbox",
+      event: "notification_sent",
+      driver_id: n.driverId,
+      phone: n.phone,
+      ride_request_id: n.rideRequestId,
+      timestamp: new Date().toISOString(),
+    }),
   );
 }
 
 export async function notifyDriver(notification: DriverNotification): Promise<void> {
   if (isMockMode()) {
-    const message = buildMockMessage(notification);
     console.log(
-      `[mock-commbox] Would send WhatsApp to ${notification.phone} (driver ${notification.driverId}):\n  "${message}"`,
+      JSON.stringify({
+        level: "info",
+        source: "mock-commbox",
+        event: "whatsapp_notification_preview",
+        driver_id: notification.driverId,
+        phone: notification.phone,
+        ride_request_id: notification.rideRequestId,
+        message: buildMockMessage(notification),
+        timestamp: new Date().toISOString(),
+      }),
     );
     return;
   }

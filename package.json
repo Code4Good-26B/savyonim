@@ -12,7 +12,8 @@
     "test:integration": "vitest run --project integration",
     "test:all": "vitest run",
     "mock:broadcast-ride": "node ./scripts/mock-broadcast-ride.mjs",
-    "mock:send-ride": "npm run mock:broadcast-ride"
+    "mock:send-ride": "npm run mock:broadcast-ride",
+    "commbox:ping": "node ./scripts/commbox-ping.mjs"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.13",
