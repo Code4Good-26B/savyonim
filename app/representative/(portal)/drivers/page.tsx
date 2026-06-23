@@ -1,4 +1,17 @@
+import Link from "next/link";
+import { Users, UserCheck, Activity, CircleDot, UserPlus } from "lucide-react";
 import { query } from "@/lib/db";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type DriverRow = {
   id: string;
@@ -10,10 +23,10 @@ type DriverRow = {
 };
 
 const STATUS_CONFIG = {
-  in_progress: { label: "בנסיעה", className: "bg-cyan-50 text-cyan-700 border border-cyan-100" },
-  assigned: { label: "ממתין לאיסוף", className: "bg-amber-50 text-amber-700 border border-amber-100" },
-  available: { label: "פנוי", className: "bg-green-50 text-green-700 border border-green-100" },
-  inactive: { label: "לא פעיל", className: "bg-gray-100 text-gray-500" },
+  in_progress: { label: "בנסיעה", className: "bg-cyan-50 text-cyan-700 border-cyan-100" },
+  assigned: { label: "ממתין לאיסוף", className: "bg-amber-50 text-amber-700 border-amber-100" },
+  available: { label: "פנוי", className: "bg-green-50 text-green-700 border-green-100" },
+  inactive: { label: "לא פעיל", className: "bg-muted text-muted-foreground border-transparent" },
 } as const;
 
 function getDriverStatus(row: DriverRow) {
@@ -52,80 +65,84 @@ export default async function DriversPage() {
   };
 
   const statCards = [
-    {
-      label: "סה״כ נהגים", value: counts.total,
-      icon: <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-    },
-    {
-      label: "פעילים", value: counts.active,
-      icon: <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-    },
-    {
-      label: "בנסיעה / ממתין", value: counts.busy,
-      icon: <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
-    },
-    {
-      label: "פנויים", value: counts.available,
-      icon: <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-    },
+    { label: "סה״כ נהגים", value: counts.total, icon: Users },
+    { label: "פעילים", value: counts.active, icon: UserCheck },
+    { label: "בנסיעה / ממתין", value: counts.busy, icon: Activity },
+    { label: "פנויים", value: counts.available, icon: CircleDot },
   ];
 
   return (
-    <div className="flex flex-col gap-6" dir="rtl">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">נהגים</h1>
-        <p className="mt-1 text-sm text-gray-400">מצב כלל הנהגים הרשומים במערכת</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2>ניהול נהגים</h2>
+          <p className="text-muted-foreground mt-1">מצב כלל הנהגים הרשומים במערכת</p>
+        </div>
+        <Button asChild className="gap-2">
+          <Link href="/representative/invitations">
+            <UserPlus className="h-4 w-4" />
+            הוסף נהג
+          </Link>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        {statCards.map((s) => (
-          <div key={s.label} className="rounded-xl bg-white border border-gray-100 p-5 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-400 font-medium">{s.label}</span>
-              {s.icon}
-            </div>
-            <p className="text-3xl font-semibold text-gray-900">{s.value}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.label}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-semibold">{stat.value}</div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      <div className="rounded-xl bg-white border border-gray-100 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50 text-right text-xs text-gray-400">
-              <th className="px-6 py-3 font-medium">שם נהג</th>
-              <th className="px-6 py-3 font-medium">טלפון</th>
-              <th className="px-6 py-3 font-medium">אימייל</th>
-              <th className="px-6 py-3 font-medium">סטטוס</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {drivers.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-6 py-16 text-center text-sm text-gray-400">
-                  אין נהגים רשומים במערכת
-                </td>
-              </tr>
-            ) : (
-              drivers.map((driver) => {
-                const status = getDriverStatus(driver);
-                return (
-                  <tr key={driver.id} className="hover:bg-gray-50/60 transition-colors">
-                    <td className="px-6 py-3.5 font-medium text-gray-900">{driver.full_name}</td>
-                    <td className="px-6 py-3.5 text-gray-500 tabular-nums">{driver.contact_phone ?? "—"}</td>
-                    <td className="px-6 py-3.5 text-gray-500">{driver.email ?? "—"}</td>
-                    <td className="px-6 py-3.5">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}>
-                        {status.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>נהגים רשומים ({drivers.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-right">שם נהג</TableHead>
+                <TableHead className="text-right">טלפון</TableHead>
+                <TableHead className="text-right">אימייל</TableHead>
+                <TableHead className="text-right">סטטוס</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {drivers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground py-12">
+                    אין נהגים רשומים במערכת
+                  </TableCell>
+                </TableRow>
+              ) : (
+                drivers.map((driver) => {
+                  const status = getDriverStatus(driver);
+                  return (
+                    <TableRow key={driver.id}>
+                      <TableCell className="font-medium text-right">{driver.full_name}</TableCell>
+                      <TableCell className="text-right text-muted-foreground tabular-nums" dir="ltr">{driver.contact_phone ?? "—"}</TableCell>
+                      <TableCell className="text-right text-muted-foreground" dir="ltr">{driver.email ?? "—"}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant="outline" className={status.className}>{status.label}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

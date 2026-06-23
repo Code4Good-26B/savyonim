@@ -53,3 +53,60 @@ export type InvitationRow = {
   status: string;
   created_at: string;
 };
+
+export async function revokeInvitation(
+  invitationId: string,
+): Promise<{ ok: true } | { error: string }> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("savionim-admin-token")?.value;
+  if (!token) return { error: "Not authenticated" };
+
+  const adminClient = createSupabaseClient();
+  const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
+  if (authError || !user) return { error: "Invalid session" };
+
+  const updated = await query<{ auth_user_id: string | null }>(
+    `UPDATE public.invitations SET status = 'revoked', updated_at = now()
+     WHERE id = $1 AND status = 'pending'
+     RETURNING auth_user_id`,
+    [invitationId],
+  );
+
+  if (updated.rows.length === 0) return { error: "הזמנה לא נמצאה" };
+
+  const authUserId = updated.rows[0].auth_user_id;
+  if (authUserId) {
+    try { await adminClient.auth.admin.deleteUser(authUserId); } catch { /* best-effort */ }
+  }
+
+  return { ok: true };
+}
+
+export async function resendInvitation(
+  invitationId: string,
+): Promise<{ ok: true } | { error: string }> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("savionim-admin-token")?.value;
+  if (!token) return { error: "Not authenticated" };
+
+  const adminClient = createSupabaseClient();
+  const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
+  if (authError || !user) return { error: "Invalid session" };
+
+  const invResult = await query<{ email: string; invited_role: string }>(
+    `SELECT email, invited_role FROM public.invitations WHERE id = $1 AND status = 'pending'`,
+    [invitationId],
+  );
+
+  const inv = invResult.rows[0];
+  if (!inv) return { error: "הזמנה לא נמצאה" };
+
+  const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(inv.email, {
+    data: { app_role: inv.invited_role, invited_role: inv.invited_role, role: inv.invited_role },
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/onboarding`,
+  });
+
+  if (inviteError) return { error: inviteError.message };
+
+  return { ok: true };
+}

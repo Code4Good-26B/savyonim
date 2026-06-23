@@ -6,6 +6,7 @@ import {
   completeRide as completeRideRequest,
   updateRideStatus,
 } from "@/lib/driver/api";
+import { Gauge } from "lucide-react";
 import { useDriverI18n } from "@/components/driver/DriverI18n";
 import type { DriverApiError, DriverSession, RideSummary } from "@/lib/driver/types";
 import { DriverNotice } from "@/components/driver/DriverNotice";
@@ -31,7 +32,7 @@ function ActionButton({
       onClick={onClick}
       variant={tone}
       size="lg"
-      className="w-full"
+      className="h-14 w-full text-base font-semibold"
     >
       {children}
     </Button>
@@ -138,25 +139,38 @@ export function AssignedRideActions({
       {ride.status === "assigned" || ride.status === "in_progress" ? (
         <Card>
           <CardHeader>
-            <h2 className="text-base font-semibold text-slate-950">{t("completeRide")}</h2>
+            <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <Gauge className="h-5 w-5 text-muted-foreground" />
+              {t("completeRide")}
+            </h2>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2">
               <FieldLabel>
                 {t("odometerStart")}
-                <Input
-                  value={odometerStart}
-                  onChange={(event) => setOdometerStart(event.target.value)}
-                  inputMode="decimal"
-                />
+                <div className="relative mt-1">
+                  <Gauge className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={odometerStart}
+                    onChange={(event) => setOdometerStart(event.target.value)}
+                    inputMode="decimal"
+                    dir="ltr"
+                    className="pr-9"
+                  />
+                </div>
               </FieldLabel>
               <FieldLabel>
                 {t("odometerEnd")}
-                <Input
-                  value={odometerEnd}
-                  onChange={(event) => setOdometerEnd(event.target.value)}
-                  inputMode="decimal"
-                />
+                <div className="relative mt-1">
+                  <Gauge className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={odometerEnd}
+                    onChange={(event) => setOdometerEnd(event.target.value)}
+                    inputMode="decimal"
+                    dir="ltr"
+                    className="pr-9"
+                  />
+                </div>
               </FieldLabel>
             </div>
             <div className="mt-4">

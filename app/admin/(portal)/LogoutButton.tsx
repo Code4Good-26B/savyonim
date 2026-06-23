@@ -10,7 +10,7 @@ export function LogoutButton() {
   async function handleLogout() {
     setPending(true);
     await fetch("/api/auth/logout?portal=admin", { method: "POST" });
-    router.replace("/admin/login");
+    router.replace("/");
   }
 
   return (

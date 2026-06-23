@@ -34,6 +34,7 @@ const translations = {
     email: "Email",
     password: "Password",
     needAccount: "Need a driver account?",
+    inviteOnlyAccount: "Driver accounts are created by invitation from a manager or representative.",
     registerTitle: "Register driver",
     registerBody:
       "Creates a local driver account and profile. Leave service zone empty if the team has not assigned one yet.",
@@ -138,6 +139,7 @@ const translations = {
     email: "אימייל",
     password: "סיסמה",
     needAccount: "צריך חשבון נהג?",
+    inviteOnlyAccount: "\u05d7\u05e9\u05d1\u05d5\u05e0\u05d5\u05ea \u05e0\u05d4\u05d2\u05d9\u05dd \u05e0\u05e4\u05ea\u05d7\u05d9\u05dd \u05e8\u05e7 \u05d1\u05d0\u05de\u05e6\u05e2\u05d5\u05ea \u05d4\u05d6\u05de\u05e0\u05d4 \u05de\u05de\u05e0\u05d4\u05dc \u05d0\u05d5 \u05de\u05e0\u05e6\u05d9\u05d2.",
     registerTitle: "הרשמת נהג",
     registerBody: "יוצר חשבון נהג מקומי ופרופיל. אפשר להשאיר אזור שירות ריק אם עדיין לא שובצת.",
     registrationFailed: "ההרשמה נכשלה",
@@ -282,7 +284,7 @@ export function LanguageSwitch({ className = "" }: { className?: string }) {
       aria-label={t("languageLabel")}
       title={t("languageLabel")}
       onClick={toggleLanguage}
-      className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:border-blue-300 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${className}`}
+      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${className}`}
     >
       {nextLanguage}
     </button>

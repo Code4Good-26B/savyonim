@@ -20,19 +20,15 @@ export function RepToggle({ userId, value }: { userId: string; value: boolean })
 
   return (
     <button
-      role="switch"
-      aria-checked={value}
       disabled={isPending}
       onClick={() => handleChange(!value)}
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
-        value ? "bg-blue-600" : "bg-gray-200"
+      className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
+        value
+          ? "bg-green-100 text-green-700 hover:bg-green-200"
+          : "bg-red-100 text-red-700 hover:bg-red-200"
       }`}
     >
-      <span
-        className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-200 ${
-          value ? "translate-x-4" : "translate-x-0"
-        }`}
-      />
+      {isPending ? "..." : value ? "מאושר" : "לא מאושר"}
     </button>
   );
 }

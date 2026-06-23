@@ -1,3 +1,4 @@
+import { accountLifecycleMessage, accountLifecycleRedirect } from "@/lib/auth/account-lifecycle";
 import { createSupabaseAnonClient } from "@/lib/supabase";
 import { query } from "@/lib/db";
 
@@ -6,6 +7,7 @@ export const runtime = "nodejs";
 type UserRow = {
   full_name: string;
   role: string;
+  status: string;
   is_active: boolean;
 };
 
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
 
   // Verify role and approval status in public.users
   const result = await query<UserRow>(
-    `select full_name, role, is_active from public.users where id = $1`,
+    `select full_name, role, status, is_active from public.users where id = $1`,
     [userId],
   );
 
@@ -55,8 +57,19 @@ export async function POST(request: Request) {
     );
   }
 
+  if (user.status !== "approved") {
+    return Response.json(
+      {
+        error: accountLifecycleMessage(user.status),
+        accountStatus: user.status,
+        redirectTo: accountLifecycleRedirect(user.status),
+      },
+      { status: 403 },
+    );
+  }
+
   if (!user.is_active) {
-    return Response.json({ error: "Account pending approval" }, { status: 403 });
+    return Response.json({ error: "Account is inactive" }, { status: 403 });
   }
 
   const expiresAt = authData.session.expires_at

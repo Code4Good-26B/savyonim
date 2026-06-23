@@ -48,6 +48,8 @@ async function readError(path: string, response: Response): Promise<DriverApiErr
     status: response.status,
     title: response.statusText || "Request failed",
     detail,
+    redirectTo: payload.redirectTo,
+    accountStatus: payload.accountStatus,
   };
 }
 
@@ -85,19 +87,6 @@ export async function loginDriver(email: string, password: string): Promise<Driv
   return requestJson<DriverSession>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
-  });
-}
-
-export async function registerDriver(input: {
-  fullName: string;
-  email: string;
-  password: string;
-  phone?: string;
-  serviceZoneId?: string;
-}): Promise<DriverSession> {
-  return requestJson<DriverSession>("/api/auth/register-driver", {
-    method: "POST",
-    body: JSON.stringify(input),
   });
 }
 

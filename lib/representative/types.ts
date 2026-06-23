@@ -11,4 +11,6 @@ export type RepresentativeApiError = {
   status: number;
   title: string;
   detail: string;
+  redirectTo?: string | null;
+  accountStatus?: string;
 };

@@ -49,13 +49,9 @@ export function DriverAuthShell({
         </header>
 
         <section className="grid flex-1 items-center gap-8 py-8 lg:grid-cols-[1fr_28rem] lg:py-10">
-          <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-wide text-blue-200">{t("landingEyebrow")}</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-normal text-white sm:text-5xl">{t("landingTitle")}</h1>
-            <p className="mt-4 max-w-xl text-base leading-7 text-slate-200">{t("landingBody")}</p>
-          </div>
+          <div className="max-w-2xl" />
 
-          <Card className="w-full border-white/15 bg-white/95 p-6 text-slate-950 shadow-2xl shadow-slate-950/35 sm:p-7">
+          <Card className="fixed left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 border-white/15 bg-white/95 p-6 text-slate-950 shadow-2xl shadow-slate-950/35 sm:p-7">
             <div className="mb-6">
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{t("landingEyebrow")}</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">{title}</h2>

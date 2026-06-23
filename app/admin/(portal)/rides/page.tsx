@@ -69,8 +69,8 @@ export default async function AdminRidesPage({
   return (
     <div className="flex flex-col gap-6" dir="rtl">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">נסיעות</h1>
-        <p className="mt-1 text-sm text-gray-400">סה״כ {total ?? 0} בקשות במערכת</p>
+        <h2>נסיעות</h2>
+        <p className="mt-1 text-sm text-muted-foreground">סה״כ {total ?? 0} בקשות במערכת</p>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -80,8 +80,8 @@ export default async function AdminRidesPage({
             href={buildUrl(s)}
             className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
               activeStatus === s
-                ? "bg-slate-900 text-white"
-                : "bg-white border border-gray-100 text-gray-500 hover:border-gray-200 hover:text-gray-800"
+                ? "bg-primary text-primary-foreground"
+                : "bg-card border border-border text-muted-foreground hover:border-border hover:text-foreground"
             }`}
           >
             {STATUS_FILTER_LABEL[s]}
@@ -89,10 +89,10 @@ export default async function AdminRidesPage({
         ))}
       </div>
 
-      <div className="rounded-xl bg-white border border-gray-100 overflow-hidden">
+      <div className="rounded-xl bg-card border border-border overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50 text-right text-xs text-gray-400">
+            <tr className="border-b border-border bg-muted/40 text-right text-xs text-muted-foreground">
               <th className="px-6 py-3 font-medium">שם מתקשר</th>
               <th className="px-6 py-3 font-medium">טלפון</th>
               <th className="px-6 py-3 font-medium">מוצא</th>
@@ -100,22 +100,22 @@ export default async function AdminRidesPage({
               <th className="px-6 py-3 font-medium">סטטוס</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-border">
             {allRides.length === 0 ? (
-              <tr><td colSpan={5} className="px-6 py-16 text-center text-sm text-gray-400">אין בקשות</td></tr>
+              <tr><td colSpan={5} className="px-6 py-16 text-center text-sm text-muted-foreground">אין בקשות</td></tr>
             ) : (
               allRides.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-50/60 transition-colors">
-                  <td className="px-6 py-4 font-medium text-gray-900">{r.caller_full_name ?? "—"}</td>
-                  <td className="px-6 py-4 text-gray-500 tabular-nums">{r.caller_phone ?? "—"}</td>
-                  <td className="px-6 py-4 text-gray-500 max-w-[200px] truncate">{r.source_address}</td>
-                  <td className="px-6 py-4 text-gray-500 tabular-nums">
+                <tr key={r.id} className="hover:bg-muted/60 transition-colors">
+                  <td className="px-6 py-4 font-medium text-foreground">{r.caller_full_name ?? "—"}</td>
+                  <td className="px-6 py-4 text-muted-foreground tabular-nums">{r.caller_phone ?? "—"}</td>
+                  <td className="px-6 py-4 text-muted-foreground max-w-[200px] truncate">{r.source_address}</td>
+                  <td className="px-6 py-4 text-muted-foreground tabular-nums">
                     {r.requested_pickup_at
                       ? new Date(r.requested_pickup_at).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
                       : "—"}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[r.status] ?? "bg-gray-100 text-gray-600"}`}>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[r.status] ?? "bg-muted text-muted-foreground"}`}>
                       {STATUS_LABEL[r.status] ?? r.status}
                     </span>
                   </td>

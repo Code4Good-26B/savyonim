@@ -6,6 +6,15 @@ import {
   establishOnboardingSession,
   type OnboardingRole,
 } from "./session";
+import { DriverOnboardingForm } from "./DriverOnboardingForm";
+import { RepresentativeOnboardingForm } from "./RepresentativeOnboardingForm";
+
+const TEXT = {
+  fallbackError: "\u05e7\u05d9\u05e9\u05d5\u05e8 \u05d4\u05d4\u05d6\u05de\u05e0\u05d4 \u05d0\u05d9\u05e0\u05d5 \u05ea\u05e7\u05d9\u05df \u05d0\u05d5 \u05e9\u05e4\u05d2 \u05ea\u05d5\u05e7\u05e4\u05d5. \u05d1\u05e7\u05e9\u05d5 \u05de\u05de\u05e0\u05d4\u05dc \u05dc\u05e9\u05dc\u05d5\u05d7 \u05d4\u05d6\u05de\u05e0\u05d4 \u05d7\u05d3\u05e9\u05d4.",
+  pageTitle: "\u05d4\u05e9\u05dc\u05de\u05ea \u05d4\u05e8\u05e9\u05de\u05d4",
+  verifying: "\u05de\u05e9\u05dc\u05d9\u05de\u05d9\u05dd \u05d0\u05ea \u05d0\u05d9\u05de\u05d5\u05ea \u05d4\u05d4\u05d6\u05de\u05e0\u05d4...",
+  ready: "\u05d4\u05d4\u05d6\u05de\u05e0\u05d4 \u05d0\u05d5\u05de\u05ea\u05d4 \u05d5\u05d4\u05d7\u05d9\u05d1\u05d5\u05e8 \u05d4\u05de\u05d0\u05d5\u05d1\u05d8\u05d7 \u05de\u05d5\u05db\u05df.",
+} as const;
 
 type InviteState =
   | { status: "verifying" }
@@ -14,25 +23,16 @@ type InviteState =
 
 export function DriverOnboardingContainer() {
   return (
-    <div className="mt-6 rounded-md border border-blue-200 bg-blue-50 p-4" data-testid="driver-onboarding-container">
-      <h2 className="text-lg font-semibold text-blue-950">Driver onboarding</h2>
-      <p className="mt-2 text-sm text-blue-900">
-        Your invitation is verified. The driver registration form will appear here.
-      </p>
+    <div data-testid="driver-onboarding-container">
+      <DriverOnboardingForm />
     </div>
   );
 }
 
 export function RepresentativeOnboardingContainer() {
   return (
-    <div
-      className="mt-6 rounded-md border border-emerald-200 bg-emerald-50 p-4"
-      data-testid="representative-onboarding-container"
-    >
-      <h2 className="text-lg font-semibold text-emerald-950">Representative onboarding</h2>
-      <p className="mt-2 text-sm text-emerald-900">
-        Your invitation is verified. The representative registration form will appear here.
-      </p>
+    <div data-testid="representative-onboarding-container">
+      <RepresentativeOnboardingForm />
     </div>
   );
 }
@@ -66,7 +66,7 @@ export default function OnboardingPage() {
       if (active) {
         setState({
           status: "error",
-          message: "This invitation link is invalid or expired. Ask an administrator for a new invitation.",
+          message: TEXT.fallbackError,
         });
       }
     });
@@ -76,24 +76,24 @@ export default function OnboardingPage() {
   }, []);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl items-center px-6 py-12">
-      <section className="w-full rounded-lg border bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold">Complete your registration</h1>
+    <main className="mx-auto flex min-h-screen max-w-xl items-center px-6 py-12" dir="rtl">
+      <section className="w-full rounded-lg border bg-card p-8 text-right shadow-sm">
+        <h1 className="text-right text-2xl font-semibold">{TEXT.pageTitle}</h1>
         {state.status === "verifying" && (
-          <p className="mt-4" role="status" aria-live="polite">
-            Verifying your invitation...
+          <p className="mt-4 text-right" role="status" aria-live="polite">
+            {TEXT.verifying}
           </p>
         )}
         {state.status === "ready" && (
           <>
-            <p className="mt-4" role="status" aria-live="polite">
-              Your invitation is verified and your secure session is ready.
+            <p className="mt-4 text-right" role="status" aria-live="polite">
+              {TEXT.ready}
             </p>
             <OnboardingRoleContainer role={state.role} />
           </>
         )}
         {state.status === "error" && (
-          <p className="mt-4 text-red-700" role="alert">
+          <p className="mt-4 text-right text-destructive" role="alert">
             {state.message}
           </p>
         )}

@@ -46,5 +46,5 @@ export async function POST(request: Request) {
     return Response.json({ error: "Failed to create upload URL" }, { status: 500 });
   }
 
-  return Response.json({ uploadUrl: data.signedUrl, path }, { status: 200 });
+  return Response.json({ uploadUrl: data.signedUrl, path, token: data.token }, { status: 200 });
 }

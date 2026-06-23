@@ -1,17 +1,20 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { sendAdminInvite } from "./actions";
-
-const card = "rounded-xl border border-gray-200 bg-white p-6 flex flex-col gap-5";
-const sectionTitle = "text-xs font-semibold uppercase tracking-widest text-gray-400";
-const fieldWrap = "flex flex-col gap-1.5";
-const label = "text-sm font-medium text-gray-700";
-const input =
-  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 disabled:opacity-50";
-const select =
-  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 bg-white disabled:opacity-50";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type InvitableRole = "representative" | "driver";
 
@@ -34,45 +37,45 @@ export function AdminInviteForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className={card}>
-        <p className={sectionTitle}>שליחת הזמנה</p>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">שליחת הזמנה</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="admin-invite-email">כתובת אימייל</Label>
+            <Input
+              id="admin-invite-email"
+              type="email"
+              required
+              dir="ltr"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+              disabled={isPending}
+            />
+          </div>
 
-        <div className={fieldWrap}>
-          <span className={label}>כתובת אימייל</span>
-          <input
-            type="email" required value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@example.com"
-            className={input} disabled={isPending}
-          />
-        </div>
+          <div className="grid gap-2">
+            <Label htmlFor="admin-invite-role">תפקיד</Label>
+            <Select value={role} onValueChange={(v) => setRole(v as InvitableRole)} disabled={isPending}>
+              <SelectTrigger id="admin-invite-role">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="driver">נהג</SelectItem>
+                <SelectItem value="representative">נציג</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className={fieldWrap}>
-          <span className={label}>תפקיד</span>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as InvitableRole)}
-            className={select} disabled={isPending}
-          >
-            <option value="driver">נהג</option>
-            <option value="representative">נציג</option>
-          </select>
-        </div>
-      </div>
-
-      <button
-        type="submit" disabled={isPending}
-        className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-sm"
-      >
-        {isPending && (
-          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-        )}
-        {isPending ? "שולח..." : "שלח הזמנה"}
-      </button>
-    </form>
+          <Button type="submit" disabled={isPending} className="gap-2">
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {isPending ? "שולח..." : "שלח הזמנה"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

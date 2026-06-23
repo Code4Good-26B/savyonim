@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import type { MobilityNeed, PassengerCategory } from "@/lib/intake-contract";
 import { type FormState, EMPTY_FORM, isValid, buildPayload } from "./form-logic";
+import { Button } from "@/components/ui/button";
 
 type ServiceZone = { id: string; name: string; region_code: string };
 
@@ -32,17 +34,17 @@ const WAITING_OPTIONS = [
   { value: "other", label: "אחר" },
 ];
 
-// Shared style constants
-const card = "rounded-xl border border-gray-200 bg-white p-6 flex flex-col gap-5";
-const sectionTitle = "text-xs font-semibold uppercase tracking-widest text-gray-400";
+// Shared style constants (design-system tokens)
+const card = "rounded-xl border border-border bg-card p-6 flex flex-col gap-5";
+const sectionTitle = "text-xs font-semibold uppercase tracking-widest text-muted-foreground";
 const fieldWrap = "flex flex-col gap-1.5";
-const label = "text-sm font-medium text-gray-700";
+const label = "text-sm font-medium text-foreground";
 const input =
-  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+  "w-full rounded-lg border border-input bg-input-background px-3 py-2 text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
 const select =
-  "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+  "w-full rounded-lg border border-input bg-input-background px-3 py-2 text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
 const radioRow = "flex items-center gap-2";
-const radioLabel = "text-sm text-gray-700 cursor-pointer";
+const radioLabel = "text-sm text-foreground cursor-pointer";
 
 export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
   const router = useRouter();
@@ -94,27 +96,24 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
               ✓
             </div>
             <div className="flex flex-col gap-1">
-              <h2 className="text-xl font-semibold text-gray-900">הבקשה נשלחה בהצלחה</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-xl font-semibold text-foreground">הבקשה נשלחה בהצלחה</h2>
+              <p className="text-sm text-muted-foreground">
                 מספר בקשה:{" "}
-                <span className="font-mono text-xs text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded">
+                <span className="font-mono text-xs text-foreground bg-muted px-1.5 py-0.5 rounded">
                   {successId}
                 </span>
               </p>
             </div>
             <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => router.push("/representative/requests")}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
+              <Button onClick={() => router.push("/representative/requests")}>
                 לרשימת הבקשות
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => { setSuccessId(null); setForm(EMPTY_FORM); }}
-                className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 בקשה חדשה
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -125,17 +124,15 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
   return (
     <div className="max-w-2xl flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <Link href="/representative/requests" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
+        <Link href="/representative/requests" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowRight className="w-4 h-4" />
           חזרה לרשימה
         </Link>
       </div>
 
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">בקשת נסיעה חדשה</h1>
-        <p className="mt-1 text-sm text-gray-500">מלא את כל השדות המסומנים ב-<span className="text-red-500">*</span></p>
+        <h2>בקשת נסיעה חדשה</h2>
+        <p className="mt-1 text-sm text-muted-foreground">מלא את כל השדות המסומנים ב-<span className="text-destructive">*</span></p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -145,7 +142,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
           <p className={sectionTitle}>פרטי המתקשר</p>
 
           <div className={fieldWrap}>
-            <label className={label}>שם מלא <span className="text-red-500">*</span></label>
+            <label className={label}>שם מלא <span className="text-destructive">*</span></label>
             <input
               type="text"
               value={form.caller_full_name}
@@ -156,7 +153,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
           </div>
 
           <div className={fieldWrap}>
-            <label className={label}>מספר תעודת זהות <span className="text-red-500">*</span></label>
+            <label className={label}>מספר תעודת זהות <span className="text-destructive">*</span></label>
             <input
               type="text"
               value={form.caller_id_number}
@@ -167,7 +164,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
           </div>
 
           <div className={fieldWrap}>
-            <label className={label}>טלפון נייד <span className="text-red-500">*</span></label>
+            <label className={label}>טלפון נייד <span className="text-destructive">*</span></label>
             <input
               type="tel"
               value={form.caller_phone}
@@ -178,7 +175,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
           </div>
 
           <div className={fieldWrap}>
-            <label className={label}>הבקשה עבור... <span className="text-red-500">*</span></label>
+            <label className={label}>הבקשה עבור... <span className="text-destructive">*</span></label>
             <div className="flex flex-col gap-2 pt-1">
               <label className={radioRow}>
                 <input
@@ -186,7 +183,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
                   name="request_for_self"
                   checked={form.request_for_self === true}
                   onChange={() => set({ request_for_self: true })}
-                  className="h-4 w-4 accent-blue-600"
+                  className="h-4 w-4 accent-primary"
                 />
                 <span className={radioLabel}>המתקשר עצמו</span>
               </label>
@@ -196,7 +193,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
                   name="request_for_self"
                   checked={form.request_for_self === false}
                   onChange={() => set({ request_for_self: false })}
-                  className="h-4 w-4 accent-blue-600"
+                  className="h-4 w-4 accent-primary"
                 />
                 <span className={radioLabel}>אדם אחר</span>
               </label>
@@ -210,7 +207,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
             <p className={sectionTitle}>פרטי הנוסע</p>
 
             <div className={fieldWrap}>
-              <label className={label}>שם מלא <span className="text-red-500">*</span></label>
+              <label className={label}>שם מלא <span className="text-destructive">*</span></label>
               <input
                 type="text"
                 value={form.passenger_full_name}
@@ -221,7 +218,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
             </div>
 
             <div className={fieldWrap}>
-              <label className={label}>מספר תעודת זהות <span className="text-red-500">*</span></label>
+              <label className={label}>מספר תעודת זהות <span className="text-destructive">*</span></label>
               <input
                 type="text"
                 value={form.passenger_id_number}
@@ -232,7 +229,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
             </div>
 
             <div className={fieldWrap}>
-              <label className={label}>טלפון <span className="text-red-500">*</span></label>
+              <label className={label}>טלפון <span className="text-destructive">*</span></label>
               <input
                 type="tel"
                 value={form.passenger_phone}
@@ -243,7 +240,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
             </div>
 
             <div className={fieldWrap}>
-              <label className={label}>מצב ניידות <span className="text-red-500">*</span></label>
+              <label className={label}>מצב ניידות <span className="text-destructive">*</span></label>
               <div className="flex flex-col gap-2 pt-1">
                 {MOBILITY_OPTIONS.map((opt) => (
                   <label key={opt.value} className={radioRow}>
@@ -252,7 +249,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
                       name="passenger_mobility_need"
                       checked={form.passenger_mobility_need === opt.value}
                       onChange={() => set({ passenger_mobility_need: opt.value })}
-                      className="h-4 w-4 accent-blue-600"
+                      className="h-4 w-4 accent-primary"
                     />
                     <span className={radioLabel}>{opt.label}</span>
                   </label>
@@ -261,7 +258,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
             </div>
 
             <div className={fieldWrap}>
-              <label className={label}>קטגוריה <span className="text-red-500">*</span></label>
+              <label className={label}>קטגוריה <span className="text-destructive">*</span></label>
               <select
                 value={form.passenger_category}
                 onChange={(e) => set({ passenger_category: e.target.value as PassengerCategory })}
@@ -281,7 +278,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
           <div className={card}>
             <p className={sectionTitle}>קטגוריה</p>
             <div className={fieldWrap}>
-              <label className={label}>קטגוריה <span className="text-red-500">*</span></label>
+              <label className={label}>קטגוריה <span className="text-destructive">*</span></label>
               <select
                 value={form.self_category}
                 onChange={(e) => set({ self_category: e.target.value as PassengerCategory })}
@@ -306,7 +303,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
                 name="trip_type"
                 checked={form.trip_type === "medical"}
                 onChange={() => set({ trip_type: "medical" })}
-                className="h-4 w-4 accent-blue-600"
+                className="h-4 w-4 accent-primary"
               />
               <span className={radioLabel}>טיפול רפואי</span>
             </label>
@@ -316,7 +313,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
                 name="trip_type"
                 checked={form.trip_type === "leisure"}
                 onChange={() => set({ trip_type: "leisure" })}
-                className="h-4 w-4 accent-blue-600"
+                className="h-4 w-4 accent-primary"
               />
               <span className={radioLabel}>פנאי / נופש</span>
             </label>
@@ -328,7 +325,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
           <p className={sectionTitle}>פרטי הנסיעה</p>
 
           <div className={fieldWrap}>
-            <label className={label}>כתובת מוצא <span className="text-red-500">*</span></label>
+            <label className={label}>כתובת מוצא <span className="text-destructive">*</span></label>
             <input
               type="text"
               value={form.source_address}
@@ -339,7 +336,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
           </div>
 
           <div className={fieldWrap}>
-            <label className={label}>כתובת יעד <span className="text-red-500">*</span></label>
+            <label className={label}>כתובת יעד <span className="text-destructive">*</span></label>
             <input
               type="text"
               value={form.destination_address}
@@ -350,7 +347,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
           </div>
 
           <div className={fieldWrap}>
-            <label className={label}>תאריך נסיעה <span className="text-red-500">*</span></label>
+            <label className={label}>תאריך נסיעה <span className="text-destructive">*</span></label>
             <input
               type="date"
               value={form.travel_date}
@@ -362,7 +359,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
           {form.trip_type === "medical" && (
             <>
               <div className={fieldWrap}>
-                <label className={label}>שעת הגעה נדרשת <span className="text-red-500">*</span></label>
+                <label className={label}>שעת הגעה נדרשת <span className="text-destructive">*</span></label>
                 <input
                   type="time"
                   value={form.required_arrival_time}
@@ -388,7 +385,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
           {form.trip_type === "leisure" && (
             <>
               <div className={fieldWrap}>
-                <label className={label}>תחילת חלון זמן <span className="text-red-500">*</span></label>
+                <label className={label}>תחילת חלון זמן <span className="text-destructive">*</span></label>
                 <input
                   type="time"
                   value={form.leisure_window_start}
@@ -397,7 +394,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
                 />
               </div>
               <div className={fieldWrap}>
-                <label className={label}>סיום חלון זמן <span className="text-red-500">*</span></label>
+                <label className={label}>סיום חלון זמן <span className="text-destructive">*</span></label>
                 <input
                   type="time"
                   value={form.leisure_window_end}
@@ -419,7 +416,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
                 name="has_waiting"
                 checked={form.has_waiting === false}
                 onChange={() => set({ has_waiting: false, waiting_duration: "", waiting_other_minutes: "" })}
-                className="h-4 w-4 accent-blue-600"
+                className="h-4 w-4 accent-primary"
               />
               <span className={radioLabel}>ללא המתנה</span>
             </label>
@@ -429,7 +426,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
                 name="has_waiting"
                 checked={form.has_waiting === true}
                 onChange={() => set({ has_waiting: true })}
-                className="h-4 w-4 accent-blue-600"
+                className="h-4 w-4 accent-primary"
               />
               <span className={radioLabel}>המתנה ביעד</span>
             </label>
@@ -437,7 +434,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
 
           {form.has_waiting === true && (
             <div className={fieldWrap}>
-              <label className={label}>משך המתנה <span className="text-red-500">*</span></label>
+              <label className={label}>משך המתנה <span className="text-destructive">*</span></label>
               <select
                 value={form.waiting_duration}
                 onChange={(e) => set({ waiting_duration: e.target.value, waiting_other_minutes: "" })}
@@ -472,7 +469,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
                 name="return_trip"
                 checked={form.return_trip_required === false}
                 onChange={() => set({ return_trip_required: false })}
-                className="h-4 w-4 accent-blue-600"
+                className="h-4 w-4 accent-primary"
               />
               <span className={radioLabel}>כיוון אחד בלבד</span>
             </label>
@@ -482,7 +479,7 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
                 name="return_trip"
                 checked={form.return_trip_required === true}
                 onChange={() => set({ return_trip_required: true })}
-                className="h-4 w-4 accent-blue-600"
+                className="h-4 w-4 accent-primary"
               />
               <span className={radioLabel}>הלוך ושוב — חובה</span>
             </label>
@@ -517,34 +514,19 @@ export default function NewRequestForm({ zones }: { zones: ServiceZone[] }) {
 
         {/* ── Error + Submit ──────────────────────────────────────── */}
         {apiError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             {apiError}
           </div>
         )}
 
-        <div className="rounded-xl border border-gray-200 bg-white px-6 py-4 flex items-center justify-between gap-4">
-          <p className="text-xs text-gray-400">
+        <div className="rounded-xl border border-border bg-card px-6 py-4 flex items-center justify-between gap-4">
+          <p className="text-xs text-muted-foreground">
             {valid ? "הטופס מוכן לשליחה" : "יש למלא את כל השדות הנדרשים לפני השליחה"}
           </p>
-          <button
-            type="submit"
-            disabled={!valid || submitting}
-            className={`flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-colors shadow-sm ${
-              valid && !submitting
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-blue-300 cursor-not-allowed"
-            }`}
-          >
-            {submitting ? (
-              <>
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                שולח...
-              </>
-            ) : "שלח בקשה"}
-          </button>
+          <Button type="submit" disabled={!valid || submitting} className="gap-2">
+            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {submitting ? "שולח..." : "שלח בקשה"}
+          </Button>
         </div>
       </form>
     </div>

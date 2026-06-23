@@ -202,13 +202,13 @@ describe("onboarding role routing", () => {
     const html = renderToStaticMarkup(React.createElement(OnboardingRoleContainer, { role: "driver" }));
 
     expect(html).toContain("data-testid=\"driver-onboarding-container\"");
-    expect(html).toContain("Driver onboarding");
+    expect(html).toContain("data-testid=\"driver-onboarding-form\"");
   });
 
   it("renders the representative onboarding form container", () => {
     const html = renderToStaticMarkup(React.createElement(OnboardingRoleContainer, { role: "representative" }));
 
     expect(html).toContain("data-testid=\"representative-onboarding-container\"");
-    expect(html).toContain("Representative onboarding");
+    expect(html).toContain("data-testid=\"rep-onboarding-form\"");
   });
 });

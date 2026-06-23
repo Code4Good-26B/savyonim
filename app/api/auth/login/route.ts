@@ -1,4 +1,5 @@
 import { signDriverToken, verifyPassword } from "@/lib/auth/local-auth";
+import { accountLifecycleMessage, accountLifecycleRedirect } from "@/lib/auth/account-lifecycle";
 import { query } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
         d.service_zone_id,
         u.is_active as user_active,
         d.is_active as driver_active,
-        coalesce(to_jsonb(u)->>'status', 'approved') as account_status
+        u.status::text as account_status
       from public.users u
       join auth.users au on au.id = u.id
       join public.drivers d on d.user_id = u.id
@@ -56,8 +57,19 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid email or password" }, { status: 401 });
   }
 
-  if (!driver.user_active || !driver.driver_active || driver.account_status !== "approved") {
-    return Response.json({ error: "This account is not an approved active driver" }, { status: 403 });
+  if (driver.account_status !== "approved") {
+    return Response.json(
+      {
+        error: accountLifecycleMessage(driver.account_status),
+        accountStatus: driver.account_status,
+        redirectTo: accountLifecycleRedirect(driver.account_status),
+      },
+      { status: 403 },
+    );
+  }
+
+  if (!driver.user_active || !driver.driver_active) {
+    return Response.json({ error: "This account is not an active driver" }, { status: 403 });
   }
 
   const { token, expiresAt } = signDriverToken({
