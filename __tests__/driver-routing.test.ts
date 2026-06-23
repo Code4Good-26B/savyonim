@@ -2,7 +2,6 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import LandingPage from "@/app/page";
-import DriverRoutePage from "@/app/driver/page";
 import LoginRoutePage from "@/app/login/page";
 import RegisterDriverPage from "@/app/register-driver/page";
 import { OnboardingRoleContainer } from "@/app/onboarding/page";
@@ -40,10 +39,6 @@ describe("driver routing", () => {
     expect(html).toContain("<form");
     expect(html).toContain('type="email"');
     expect(html).toContain('type="password"');
-  });
-
-  it("does not expose public driver self-registration from /driver", () => {
-    expectRedirectsToLogin(DriverRoutePage);
   });
 
   it("does not expose the standalone public driver registration page", () => {

@@ -29,17 +29,19 @@ export function enforceRateLimit(
     keyPrefix,
     limit,
     windowMs,
+    identifier,
   }: {
     keyPrefix: string;
     limit: number;
     windowMs: number;
+    identifier?: string;
   },
 ): Response | null {
   const now = Date.now();
   cleanupBuckets(now);
 
   const ip = readClientIp(request);
-  const key = `${keyPrefix}:${ip}`;
+  const key = identifier ? `${keyPrefix}:${ip}:${identifier}` : `${keyPrefix}:${ip}`;
   const existing = buckets.get(key);
 
   if (!existing || existing.resetAt <= now) {

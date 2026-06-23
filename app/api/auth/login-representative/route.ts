@@ -1,6 +1,7 @@
 import { accountLifecycleMessage, accountLifecycleRedirect } from "@/lib/auth/account-lifecycle";
 import { createSupabaseAnonClient } from "@/lib/supabase";
 import { query } from "@/lib/db";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,14 @@ export async function POST(request: Request) {
 
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body.password === "string" ? body.password : "";
+
+  const rateLimitResponse = enforceRateLimit(request, {
+    keyPrefix: "auth-rep",
+    limit: parseInt(process.env.AUTH_RATE_LIMIT_MAX || "5", 10),
+    windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || "60000", 10),
+    identifier: email || "anonymous",
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   if (!email) return Response.json({ error: "email is required" }, { status: 400 });
   if (!password) return Response.json({ error: "password is required" }, { status: 400 });

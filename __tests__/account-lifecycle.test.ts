@@ -60,8 +60,8 @@ describe("account lifecycle screens", () => {
   it("renders the pending approval waiting state", () => {
     const html = renderToStaticMarkup(React.createElement(PendingPage));
 
-    expect(html).toContain("Registration received, waiting for system approval.");
-    expect(html).toContain("Waiting for approval");
+    expect(html).toContain("הרשמה התקבלה");
+    expect(html).toContain("ממתין לאישור");
   });
 
   it("renders the rejected state with contact and next-step guidance", () => {

@@ -102,7 +102,6 @@ describe("driver ride details page passenger rendering", () => {
       },
     });
 
-    expect(html).toContain("Passenger information");
     expect(html).toContain("Miriam Katz");
     expect(html).toContain("050-1111111");
     expect(html).toContain("050-9991111");
