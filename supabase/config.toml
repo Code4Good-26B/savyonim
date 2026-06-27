@@ -213,7 +213,12 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
-enable_signup = false
+# Keep TRUE so the email provider (password login) stays enabled for invited &
+# approved users. Invite-only is still enforced by the global [auth] enable_signup
+# = false above, which blocks public self-signup. Setting this to false disables
+# the email provider entirely (GOTRUE_EXTERNAL_EMAIL_ENABLED=false) and breaks
+# all password logins.
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
